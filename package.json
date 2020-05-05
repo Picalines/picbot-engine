@@ -10,7 +10,8 @@
     "scripts": {
         "build": "tsc",
         "link": "npm link",
-        "dev": "npm run build && npm run link"
+        "dev": "npm run build && npm run link",
+        "prepare": "npm run build"
     },
     "keywords": [
         "discord",
@@ -18,6 +19,9 @@
         "nodejs",
         "engine"
     ],
+    "repository": {
+        "url": "https://github.com/Picalines/picbot-engine"
+    },
     "author": "Picalines",
     "license": "ISC",
     "dependencies": {
