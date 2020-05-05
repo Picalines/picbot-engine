@@ -1,0 +1,29 @@
+{
+    "name": "picbot-engine",
+    "version": "1.0.0",
+    "description": "discord.js bot engine",
+    "main": "dist/index.js",
+    "types": "types/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "link": "npm link",
+        "dev": "npm run build && npm run link"
+    },
+    "keywords": [
+        "discord",
+        "bot",
+        "nodejs",
+        "engine"
+    ],
+    "author": "Picalines",
+    "license": "ISC",
+    "dependencies": {
+        "discord.js": "^12.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "^13.13.0"
+    }
+}
