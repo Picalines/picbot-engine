@@ -1,9 +1,14 @@
 import { PermissionResolvable, Message } from "discord.js";
-import { Argument, SpaceReader, ArgumentReader } from "./argument";
+import { Argument, SpaceReader, ArgumentReader, MemberArgument, NumberArgument } from "./argument";
 import { Bot } from "./bot";
 
-type ArgumentList = Record<string, Argument<any>>;
-type ArgumentValuesList<Args extends ArgumentList> = { [name in keyof Args]: Args[name] extends Argument<infer T> ? T : never };
+type OptionalArgument<T> = { arg: Argument<T>, default: T };
+type ArgumentList = Record<string, Argument<any> | OptionalArgument<any>>;
+type ArgumentValuesList<Args extends ArgumentList> = {
+    [name in keyof Args]: Args[name] extends Argument<infer T> ? T :
+    Args[name] extends OptionalArgument<infer T> ? T :
+    never
+};
 
 export interface CommandInfo<Args extends ArgumentList> {
     name: string;
@@ -109,20 +114,31 @@ export class Command {
             }
         }
 
-        const _arguments = branch.args as Record<string, Argument<any>>;
+        const _arguments = branch.args;
         const parsedValues: Record<string, any> = {};
         for (const name in _arguments) {
-            const arg = _arguments[name];
+            let arg = _arguments[name];
+            let _default: any = undefined;
 
-            let tokenLength: number;
+            if (!(arg instanceof Argument)) {
+                _default = arg.default;
+                arg = arg.arg;
+            }
+
+            let tokenLength = 0;
             try {
                 tokenLength = arg.read(line);
                 const value = line.substring(0, tokenLength);
-                if (tokenLength <= 0) throw null;
+                if (tokenLength <= 0) throw undefined;
                 parsedValues[name] = arg.parse(value, msg);
             }
-            catch {
-                throw new Error(`Ожидался аргумент \`${branch.getArgumentName(name)}\``);
+            catch (err) {
+                if (err === undefined) {
+                    parsedValues[name] = _default;
+                }
+                else {
+                    throw new SyntaxError(`Ожидался аргумент \`${branch.getArgumentName(name)}\``);
+                }
             }
 
             line = this.readLine(tokenLength, line);

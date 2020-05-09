@@ -9,6 +9,9 @@ export {
     RegexReader,
     RegexArgument,
     MemberArgument,
+    MentionArgument,
+    RoleArgument,
+    TextChannelArgument,
 } from "./argument";
 
 export {

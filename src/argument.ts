@@ -1,4 +1,4 @@
-import { GuildMember, Message } from "discord.js";
+import { GuildMember, Message, Guild, Role, TextChannel } from "discord.js";
 
 export interface ArgumentReader {
     /**
@@ -91,6 +91,9 @@ export class RemainingTextArgument extends Argument<string> {
     }
 }
 
+/**
+ * Читает аргумент с помощью регулярного выражения
+ */
 export class RegexReader implements ArgumentReader {
     public readonly regex: RegExp;
 
@@ -104,12 +107,19 @@ export class RegexReader implements ArgumentReader {
     }
 }
 
+/**
+ * Читает пробел в сообщении
+ */
 export class SpaceReader extends RegexReader {
     constructor() {
         super('\\s+');
     }
 }
 
+/**
+ * Абстрактный класс аргумента, читающийся с помощью
+ * регулярного выражения
+ */
 export abstract class RegexArgument<T> extends Argument<T> {
     public readonly regexReader: RegexReader;
 
@@ -125,6 +135,10 @@ export abstract class RegexArgument<T> extends Argument<T> {
     }
 }
 
+/**
+ * Числовой аргумент. В конструкторе можно настроить
+ * тип числа (целое / вещественное)
+ */
 export class NumberArgument extends RegexArgument<number> {
     constructor(
         public readonly type: 'integer' | 'float'
@@ -133,19 +147,69 @@ export class NumberArgument extends RegexArgument<number> {
     }
 
     parse(value: string) {
-        return this.type == 'integer' ? parseInt(value) : parseFloat(value);
+        try {
+            return this.type == 'integer' ? parseInt(value) : parseFloat(value);
+        }
+        catch {
+            throw new SyntaxError('invalid number');
+        }
     }
 }
 
-export class MemberArgument extends RegexArgument<GuildMember> {
-    constructor() {
-        super('<@\\!?\\d+>');
+/**
+ * Абстрактный класс аргумента упоминания
+ */
+export abstract class MentionArgument<T> extends RegexArgument<T> {
+    constructor(
+        regex: string,
+        readonly extract: (msg: Message & { guild: Guild }, id: string) => T | null | undefined
+    ) {
+        super(regex);
     }
 
     parse(value: string, msg: Message) {
+        if (!msg.guild) {
+            throw new TypeError('dm message');
+        }
         const id = (value.match(/\d+/) as RegExpMatchArray)[0];
-        const member = msg.guild?.member(id);
-        if (!member) throw null;
-        return member;
+        try {
+            const obj = this.extract(msg as Message & { guild: Guild }, id);
+            if (!obj) {
+                throw undefined;
+            }
+            return obj;
+        }
+        catch {
+            throw new SyntaxError('invalid mention');
+        }
+    }
+}
+
+/**
+ * Аргумент упоминания участника сервера
+ */
+export class MemberArgument extends MentionArgument<GuildMember> {
+    constructor() {
+        super('<@\\!?\\d+>', (msg, id) => msg.guild.member(id));
+    }
+}
+
+/**
+ * Аргумент упоминания роли
+ */
+export class RoleArgument extends MentionArgument<Role> {
+    constructor() {
+        super('<@&\\d+>', (msg, id) => msg.guild.roles.cache.find(r => r.id == id));
+    }
+}
+
+/**
+ * Аргумент упоминания текстового канала
+ */
+export class TextChannelArgument extends MentionArgument<TextChannel> {
+    constructor() {
+        super('<#(?<id>\\d+)>', (msg, id) => msg.guild.channels.cache.find(
+            ch => ch.type == 'text' && ch.id == id
+        ) as TextChannel | undefined);
     }
 }

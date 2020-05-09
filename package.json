@@ -10,8 +10,7 @@
     "scripts": {
         "build": "tsc",
         "link": "npm link",
-        "dev": "npm run build && npm run link",
-        "prepare": "npm run build"
+        "dev": "npm run build && npm run link"
     },
     "keywords": [
         "discord",
