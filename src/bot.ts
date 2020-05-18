@@ -4,8 +4,6 @@ import { Command } from "./commands";
 import { promises } from "fs";
 import { join, resolve } from "path";
 
-type ErrorCallback<TError extends Error = Error> = (err: TError) => void;
-
 /**
  * Обёртка класса Client из discord.js,
  * в которой реализованны полезные сокращения
@@ -92,15 +90,9 @@ export class Bot extends EventEmitter {
     /**
      * Аналог стандартной функции client.login
      * @param token токен discord api
-     * @param errorCallback функция, выполняющаяся при ошибке
      */
-    public async login(token: string, errorCallback: ErrorCallback = console.error) {
-        try {
-            await this.client.login(token);
-        }
-        catch (err) {
-            errorCallback(err);
-        }
+    public async login(token: string): Promise<void> {
+        await this.client.login(token);
     }
 
     /**
@@ -108,16 +100,10 @@ export class Bot extends EventEmitter {
      * его в методе login
      * 
      * @param path путь до файла с токеном
-     * @param errorCallback функция, выполняющаяся при ошибке
      */
-    public async loginFromFile(path: string, errorCallback: ErrorCallback = console.error) {
-        try {
-            const token = (await promises.readFile(path)).toString();
-            await this.login(token, errorCallback);
-        }
-        catch (err) {
-            errorCallback(err);
-        }
+    public async loginFromFile(path: string): Promise<void> {
+        const token = (await promises.readFile(path)).toString();
+        await this.login(token);
     }
 
     /**
@@ -127,31 +113,26 @@ export class Bot extends EventEmitter {
      * @param path путь до папки с командами
      * @param forgetOld выбросить ли старые команды из памяти бота, если они были
      */
-    public async loadCommandsInFolder(path: string, errorCallback: ErrorCallback = console.error, forgetOld = true) {
-        console.log(`loading commands from folder ${path}...`);
-        try {
-            const jsFiles = (await promises.readdir(path)).filter(filename => filename.endsWith('.js'));
-            if (jsFiles.length == 0) {
-                throw new Error(`folder ${path} does not contain js files`);
-            }
-            if (forgetOld) this._commands.length = 0;
-            for (const filename of jsFiles) {
-                const fullname = './' + join(path, filename);
-                delete require.cache[resolve(fullname)];
-                const exports = require.main?.require(fullname);
-                if (!(exports instanceof Command)) {
-                    if (exports.__ignoreCommandsLoading === true) {
-                        continue;
-                    }
-                    throw new Error(`${fullname}: Command object expected in module.exports`);
+    public async loadCommandsInFolder(path: string, forgetOld = true) {
+        console.log(`loading commands from folder ${path}`);
+        const jsFiles = (await promises.readdir(path)).filter(filename => filename.endsWith('.js'));
+        if (jsFiles.length == 0) {
+            throw new Error(`folder ${path} does not contain js files`);
+        }
+        if (forgetOld) this._commands.length = 0;
+        for (const filename of jsFiles) {
+            const fullname = './' + join(path, filename);
+            delete require.cache[resolve(fullname)];
+            const exports = require.main?.require(fullname);
+            if (!(exports instanceof Command)) {
+                if (exports.__ignoreCommandsLoading === true) {
+                    continue;
                 }
-                this.registerCommand(exports);
-                console.log(`command ${exports.info.name} successfully loaded`);
+                throw new Error(`${fullname}: Command object expected in module.exports`);
             }
-            console.log('done!');
+            this.registerCommand(exports);
+            console.log(`command ${exports.info.name} successfully loaded`);
         }
-        catch (err) {
-            errorCallback(err);
-        }
+        console.log('done!');
     }
 }
