@@ -1,25 +1,25 @@
 import { Client, ClientOptions, Message, MessageEmbed } from "discord.js";
-import { EventEmitter } from "events";
-import { Command } from "./commands";
-import { promises } from "fs";
+import { Command, CommandStorage, CommandHandler } from "./commands";
+import { readFileSync, readdirSync } from "fs";
 import { join, resolve } from "path";
+import { GuildMessage } from "./utils";
 
 /**
  * Обёртка класса Client из discord.js,
  * в которой реализованны полезные сокращения
  */
-export class Bot extends EventEmitter {
+export class Bot {
     public readonly client: Client;
-    public prefix: string = '~';
-    private readonly _commands: Command[] = [];
+    public prefix = '~';
 
-    public get commands(): ReadonlyArray<Command> {
-        return this._commands;
-    }
+    public commandStorage = new CommandStorage();
+    private commandHandler: CommandHandler;
 
     constructor(options?: ClientOptions) {
-        super();
         this.client = new Client(options);
+
+        this.commandHandler = new CommandHandler(this);
+
         this.initEvents();
     }
 
@@ -33,77 +33,57 @@ export class Bot extends EventEmitter {
 
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
-     * @param msg сообщение
+     * @param message сообщение
      */
-    public async handleCommands(msg: Message): Promise<void> {
-        let content = msg.content;
-        if (!content.startsWith(this.prefix)) return;
+    public async handleCommands(message: Message): Promise<void> {
+        if (!(message.guild && message.channel.type == 'text')) return;
+        if (!message.content.startsWith(this.prefix)) return;
 
-        content = content.slice(this.prefix.length);
-        const command = this._commands.find(c => content.startsWith(c.info.name));
-        if (!command) return;
+        this.commandHandler.handleMessage(message as GuildMessage, this.prefix.length);
+    }
 
-        content = content.slice(command.info.name.length);
+    public makeErrorEmbed(error: Error) {
+        return new MessageEmbed()
+            .setTitle('Произошла ошибка')
+            .setColor(0xd61111)
+            .setDescription(error.message);
+    }
 
+    public async catchErrorEmbedReply(message: Message, tryBlock: () => any): Promise<void> {
         try {
-            await command.handle(this, msg, msg.content.length - content.length);
+            await tryBlock();
         }
-        catch (err) {
-            if (!(err instanceof Error)) return;
+        catch (error) {
+            if (!(error instanceof Error)) return;
+
             let embed: MessageEmbed;
             try {
-                embed = new MessageEmbed()
-                    .setTitle('Произошла ошибка')
-                    .setColor(0xd61111)
-                    .setDescription(err.message);
+                embed = this.makeErrorEmbed(error);
             }
             catch {
-                await msg.reply(`Произошла ошибка: ${err.message}`);
+                await message.reply(`Произошла ошибка: ${error.message}`);
                 return;
             }
-            await msg.reply(embed);
-        }
-    }
 
-    /**
-     * Добавляет новую команду для бота
-     * @param command команда
-     */
-    public registerCommand(command: Command): this {
-        const registered = this._commands.some(c => c.mainBranch.info.name == command.info.name);
-        if (registered) {
-            throw new Error(`command '${command.info.name}' already registered`);
+            await message.reply(embed);
         }
-        this._commands.push(command);
-        return this;
-    }
-
-    public unregisterCommand(name: string): this {
-        const registered = this._commands.findIndex(c => c.info.name == name);
-        if (registered == -1) {
-            throw new Error(`command '${name}' not registered`);
-        }
-        this._commands.splice(registered, 1);
-        return this;
     }
 
     /**
      * Аналог стандартной функции client.login
      * @param token токен discord api
      */
-    public async login(token: string): Promise<void> {
+    public async login(token: string): Promise<this> {
         await this.client.login(token);
+        return this;
     }
 
     /**
-     * Сначала читает токен из файла, а потом использует
-     * его в методе login
-     * 
+     * Сначала читает токен из файла, а потом использует его в методе login
      * @param path путь до файла с токеном
      */
-    public async loginFromFile(path: string): Promise<void> {
-        const token = (await promises.readFile(path)).toString();
-        await this.login(token);
+    public async loginFromFile(path: string) {
+        return await this.login(readFileSync(path).toString());
     }
 
     /**
@@ -113,26 +93,37 @@ export class Bot extends EventEmitter {
      * @param path путь до папки с командами
      * @param forgetOld выбросить ли старые команды из памяти бота, если они были
      */
-    public async loadCommandsInFolder(path: string, forgetOld = true) {
+    public loadCommandsInFolder(path: string, forgetOld = true): this {
         console.log(`loading commands from folder ${path}`);
-        const jsFiles = (await promises.readdir(path)).filter(filename => filename.endsWith('.js'));
+
+        const jsFiles = readdirSync(path).filter(filename => filename.endsWith('.js'));
         if (jsFiles.length == 0) {
             throw new Error(`folder ${path} does not contain js files`);
         }
-        if (forgetOld) this._commands.length = 0;
+
+        if (forgetOld) this.commandStorage.clear();
+
         for (const filename of jsFiles) {
             const fullname = './' + join(path, filename);
-            delete require.cache[resolve(fullname)];
+
+            if (forgetOld) {
+                delete require.cache[resolve(fullname)];
+            }
+
             const exports = require.main?.require(fullname);
             if (!(exports instanceof Command)) {
-                if (exports.__ignoreCommandsLoading === true) {
-                    continue;
+                if (exports.__ignoreCommandsLoading !== true) {
+                    console.error(`${fullname}: Command object expected in module.exports`);
                 }
-                throw new Error(`${fullname}: Command object expected in module.exports`);
+                continue;
             }
-            this.registerCommand(exports);
-            console.log(`command ${exports.info.name} successfully loaded`);
+
+            this.commandStorage.addCommand(exports);
+            console.log(`command ${exports.name} successfully loaded`);
         }
+
         console.log('done!');
+        return this;
     }
+
 }

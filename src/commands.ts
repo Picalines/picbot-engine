@@ -1,153 +1,85 @@
-import { PermissionResolvable, Message } from "discord.js";
-import { Argument, SpaceReader, ArgumentReader, MemberArgument, NumberArgument } from "./argument";
+import { GuildMessage, PromiseVoid } from "./utils";
 import { Bot } from "./bot";
 
-type OptionalArgument<T> = { arg: Argument<T>, default: T };
-type ArgumentList = Record<string, Argument<any> | OptionalArgument<any>>;
-type ArgumentValuesList<Args extends ArgumentList> = {
-    [name in keyof Args]: Args[name] extends Argument<infer T> ? T :
-    Args[name] extends OptionalArgument<infer T> ? T :
-    never
-};
+export class CommandStorage {
+    private readonly _commands = new Map<string, Command>();
 
-export interface CommandInfo<Args extends ArgumentList> {
-    name: string;
-    description: string;
-    permissions?: PermissionResolvable[];
-    args?: { [name in keyof Args]: string };
-}
-
-export class CommandBranch<Input, Args extends ArgumentList, Output> {
-    private _branches: CommandBranch<Output, any, any>[] = [];
-
-    public get branches(): ReadonlyArray<CommandBranch<Output, any, any>> | undefined {
-        return this._branches.length > 0 ? this._branches : undefined;
+    public get commandsMap(): ReadonlyMap<string, Command> {
+        return this._commands;
     }
 
-    constructor(
-        parentBranch: CommandBranch<any, any, Input>,
-        public readonly info: CommandInfo<Args>,
-        public readonly args: Args,
-        public readonly executeable: (this: Bot, mgs: Message, args: ArgumentValuesList<Args>, input: Input) => Promise<Output>
-    ) {
-        parentBranch?._branches.push(this);
+    public addCommand(command: Command, replace = false) {
+        if (this._commands.has(command.name) && !replace) {
+            throw new Error(`command '${command.name}' already registered`);
+        }
+        this._commands.set(command.name, command);
+        command.aliases.forEach(alias => {
+            if (this._commands.has(alias)) {
+                console.warn(`command alias '${alias}' was ignored because of conflict`);
+            }
+            else {
+                this._commands.set(alias, command);
+            }
+        });
     }
 
-    getArgumentName(key: keyof Args & string): string {
-        return this.info.args ? this.info.args[key] : key;
+    public removeCommand(command: Command | string) {
+        if (typeof command == 'string') command = this.getCommandByName(command);
+        if (!this._commands.delete(command.name)) {
+            throw new Error(`command '${command}' not registered`);
+        }
+        command.aliases.forEach(alias => this._commands.delete(alias));
     }
-}
 
-export class CommandMainBranch<Args extends ArgumentList, Output> extends CommandBranch<unknown, Args, Output> {
-    constructor(
-        info: CommandInfo<Args>,
-        args: Args,
-        executeable: (this: Bot, mgs: Message, args: ArgumentValuesList<Args>) => Promise<Output>
-    ) {
-        super(null as any, info, args, executeable);
+    public clear() {
+        return this._commands.clear();
+    }
+
+    public getCommandByName(name: string): Command | never {
+        const command = this._commands.get(name);
+        if (!command) {
+            throw new Error(`command '${name}' not registered`);
+        }
+        return command;
     }
 }
 
-export class Command {
-    private static readonly spaceReader = new SpaceReader();
-
+export class CommandHandler {
     constructor(
-        public readonly mainBranch: CommandMainBranch<any, any> & { info: { aliases?: string[] } }
+        public readonly bot: Bot
     ) { }
 
-    public get info(): CommandInfo<any> {
-        return this.mainBranch.info;
+    public async handleMessage(message: GuildMessage, startFrom: number) {
+        let content = message.content.slice(startFrom);
+
+        const command = this.bot.commandStorage.getCommandByName(content.replace(/\s.*$/, ''));
+
+        content = content.slice(command.name.length).replace(/^\s+/, '');
+
+        await this.bot.catchErrorEmbedReply(message, () => {
+            return this.executeCommand(command, content);
+        });
     }
 
-    public async handle(bot: Bot, msg: Message, start: number): Promise<void> {
-        let line = this.readLine(Command.spaceReader, msg.content.slice(start));
-        let branch: CommandBranch<any, ArgumentList, any> = this.mainBranch;
-        let output: any = undefined;
-        while (true) {
-            if (branch.info.permissions) {
-                for (const permission of branch.info.permissions) {
-                    if (!msg.member?.hasPermission(permission))    throw new Error(`У вас недостаточно прав: ${permission}`);
-                    if (!msg.guild?.me?.hasPermission(permission)) throw new Error(`У меня недостаточно прав: ${permission}`);
-                }
-            }
-
-            const exResult = await this.executeBranch<unknown, any>(bot, msg, line, branch, output);
-            line = exResult.line;
-            output = exResult.output;
-
-            if (!branch.branches) return;
-
-            const sResult = this.selectBranch(line, branch.branches);
-            line = sResult.line;
-            branch = sResult.branch;
-        }
+    public async executeCommand(command: Command, userInput: string) {
+        console.error('not implemented');
     }
+}
 
-    private readLine(length: number | ArgumentReader, line: string) {
-        let _length = typeof length == 'number' ? length : length.read(line);
-        return line.slice(_length);
-    }
+export abstract class Command {
+    public abstract readonly name: string;
+    public readonly aliases: string[] = [];
+    public abstract readonly description: string;
 
-    private selectBranch<TBranch extends CommandBranch<any, ArgumentList, any>>(
-        line: string,
-        branches: ReadonlyArray<TBranch>
-    ): { line: string, branch: TBranch } | never {
-        for (const branch of branches) {
-            if (line.startsWith(branch.info.name)) {
-                return {
-                    line: this.readLine(branch.info.name.length, line),
-                    branch
-                }
-            }
-        }
-        const keyWordList = branches.map(({ info: { name } }) => `\`${name}\``).join(', ');
-        throw new Error(`Ожидалось одно из ключевых слов: ${keyWordList}`);
-    }
+    public abstract execute(message: GuildMessage): PromiseVoid;
+}
 
-    private async executeBranch<Input, Output>(bot: Bot, msg: Message, line: string,
-        branch: CommandBranch<Input, ArgumentList, Output>, input: Input
-    ): Promise<{ output: Output | null, line: string }> {
-        if (!branch.executeable) {
-            return {
-                line: this.readLine(Command.spaceReader, line),
-                output: null,
-            }
-        }
+class MathCommand extends Command {
+    name = 'math';
+    aliases = ['calc'];
+    description = '*математика*';
 
-        const _arguments = branch.args;
-        const parsedValues: Record<string, any> = {};
-        for (const name in _arguments) {
-            let arg = _arguments[name];
-            let _default: any = undefined;
-
-            if (!(arg instanceof Argument)) {
-                _default = arg.default;
-                arg = arg.arg;
-            }
-
-            let tokenLength = 0;
-            try {
-                tokenLength = arg.read(line);
-                const value = line.substring(0, tokenLength);
-                if (tokenLength <= 0) throw undefined;
-                parsedValues[name] = arg.parse(value, msg);
-            }
-            catch (err) {
-                if (err === undefined) {
-                    parsedValues[name] = _default;
-                }
-                else {
-                    throw new SyntaxError(`Ожидался аргумент \`${branch.getArgumentName(name)}\``);
-                }
-            }
-
-            line = this.readLine(tokenLength, line);
-            line = this.readLine(Command.spaceReader, line);
-        }
-
-        return {
-            line,
-            output: await branch.executeable.call(bot, msg, parsedValues as any, input),
-        };
+    execute(message: GuildMessage) {
+        
     }
 }
