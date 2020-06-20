@@ -1,5 +1,7 @@
 import { Client, ClientOptions, Message, MessageEmbed } from "discord.js";
-import { Command, CommandStorage, CommandHandler } from "./commands";
+import { Command } from "./command/Command";
+import { CommandHandler } from "./command/Handler";
+import { CommandStorage } from "./command/Storage";
 import { readFileSync, readdirSync } from "fs";
 import { join, resolve } from "path";
 import { GuildMessage } from "./utils";

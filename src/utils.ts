@@ -1,6 +1,10 @@
-import { Message, Guild, TextChannel } from "discord.js";
+import { Message, Guild, TextChannel, GuildMember } from "discord.js";
 
-export type GuildMessage = Message & { guild: Guild, channel: TextChannel & { type: 'text' } };
+export type GuildMessage = Message & {
+    guild: Guild,
+    channel: TextChannel & { type: 'text' },
+    member: GuildMember,
+};
 
 export type PromiseVoid = Promise<void> | void;
 
