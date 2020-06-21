@@ -3,7 +3,9 @@ export { Bot } from './bot';
 
 export * from './argument';
 
-export { Command } from './command/Command';
+export {
+    CommandInfo, OptionalCommandInfo, CommandExecuteable, Command
+} from './command/Info';
+
 export { CommandContext } from './command/Context';
-export { CommandHandler } from './command/Handler';
 export { CommandStorage } from './command/Storage';

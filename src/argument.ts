@@ -1,6 +1,9 @@
 import { GuildMember, Role, TextChannel } from "discord.js";
 import { GuildMessage } from "./utils";
 
+/**
+ * Интерфейс объекта, читающего аргумент в сообщении пользователя
+ */
 export interface ArgumentReader {
     /**
      * Метод возвращает длину нужного токена,
@@ -13,6 +16,10 @@ export interface ArgumentReader {
     read(input: string): number;
 }
 
+/**
+ * @template T
+ * Интерфейс объекта, приводящего строчный ввод пользователя к типу `T`
+ */
 export interface ArgumentParser<T> {
     /**
      * Метод переводит строковое значение `value` в
@@ -31,6 +38,12 @@ export interface ArgumentParser<T> {
 export class RemainingTextReader implements ArgumentReader {
     read(input: string): number {
         return input.length;
+    }
+}
+
+export class RamainingTextParser implements ArgumentParser<string> {
+    parse(text: string, _: GuildMessage): string {
+        return text.trim();
     }
 }
 
@@ -59,23 +72,31 @@ export class SpaceReader extends RegexReader {
     }
 }
 
+/**
+ * Читает число (положительное / отрицательное, с дробной частью / целое)
+ */
 export class NumberReader extends RegexReader {
     constructor() {
-        super(`\\d+(\\.\\d+)?`);
+        super(`[+-]?\\d+(\\.\\d+)?`);
     }
 }
 
+/**
+ * Переводит строку в число (в случае `isNaN` кидает `SyntaxError`)
+ */
 export class NumberParser implements ArgumentParser<number> {
     parse(value: string) {
-        try {
-            return parseFloat(value);
+        const number = parseFloat(value);
+        if (isNaN(number)) {
+            throw new SyntaxError(`'${value}' is not a number`);
         }
-        catch {
-            throw new SyntaxError('invalid number');
-        }
+        return number;
     }
 }
 
+/**
+ * Абстрактный класс для парсеров упоминаний discord'а
+ */
 export abstract class MentionParser<T> implements ArgumentParser<T> {
     constructor(
         readonly extract: (msg: GuildMessage, id: string) => T | null | undefined
@@ -97,36 +118,54 @@ export abstract class MentionParser<T> implements ArgumentParser<T> {
     }
 }
 
+/**
+ * Читает упоминание участника сервера
+ */
 export class MemberMentionReader extends RegexReader {
     constructor() {
         super('<@\\!?\\d+>');
     }
 }
 
+/**
+ * Получает участника сервера через его упоминание
+ */
 export class MemberMentionParser extends MentionParser<GuildMember> {
     constructor() {
         super((msg, id) => msg.guild.member(id));
     }
 }
 
+/**
+ * Читает упоминание роли
+ */
 export class RoleMentionReader extends RegexReader {
     constructor() {
         super('<@&\\d+>');
     }
 }
 
+/**
+ * Получает роль через её упоминание
+ */
 export class RoleMentionParser extends MentionParser<Role> {
     constructor() {
         super((msg, id) => msg.guild.roles.cache.find(r => r.id == id));
     }
 }
 
+/**
+ * Читает упоминание текстового канала
+ */
 export class TextChannelMentionReader extends RegexReader {
     constructor() {
         super('<#(?<id>\\d+)>');
     }
 }
 
+/**
+ * Получает текстовый канал по его упоминанию
+ */
 export class TextChannelMentionParser extends MentionParser<TextChannel> {
     constructor() {
         super((msg, id) => msg.guild.channels.cache.find(

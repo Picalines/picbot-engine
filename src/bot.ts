@@ -1,10 +1,8 @@
 import { Client, ClientOptions, Message, MessageEmbed } from "discord.js";
-import { Command } from "./command/Command";
-import { CommandHandler } from "./command/Handler";
 import { CommandStorage } from "./command/Storage";
-import { readFileSync, readdirSync } from "fs";
-import { join, resolve } from "path";
+import { CommandContext } from "./command/Context";
 import { GuildMessage } from "./utils";
+import { readFileSync } from "fs";
 
 /**
  * Обёртка класса Client из discord.js,
@@ -14,14 +12,10 @@ export class Bot {
     public readonly client: Client;
     public prefix = '~';
 
-    public commandStorage = new CommandStorage();
-    private commandHandler: CommandHandler;
+    public commands = new CommandStorage();
 
     constructor(options?: ClientOptions) {
         this.client = new Client(options);
-
-        this.commandHandler = new CommandHandler(this);
-
         this.initEvents();
     }
 
@@ -41,7 +35,15 @@ export class Bot {
         if (!(message.guild && message.channel.type == 'text')) return;
         if (!message.content.startsWith(this.prefix)) return;
 
-        this.commandHandler.handleMessage(message as GuildMessage, this.prefix.length);
+        let content = message.content.slice(this.prefix.length);
+
+        const commandName = content.replace(/\s.*$/, '');
+
+        await this.catchErrorEmbedReply(message, async () => {
+            const command = this.commands.getByName(commandName);
+            const context = new CommandContext(this, message as GuildMessage);
+            await command.execute(context);
+        });
     }
 
     public makeErrorEmbed(error: Error) {
@@ -86,46 +88,6 @@ export class Bot {
      */
     public async loginFromFile(path: string) {
         return await this.login(readFileSync(path).toString());
-    }
-
-    /**
-     * В папке по указанному пути бот импортирует команды из всех `.js` файлов
-     * Если какой-то файл в папке нужно проигнорировать, то добавьте в его module.exports
-     * поле `__ignoreCommandLoading` со значением `true`
-     * @param path путь до папки с командами
-     * @param forgetOld выбросить ли старые команды из памяти бота, если они были
-     */
-    public loadCommandsInFolder(path: string, forgetOld = true): this {
-        console.log(`loading commands from folder ${path}`);
-
-        const jsFiles = readdirSync(path).filter(filename => filename.endsWith('.js'));
-        if (jsFiles.length == 0) {
-            throw new Error(`folder ${path} does not contain js files`);
-        }
-
-        if (forgetOld) this.commandStorage.clear();
-
-        for (const filename of jsFiles) {
-            const fullname = './' + join(path, filename);
-
-            if (forgetOld) {
-                delete require.cache[resolve(fullname)];
-            }
-
-            const exports = require.main?.require(fullname);
-            if (!(exports instanceof Command)) {
-                if (exports.__ignoreCommandsLoading !== true) {
-                    console.error(`${fullname}: Command object expected in module.exports`);
-                }
-                continue;
-            }
-
-            this.commandStorage.addCommand(exports);
-            console.log(`command ${exports.name} successfully loaded`);
-        }
-
-        console.log('done!');
-        return this;
     }
 
 }

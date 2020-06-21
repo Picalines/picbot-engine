@@ -5,7 +5,8 @@
     "main": "dist/index.js",
     "types": "types/index.d.ts",
     "files": [
-        "dist"
+        "dist/",
+        "types/"
     ],
     "scripts": {
         "build": "tsc",
@@ -24,7 +25,8 @@
     "author": "Picalines",
     "license": "ISC",
     "dependencies": {
-        "discord.js": "^12.2.0"
+        "discord.js": "^12.2.0",
+        "typescript": "^3.9.5"
     },
     "devDependencies": {
         "@types/node": "^13.13.0"

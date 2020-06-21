@@ -1,13 +1,15 @@
 {
     "compilerOptions": {
         "strict": true,
-        "target": "ES5",
+        "noImplicitAny": true,
+        "target": "ES6",
         "module": "commonjs",
         "outDir": "dist",
         "moduleResolution": "node",
         "removeComments": false,
         "skipLibCheck": true,
         "declaration": true,
+        "declarationDir": "types",
     },
     "include": [
         "src"

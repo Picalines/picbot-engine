@@ -9,3 +9,7 @@ export type GuildMessage = Message & {
 export type PromiseVoid = Promise<void> | void;
 
 export type StringResolvable<T> = new (str: string) => T;
+
+export type NonEmptyArray<T> = [T, ...T[]];
+
+export type ReadOnlyNonEmptyArray<T> = readonly [T, ...T[]];
