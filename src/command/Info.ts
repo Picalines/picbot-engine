@@ -9,8 +9,6 @@ export interface CommandInfo {
     readonly permissions?: ReadonlyArray<PermissionResolvable>;
 }
 
-export type OptionalCommandInfo = Omit<CommandInfo, 'name'>;
-
 export type CommandExecuteable = (context: CommandContext) => PromiseVoid;
 
 export type Command = CommandInfo & { execute: CommandExecuteable };

@@ -2,42 +2,25 @@ import { GuildMessage } from '../utils';
 import { GuildMember } from 'discord.js';
 import { Bot } from '../Bot';
 
-import * as Arguments from '../argument';
-
-export type ArgumentHandler<T> = {
-    reader: Arguments.ArgumentReader,
-    parser: Arguments.ArgumentParser<T>,
-}
-
-export type ArgumentType = 'number' | 'member' | 'role' | 'textChannel' | 'remainingText';
+import * as Arguments from './ArgumentTypes';
 
 export class CommandContext {
     public readonly executor: GuildMember;
 
     #userInput: string;
-    #spaceReader: Arguments.SpaceReader;
+    #spaceReader: Arguments.ArgumentReader<string> = Arguments.ReadSpace;
 
-    public readonly argumentTypes = {
-        number: {
-            reader: new Arguments.NumberReader(),
-            parser: new Arguments.NumberParser(),
-        },
-        member: {
-            reader: new Arguments.MemberMentionReader(),
-            parser: new Arguments.MemberMentionParser(),
-        },
-        role: {
-            reader: new Arguments.RoleMentionReader(),
-            parser: new Arguments.RoleMentionParser(),
-        },
-        textChannel: {
-            reader: new Arguments.TextChannelMentionReader(),
-            parser: new Arguments.TextChannelMentionParser(),
-        },
-        remainingText: {
-            reader: new Arguments.RemainingTextReader(),
-            parser: new Arguments.RamainingTextParser(),
-        },
+    public static readonly argumentTypes = {
+        number: Arguments.ReadNumber,
+        member: Arguments.ReadMember,
+        role: Arguments.ReadRole,
+        textChannel: Arguments.ReadTextChannel,
+        remainingText: Arguments.ReadRemainingText,
+    };
+
+    public readonly read: {
+        [ArgType in keyof typeof CommandContext['argumentTypes']]:
+        () => typeof CommandContext['argumentTypes'][ArgType] extends Arguments.ArgumentReader<infer T> ? T : never
     };
 
     constructor(
@@ -47,26 +30,31 @@ export class CommandContext {
     ) {
         this.executor = executor || message.member;
         this.#userInput = message.content.replace(/^\S+\s*/, '');
-        this.#spaceReader = new Arguments.SpaceReader();
+
+        this.read = {} as any;
+        for (const type of Object.keys(CommandContext.argumentTypes)) {
+            Object.defineProperty(this.read, type, {
+                get: () => () => this.readArgument(type)
+            });
+        }
     }
 
-    public get endOfInput(): boolean {
+    public get endOfCommand(): boolean {
         return !this.#userInput;
     }
 
-    public read<ArgType extends ArgumentType>(type: ArgType)
-    : CommandContext['argumentTypes'][ArgType]['parser'] extends Arguments.ArgumentParser<infer T> ? T : never {
-        if (this.endOfInput) {
+    private readArgument<T>(type: string): T {
+        if (this.endOfCommand) {
             throw new SyntaxError(`argument of type '${type}' expected, but got end of command`);
         }
 
-        const argumentHandler = this.argumentTypes[type];
-        if (!argumentHandler) {
+        const argumentReader = (CommandContext.argumentTypes as any)[type] as Arguments.ArgumentReader<any>;
+        if (!argumentReader) {
             throw new Error(`invalid argument type '${type}'`);
         }
 
-        let argLength = argumentHandler.reader.read(this.#userInput);
-        if (argLength <= 0) {
+        let { argumentLength, parsedValue } = argumentReader(this.#userInput, this.message);
+        if (argumentLength <= 0) {
             let errorMessage = `argument of type '${type}' expected`;
 
             const gotWord = this.#userInput.match(/^\S+/);
@@ -77,14 +65,11 @@ export class CommandContext {
             throw new SyntaxError(errorMessage);
         }
 
-        const argumentString = this.#userInput.slice(0, argLength);
+        this.#userInput = this.#userInput.slice(argumentLength);
 
-        const value = (argumentHandler.parser as Arguments.ArgumentParser<any>)
-            .parse(argumentString, this.message);
+        const spaceLength = this.#spaceReader(this.#userInput, undefined as any).argumentLength
+        this.#userInput = this.#userInput.slice(spaceLength);
 
-        this.#userInput = this.#userInput.slice(argLength);
-        this.#userInput = this.#userInput.slice(this.#spaceReader.read(this.#userInput));
-
-        return value;
+        return parsedValue;
     }
 }

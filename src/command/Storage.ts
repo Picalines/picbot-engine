@@ -1,16 +1,21 @@
-import { Command, CommandExecuteable, OptionalCommandInfo } from "./Info";
+import { Command, CommandExecuteable, CommandInfo } from "./Info";
+
+type CommandRegisterData = {
+    executeable: CommandExecuteable,
+    info?: Omit<CommandInfo, 'name'>,
+}
 
 export class CommandStorage {
     readonly #commands = new Map<string, Command>();
 
-    public register(name: string, execute: CommandExecuteable, info: OptionalCommandInfo = {}) {
+    public register(name: string, { executeable, info }: CommandRegisterData) {
         const validateName = (name: string) => name.length > 0 && !name.includes(' ');
 
         if (!validateName(name)) {
             throw new Error(`invalid command name '${name}'`);
         }
 
-        const command: Command = { name, execute, ...info };
+        const command: Command = { name, execute: executeable, ...info };
 
         this.#commands.set(name, command);
 
