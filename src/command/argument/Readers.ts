@@ -20,7 +20,7 @@ export function ReadRegex(regex: string, userInput: string): string {
 
 export const ReadSpace: ArgumentReader<string> = function (userInput) {
     return {
-        argumentLength: ReadRegex('\\s+', userInput).length
+        argumentLength: ReadRegex('\\s*', userInput).length
     };
 }
 
