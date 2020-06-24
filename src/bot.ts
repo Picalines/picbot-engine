@@ -1,25 +1,21 @@
 import { Client, ClientOptions, Message, MessageEmbed } from "discord.js";
 import { CommandStorage } from "./command/Storage";
 import { CommandContext } from "./command/Context";
-import { GuildMessage } from "./utils";
+import { GuildMessage, PromiseVoid, nameof } from "./utils";
 import { readFileSync } from "fs";
+import { ArgumentReaderStorage } from "./command/argument/Storage";
 
-/**
- * Обёртка класса Client из discord.js,
- * в которой реализованны полезные сокращения
- */
 export class Bot {
     public readonly client: Client;
-    public prefix = '~';
 
-    public commands = new CommandStorage();
+    public readonly commandArguments = new ArgumentReaderStorage();
+    public readonly commands = new CommandStorage();
+
+    public readCommandPrefix?: (message: GuildMessage) => number | undefined;
 
     constructor(options?: ClientOptions) {
         this.client = new Client(options);
-        this.initEvents();
-    }
 
-    private initEvents() {
         this.client.on('ready', () => {
             console.log("logged in as " + String(this.client.user?.username));
         });
@@ -27,15 +23,38 @@ export class Bot {
         this.client.on('message', msg => this.handleCommands(msg));
     }
 
+    public setPrefix(prefix: string): never | void {
+        if (this.readCommandPrefix) {
+            throw new Error(`prefix already defined in bot.${nameof<Bot>('readCommandPrefix')}`);
+        }
+        if (!prefix || prefix.includes(' ')) {
+            throw new Error(`invalid prefix '${prefix}'`);
+        }
+        this.readCommandPrefix = message => {
+            if (message.content.startsWith(prefix)) {
+                return prefix.length;
+            }
+        }
+    }
+
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
      * @param message сообщение
      */
     public async handleCommands(message: Message): Promise<void> {
-        if (!(message.guild && message.channel.type == 'text')) return;
-        if (!message.content.startsWith(this.prefix)) return;
+        if (!this.readCommandPrefix) {
+            console.warn(`bot.${nameof<Bot>('readCommandPrefix')} is undefined, so commands are ignored`);
+            return;
+        }
 
-        let content = message.content.slice(this.prefix.length);
+        if (!(message.guild && message.channel.type == 'text')) return;
+
+        const prefixLength = this.readCommandPrefix(message as GuildMessage);
+        if (!prefixLength) {
+            return;
+        }
+
+        let content = message.content.slice(prefixLength);
 
         const commandName = content.replace(/\s.*$/, '');
 
@@ -46,6 +65,9 @@ export class Bot {
         });
     }
 
+    /**
+     * Возвращает эмбед с описанием ошибки
+     */
     public makeErrorEmbed(error: Error) {
         return new MessageEmbed()
             .setTitle('Произошла ошибка')
@@ -53,7 +75,11 @@ export class Bot {
             .setDescription(error.message);
     }
 
-    public async catchErrorEmbedReply(message: Message, tryBlock: () => any): Promise<void> {
+    /**
+     * Запускает функцию `tryBlock`. В блоке `catch` бот отвечает
+     * на сообщение `message` эмбедом из `makeErrorEmbed`
+     */
+    public async catchErrorEmbedReply(message: Message, tryBlock: () => PromiseVoid): Promise<void> {
         try {
             await tryBlock();
         }

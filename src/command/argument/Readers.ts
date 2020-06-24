@@ -1,10 +1,11 @@
-import { GuildMessage } from "../utils";
+import { GuildMessage } from "../../utils";
 
 export interface ArgumentReader<T> {
     (userInput: string, message: GuildMessage): { argumentLength: number; parsedValue?: T };
 }
 
 export const ReadRemainingText: ArgumentReader<string> = function (userInput) {
+    userInput = userInput.trim();
     return {
         argumentLength: userInput.length,
         parsedValue: userInput,
@@ -25,6 +26,9 @@ export const ReadSpace: ArgumentReader<string> = function (userInput) {
 
 export const ReadNumber: ArgumentReader<number> = function (userInput) {
     const numberInput = ReadRegex(`[+-]?\\d+(\\.\\d+)?`, userInput);
+    if (!numberInput) {
+        return { argumentLength: 0 };
+    }
     const number = parseFloat(numberInput);
     if (isNaN(number)) {
         throw new SyntaxError(`'${numberInput}' is not a number`);
@@ -40,6 +44,9 @@ export const MakeMentionReader = <T>(
     getById: (msg: GuildMessage, id: string) => T | null | undefined
 ): ArgumentReader<T> => (userInput, message) => {
     const mention = ReadRegex(mentionRegex, userInput);
+    if (!mention) {
+        return { argumentLength: 0 };
+    }
     const idMatches = mention.match(/\d+/);
     try {
         if (idMatches) {

@@ -13,3 +13,7 @@ export type StringResolvable<T> = new (str: string) => T;
 export type NonEmptyArray<T> = [T, ...T[]];
 
 export type ReadOnlyNonEmptyArray<T> = readonly [T, ...T[]];
+
+export function nameof<T>(name: Extract<keyof T, string>): string {
+    return name;
+}

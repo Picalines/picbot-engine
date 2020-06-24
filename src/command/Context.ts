@@ -1,27 +1,21 @@
+import { ArgumentReader, ReadSpace } from './argument/Readers';
+import { ArgumentReaderStorage } from './argument/Storage';
 import { GuildMessage } from '../utils';
 import { GuildMember } from 'discord.js';
 import { Bot } from '../Bot';
-
-import * as Arguments from './ArgumentTypes';
 
 export class CommandContext {
     public readonly executor: GuildMember;
 
     #userInput: string;
-    #spaceReader: Arguments.ArgumentReader<string> = Arguments.ReadSpace;
-
-    public static readonly argumentTypes = {
-        number: Arguments.ReadNumber,
-        member: Arguments.ReadMember,
-        role: Arguments.ReadRole,
-        textChannel: Arguments.ReadTextChannel,
-        remainingText: Arguments.ReadRemainingText,
-    };
+    #spaceReader: ArgumentReader<string> = ReadSpace;
 
     public readonly read: {
-        [ArgType in keyof typeof CommandContext['argumentTypes']]:
-        () => typeof CommandContext['argumentTypes'][ArgType] extends Arguments.ArgumentReader<infer T> ? T : never
+        [ArgType in keyof ArgumentReaderStorage['readers']]: () =>
+        ArgumentReaderStorage['readers'][ArgType] extends ArgumentReader<infer T> ? T : never
     };
+
+    public readonly isEOL: () => boolean;
 
     constructor(
         public readonly bot: Bot,
@@ -29,33 +23,26 @@ export class CommandContext {
         executor?: GuildMember
     ) {
         this.executor = executor || message.member;
+
         this.#userInput = message.content.replace(/^\S+\s*/, '');
+        this.isEOL = () => !this.#userInput;
 
         this.read = {} as any;
-        for (const type of Object.keys(CommandContext.argumentTypes)) {
+        for (const [type, reader] of Object.entries(bot.commandArguments.readers)) {
             Object.defineProperty(this.read, type, {
-                get: () => () => this.readArgument(type)
+                get: () => () => this.readArgument(reader, type)
             });
         }
     }
 
-    public get endOfCommand(): boolean {
-        return !this.#userInput;
-    }
-
-    private readArgument<T>(type: string): T {
-        if (this.endOfCommand) {
-            throw new SyntaxError(`argument of type '${type}' expected, but got end of command`);
+    private readArgument<T>(reader: ArgumentReader<T>, typeName: string): T {
+        if (this.isEOL()) {
+            throw new SyntaxError(`argument of type '${typeName}' expected, but got end of command`);
         }
 
-        const argumentReader = (CommandContext.argumentTypes as any)[type] as Arguments.ArgumentReader<any>;
-        if (!argumentReader) {
-            throw new Error(`invalid argument type '${type}'`);
-        }
-
-        let { argumentLength, parsedValue } = argumentReader(this.#userInput, this.message);
+        let { argumentLength, parsedValue } = reader(this.#userInput, this.message);
         if (argumentLength <= 0) {
-            let errorMessage = `argument of type '${type}' expected`;
+            let errorMessage = `argument of type '${typeName}' expected`;
 
             const gotWord = this.#userInput.match(/^\S+/);
             if (gotWord && gotWord[0]) {
@@ -70,6 +57,6 @@ export class CommandContext {
         const spaceLength = this.#spaceReader(this.#userInput, undefined as any).argumentLength
         this.#userInput = this.#userInput.slice(spaceLength);
 
-        return parsedValue;
+        return parsedValue as T;
     }
 }
