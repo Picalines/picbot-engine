@@ -1,14 +1,24 @@
-import { GuildMessage } from "../../utils";
+import { GuildMessage, Failable } from "../../utils";
+
+export type ArgumentInfo<T> = {
+    length: number,
+    parsedValue?: T,
+}
+
+export type ArgumentReaderError = 'notFound' | { message: string };
 
 export interface ArgumentReader<T> {
-    (userInput: string, message: GuildMessage): { argumentLength: number; parsedValue?: T };
+    (userInput: string, message: GuildMessage): Failable<ArgumentInfo<T>, ArgumentReaderError>;
 }
 
 export const ReadRemainingText: ArgumentReader<string> = function (userInput) {
     userInput = userInput.trim();
     return {
-        argumentLength: userInput.length,
-        parsedValue: userInput,
+        isError: false,
+        value: {
+            length: userInput.length,
+            parsedValue: userInput,
+        },
     };
 }
 
@@ -20,22 +30,36 @@ export function ReadRegex(regex: string, userInput: string): string {
 
 export const ReadSpace: ArgumentReader<string> = function (userInput) {
     return {
-        argumentLength: ReadRegex('\\s*', userInput).length
+        isError: false,
+        value: {
+            length: ReadRegex('\\s*', userInput).length
+        },
     };
 }
 
 export const ReadNumber: ArgumentReader<number> = function (userInput) {
     const numberInput = ReadRegex(`[+-]?\\d+(\\.\\d+)?`, userInput);
     if (!numberInput) {
-        return { argumentLength: 0 };
+        return {
+            isError: true,
+            error: 'notFound',
+        };
     }
     const number = parseFloat(numberInput);
     if (isNaN(number)) {
-        throw new SyntaxError(`'${numberInput}' is not a number`);
+        return {
+            isError: true,
+            error: {
+                message: `'${numberInput}' is not a number`,
+            },
+        }
     }
     return {
-        argumentLength: numberInput.length,
-        parsedValue: number,
+        isError: false,
+        value: {
+            length: numberInput.length,
+            parsedValue: number,
+        },
     };
 }
 
@@ -45,23 +69,36 @@ export const MakeMentionReader = <T>(
 ): ArgumentReader<T> => (userInput, message) => {
     const mention = ReadRegex(mentionRegex, userInput);
     if (!mention) {
-        return { argumentLength: 0 };
+        return {
+            isError: true,
+            error: 'notFound',
+        };
     }
     const idMatches = mention.match(/\d+/);
+    if (!idMatches) {
+        return {
+            isError: true, error: { message: 'id not found in the mention' }
+        };
+    }
+    let mentionedObj: T | null | undefined;
     try {
-        if (idMatches) {
-            const mentionedObj = getById(message, idMatches[0]);
-            if (mentionedObj) {
-                return {
-                    argumentLength: mention.length,
-                    parsedValue: mentionedObj
-                };
-            }
+        mentionedObj = getById(message, idMatches[0]);
+        if (!mentionedObj) {
+            throw { message: 'mentioned object not found' };
         }
     }
-    finally {
-        throw new SyntaxError('invalid mention');
+    catch (err) {
+        return {
+            isError: true, error: err,
+        };
     }
+    return {
+        isError: false,
+        value: {
+            length: mention.length,
+            parsedValue: mentionedObj,
+        }
+    };
 };
 
 export const ReadMember = MakeMentionReader('<@\\!?\\d+>', (msg, id) => msg.guild.member(id));

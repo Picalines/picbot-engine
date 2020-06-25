@@ -37,11 +37,11 @@ export class CommandContext {
 
     private readArgument<T>(reader: ArgumentReader<T>, typeName: string): T {
         if (this.isEOL()) {
-            throw new SyntaxError(`argument of type '${typeName}' expected, but got end of command`);
+            throw new Error(`argument of type '${typeName}' expected, but got end of command`);
         }
 
-        let { argumentLength, parsedValue } = reader(this.#userInput, this.message);
-        if (argumentLength <= 0) {
+        let readerResult = reader(this.#userInput, this.message);
+        if (readerResult.isError) {
             let errorMessage = `argument of type '${typeName}' expected`;
 
             const gotWord = this.#userInput.match(/^\S+/);
@@ -49,13 +49,16 @@ export class CommandContext {
                 errorMessage += `, but got '${gotWord[0]}'`;
             }
 
-            throw new SyntaxError(errorMessage);
+            throw new Error(errorMessage);
         }
 
+        const { length: argumentLength, parsedValue } = readerResult.value;
         this.#userInput = this.#userInput.slice(argumentLength);
 
-        const spaceLength = this.#spaceReader(this.#userInput, undefined as any).argumentLength
-        this.#userInput = this.#userInput.slice(spaceLength);
+        const spaceReaderResult = this.#spaceReader(this.#userInput, undefined as any);
+        if (!spaceReaderResult.isError && spaceReaderResult.value.length) {
+            this.#userInput = this.#userInput.slice(spaceReaderResult.value.length);
+        }
 
         return parsedValue as T;
     }
