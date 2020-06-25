@@ -9,6 +9,7 @@
         "types/"
     ],
     "scripts": {
+        "test": "jest",
         "build": "tsc",
         "link": "npm link",
         "dev": "npm run build && npm run link"
@@ -17,6 +18,7 @@
         "discord",
         "bot",
         "nodejs",
+        "boilerplate",
         "engine"
     ],
     "repository": {
@@ -29,6 +31,9 @@
         "typescript": "^3.9.5"
     },
     "devDependencies": {
-        "@types/node": "^13.13.0"
+        "@types/jest": "^26.0.3",
+        "@types/node": "^13.13.12",
+        "jest": "^26.1.0",
+        "ts-jest": "^26.1.1"
     }
 }
