@@ -55,12 +55,8 @@ describe('argument read functions', () => {
             });
 
             test('NaN not readable', () => {
-                expect(Arguments.ReadNumber('NaN', nullMessage)).toEqual<ReaderResult>({
-                    argumentLength: 0,
-                });
-                expect(Arguments.ReadNumber('nan', nullMessage)).toEqual<ReaderResult>({
-                    argumentLength: 0,
-                });
+                expect(Arguments.ReadNumber('NaN', nullMessage)).toEqual<ReaderResult>(noArgumentResult);
+                expect(Arguments.ReadNumber('nan', nullMessage)).toEqual<ReaderResult>(noArgumentResult);
             });
 
             test('signed', () => {
@@ -101,6 +97,13 @@ describe('argument read functions', () => {
                 expect(Arguments.ReadNumber('0.0000', nullMessage)).toEqual<ReaderResult<number>>({
                     argumentLength: 6,
                     parsedValue: 0,
+                });
+            });
+
+            test('long floating part', () => {
+                expect(Arguments.ReadNumber('0.54321', nullMessage)).toEqual<ReaderResult<number>>({
+                    argumentLength: 7,
+                    parsedValue: 0.54321,
                 });
             });
         });
