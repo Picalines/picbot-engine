@@ -5,15 +5,27 @@ on:
     branches: [ master ]
 
 jobs:
-  test_pull_request:
+  npm_ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
           node-version: 13
-      - run: npm -v
-      - run: npm ci
+      - run: |
+        npm -v
+        npm ci
+
+  npm_test:
+    runs-on: ubuntu-latest
+    needs: [ npm_ci ]
+    steps:
       - run: npm test
-      - run: tsc -v
-      - run: npm run build
+
+  npm_build:
+    runs-on: ubuntu-latest
+    needs: [ npm_ci ]
+    steps:
+      - run: |
+          tsc -v
+          npm run build
