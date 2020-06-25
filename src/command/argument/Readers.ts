@@ -29,12 +29,13 @@ export function ReadRegex(regex: string, userInput: string): string {
 }
 
 export const ReadSpace: ArgumentReader<string> = function (userInput) {
-    return {
-        isError: false,
-        value: {
-            length: ReadRegex('\\s*', userInput).length
-        },
-    };
+    const spaceLength = ReadRegex('\\s*', userInput).length;
+    if (spaceLength > 0) {
+        return { isError: false, value: { length: spaceLength } };
+    }
+    else {
+        return { isError: true, error: 'notFound' };
+    }
 }
 
 export const ReadNumber: ArgumentReader<number> = function (userInput) {
