@@ -13,8 +13,8 @@ jobs:
         with:
           node-version: 13
       - run: |
-        npm -v
-        npm ci
+          npm -v
+          npm ci
 
   npm_test:
     runs-on: ubuntu-latest
