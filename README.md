@@ -1,0 +1,118 @@
+# picbot-engine
+
+Библиотека для лёгкого написания дискорд бота на JavaScript
+
+Все функции API дискорда библиотека берёт из [discord.js](https://github.com/discordjs/discord.js)
+
+### Важно!
+
+Проект находится на ранней стадии разработки. Если и использовать, то только на свой страх и риск.
+
+Скачать библиотеку сейчас можно только из *этого* репозитория, а подключать через `npm link`. Позже планируется выход на npm
+
+## Примеры кода
+
+### Команды
+
+#### Ping
+
+```js
+const { Bot } = require('picbot-engine');
+
+const bot = new Bot(); // обёртка Client из discord.js
+
+bot.setPrefix('!');
+
+bot.commands.register('ping', ({ message }) => {
+    message.reply('pong!');
+});
+
+bot.loginFromFile('./token.txt');
+// Прочитает токен бота из файла token.txt в папке бота.
+// Простой аналог из discord.js: bot.login('TOKEN')
+```
+
+#### Сложение двух чисел
+
+```js
+bot.commands.register('sum', ({ message, read: { number } }) => {
+    const [a, b] = [number(), number()];
+    message.reply(a + b);
+});
+```
+
+#### Ban
+
+```js
+bot.commands.register('ban', async ({ message, read: { member, remainingText }, isEOL }) => {
+    const target = member();
+    if (message.member.id == target.id) {
+        throw new Error('Нельзя забанить самого себя!');
+    }
+    if (!target.bannable) {
+        throw new Error('Я не могу забанить этого участника сервера :/');
+    }
+
+    let reason = 'Злобные админы :/';
+    if (!isEOL()) { // есть ли ещё аргументы в сообщении
+        reason = remainingText();
+    }
+
+    try {
+        await target.ban({ reason });
+    }
+    catch {
+        throw new Error('Я не смог забанить этого участника сервера :/');
+    }
+
+    await message.reply(`**${target.displayName}** успешно сослан в Сибирь`);
+});
+```
+
+### Эвенты discord.js
+
+```js
+bot.client.on('эвент discord.js', () => {
+    // ...
+});
+```
+
+### Встроенные аргументы команд
+
+* `number` - число. Оно может быть целым / дробным, положительным / отрицательным
+* `member` - упоминание участника сервера
+* `role` - упоминание роли на сервере
+* `textChannel` - упоминание текстового канала
+* `remainingText` - оставшийся текст команды
+
+### Кастомные аргументы команд
+
+```js
+const { Bot, ReadRegex } = require('picbot-engine');
+
+// ...
+
+bot.commandArguments.register('pos', userInput => {
+    const pos = ReadRegex('{\\s*\\d+\\s*,\\s*\\d+\\s*}', userInput);
+    if (!pos) {
+        return { isError: true, error: 'notFound' };
+    }
+
+    const [x, y] = pos.match(/\d+/g).map(Number);
+
+    return {
+        isError: false,
+        value: {
+            length: pos.length,
+            parsedValue: { x, y },
+        },
+    };
+});
+
+// ...
+
+bot.commands.register('goto', ({ message, read: { pos } }) => {
+    const { x, y } = pos();
+    message.reply(`шагаю на клетку ${x}-${y}!`);
+});
+```
