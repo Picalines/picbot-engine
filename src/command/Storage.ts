@@ -45,7 +45,7 @@ export class CommandStorage {
         return command;
     }
 
-    get all(): Command[] {
+    get all(): readonly Command[] {
         return [...new Set(this.#commands.values())];
     }
 }

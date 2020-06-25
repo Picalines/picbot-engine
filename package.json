@@ -9,7 +9,7 @@
         "types/"
     ],
     "scripts": {
-        "test": "jest",
+        "test": "jest --verbose",
         "build": "tsc",
         "link": "npm link",
         "dev": "npm run build && npm run link"
