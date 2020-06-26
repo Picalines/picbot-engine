@@ -66,7 +66,7 @@ bot.commands.register('ban', async ({ message, read: { member, remainingText }, 
 ### События discord.js
 
 ```js
-bot.client.on('эвент discord.js', () => {
+bot.client.on('событие discord.js', () => {
     // ...
 });
 ```
