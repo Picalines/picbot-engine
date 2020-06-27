@@ -7,4 +7,4 @@ export { CommandInfo, CommandExecuteable, Command } from './command/Info';
 export { CommandStorage } from './command/Storage';
 export { CommandContext } from './command/Context';
 
-export { Bot } from './bot';
+export { Bot } from './Bot';
