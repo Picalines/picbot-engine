@@ -7,9 +7,17 @@ type CommandRegisterData = {
     info?: CommandOptionalInfo,
 }
 
+/**
+ * Хранилище команд
+ */
 export class CommandStorage {
     readonly #commands = new Map<string, Command>();
 
+    /**
+     * Добавляет новую команду в память бота
+     * @param name имя команды
+     * @param data информация команды (функция или объект с дополнительной информацией)
+     */
     public register(name: string, data: CommandRegisterData | CommandExecuteable) {
         const validateName = (name: string) => name.length > 0 && !name.includes(' ');
 
@@ -37,6 +45,10 @@ export class CommandStorage {
         });
     }
 
+    /**
+     * Возвращает данные команды по её имени или алиасу
+     * @param name имя или алиас команды
+     */
     public getByName(name: string): Command | never {
         const command = this.#commands.get(name);
         if (!command) {
@@ -45,6 +57,9 @@ export class CommandStorage {
         return command;
     }
 
+    /**
+     * Свойство, возвращающее список всех команд в хранилище
+     */
     get all(): readonly Command[] {
         return [...new Set(this.#commands.values())];
     }

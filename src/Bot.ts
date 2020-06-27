@@ -1,18 +1,39 @@
 import { Client, ClientOptions, Message, MessageEmbed } from "discord.js";
+import { ArgumentReaderStorage } from "./command/argument/Storage";
+import { GuildMessage, PromiseVoid, nameof } from "./utils";
 import { CommandStorage } from "./command/Storage";
 import { CommandContext } from "./command/Context";
-import { GuildMessage, PromiseVoid, nameof } from "./utils";
 import { readFileSync } from "fs";
-import { ArgumentReaderStorage } from "./command/argument/Storage";
 
+/**
+ * Обёртка клиента API из discord.js
+ */
 export class Bot {
+    /**
+     * Клиент API discord.js
+     */
     public readonly client: Client;
 
+    /**
+     * Хранилище типов аргументов команд бота
+     */
     public readonly commandArguments = new ArgumentReaderStorage();
+
+    /**
+     * Хранилище команд бота
+     */
     public readonly commands = new CommandStorage();
 
+    /**
+     * Функция, читающая префикс команды в сообщении.
+     * Возвращает длину префикса. Если префикс не найден,
+     * должна вернуть 0 или undefined.
+     */
     public readCommandPrefix?: (message: GuildMessage) => number | undefined;
 
+    /**
+     * @param options настройки клиента API discord.js
+     */
     constructor(options?: ClientOptions) {
         this.client = new Client(options);
 
@@ -23,10 +44,12 @@ export class Bot {
         this.client.on('message', msg => this.handleCommands(msg));
     }
 
+    /**
+     * Устанавливает боту единственный префикс команд.
+     * (Меняет значение `readCommandPrefix`)
+     * @param prefix префикс команд
+     */
     public setPrefix(prefix: string): never | void {
-        if (this.readCommandPrefix) {
-            throw new Error(`prefix already defined in bot.${nameof<Bot>('readCommandPrefix')}`);
-        }
         if (!prefix || prefix.includes(' ')) {
             throw new Error(`invalid prefix '${prefix}'`);
         }
@@ -39,7 +62,7 @@ export class Bot {
 
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
-     * @param message сообщение
+     * @param message сообщение пользователя
      */
     public async handleCommands(message: Message): Promise<void> {
         if (!this.readCommandPrefix) {
@@ -67,8 +90,9 @@ export class Bot {
 
     /**
      * Возвращает эмбед с описанием ошибки
+     * @param error ошибка
      */
-    public makeErrorEmbed(error: Error) {
+    public makeErrorEmbed(error: Error | { message: string }) {
         return new MessageEmbed()
             .setTitle('Произошла ошибка')
             .setColor(0xd61111)
@@ -78,6 +102,8 @@ export class Bot {
     /**
      * Запускает функцию `tryBlock`. В блоке `catch` бот отвечает
      * на сообщение `message` эмбедом из `makeErrorEmbed`
+     * @param message сообщение, на которое бот ответит информацией об ошибке
+     * @param tryBlock функция в блоке try...catch
      */
     public async catchErrorEmbedReply(message: Message, tryBlock: () => PromiseVoid): Promise<void> {
         try {
@@ -115,5 +141,4 @@ export class Bot {
     public async loginFromFile(path: string) {
         return await this.login(readFileSync(path).toString());
     }
-
 }

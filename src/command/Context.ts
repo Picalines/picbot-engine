@@ -4,19 +4,37 @@ import { GuildMessage } from '../utils';
 import { GuildMember } from 'discord.js';
 import { Bot } from '../Bot';
 
+/**
+ * Контекст запущенной команды
+ */
 export class CommandContext {
+    /**
+     * Участник сервера, который запустил команду
+     */
     public readonly executor: GuildMember;
 
     #userInput: string;
     #spaceReader: ArgumentReader<string> = ReadSpace;
 
+    /**
+     * Объект, содержащий функции чтения аргументов.
+     * Зависит от хранилища типов аргументов бота.
+     */
     public readonly read: {
         [ArgType in keyof ArgumentReaderStorage['readers']]: () =>
         ArgumentReaderStorage['readers'][ArgType] extends ArgumentReader<infer T> ? T : never
     };
 
+    /**
+     * Возвращает true, если в сообщении больше нет аргументов
+     */
     public readonly isEOL: () => boolean;
 
+    /**
+     * @param bot ссылка на бота
+     * @param message сообщение с командой
+     * @param executor участник сервера, запустивший команду
+     */
     constructor(
         public readonly bot: Bot,
         public readonly message: GuildMessage,
