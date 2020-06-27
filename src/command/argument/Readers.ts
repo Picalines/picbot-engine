@@ -1,16 +1,39 @@
 import { GuildMessage, Failable } from "../../utils";
 
+/**
+ * Информация прочитанного аргумента
+ */
 export type ArgumentInfo<T> = {
+    /**
+     * Длина строки аргумента
+     */
     length: number,
+    /**
+     * Переведённое значение аргумента
+     * (числовой аргумент -> значение типа number)
+     */
     parsedValue?: T,
 }
 
+/**
+ * Ошибка чтения аргумента
+ */
 export type ArgumentReaderError = 'notFound' | { message: string };
 
+/**
+ * Интерфейс функции, читающей аргумент
+ */
 export interface ArgumentReader<T> {
+    /**
+     * @param userInput не прочитанный ввод пользователя
+     * @param message сообщение пользователя
+     */
     (userInput: string, message: GuildMessage): Failable<ArgumentInfo<T>, ArgumentReaderError>;
 }
 
+/**
+ * Читает оставшийся текст сообщения
+ */
 export const ReadRemainingText: ArgumentReader<string> = function (userInput) {
     userInput = userInput.trim();
     return {
@@ -22,12 +45,21 @@ export const ReadRemainingText: ArgumentReader<string> = function (userInput) {
     };
 }
 
+/**
+ * Вспомогательная функция. Читает регулярное выражение в сообщении.
+ * @returns прочитанная часть, либо пустая строка
+ * @param regex регулярное выражение
+ * @param userInput ввод пользователя
+ */
 export function ReadRegex(regex: string, userInput: string): string {
     const regexp = new RegExp('^' + regex, 'i');
     const matches = userInput.match(regexp);
     return matches && matches[0] ? matches[0] : '';
 }
 
+/**
+ * Читает пробелы между аргументами
+ */
 export const ReadSpace: ArgumentReader<string> = function (userInput) {
     const spaceLength = ReadRegex('\\s*', userInput).length;
     if (spaceLength > 0) {
@@ -38,6 +70,9 @@ export const ReadSpace: ArgumentReader<string> = function (userInput) {
     }
 }
 
+/**
+ * Читает число (целое / дробное, положительное / отрицательное)
+ */
 export const ReadNumber: ArgumentReader<number> = function (userInput) {
     const numberInput = ReadRegex(`[+-]?\\d+(\\.\\d+)?`, userInput);
     if (!numberInput) {
@@ -64,6 +99,11 @@ export const ReadNumber: ArgumentReader<number> = function (userInput) {
     };
 }
 
+/**
+ * Вспомогательная функция. Возвращает новую функцию, читающую упоминание дискорда
+ * @param mentionRegex регулярное выражение дискорда
+ * @param getById функция, получающая упомянутый объект по его id
+ */
 export const MakeMentionReader = <T>(
     mentionRegex: string,
     getById: (msg: GuildMessage, id: string) => T | null | undefined
@@ -102,12 +142,21 @@ export const MakeMentionReader = <T>(
     };
 };
 
+/**
+ * Читает упоминание участника сервера
+ */
 export const ReadMember = MakeMentionReader('<@\\!?\\d+>', (msg, id) => msg.guild.member(id));
 
+/**
+ * Читает упоминание роли
+ */
 export const ReadRole = MakeMentionReader('<@&\\d+>', (msg, id) => {
     return msg.guild.roles.cache.find(r => r.id == id);
 });
 
+/**
+ * Читает упоминание текстового канала
+ */
 export const ReadTextChannel = MakeMentionReader('<#(?<id>\\d+)>', (msg, id) => {
     return msg.guild.channels.cache.find(ch => ch.type == 'text' && ch.id == id) as any;
 });
