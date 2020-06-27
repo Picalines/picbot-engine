@@ -12,7 +12,8 @@
         "test": "jest --verbose",
         "build": "tsc",
         "link": "npm link",
-        "dev": "npm run build && npm run link"
+        "dev": "npm run build && npm run link",
+        "docs": "jsdoc -c jsdoc.json"
     },
     "keywords": [
         "discord",
@@ -34,6 +35,7 @@
         "@types/jest": "^26.0.3",
         "@types/node": "^13.13.12",
         "jest": "^26.1.0",
+        "jsdoc": "^3.6.4",
         "ts-jest": "^26.1.1"
     }
 }
