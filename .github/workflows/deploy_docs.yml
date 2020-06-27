@@ -1,0 +1,29 @@
+name: Docs Deployment
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy_docs:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: npm ci
+        run: |
+          npm -v
+          npm ci
+      - name: npm build
+        run: |
+          tsc -v
+          npm run build
+      - name: build docs
+        run: npm run docs
+      - name: deploy docs to gh-pages
+        if: success()
+        uses: crazy-max/ghaction-github-pages@v2
+        with:
+          target_branch: gh-pages
+          build_dir: docs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

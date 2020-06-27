@@ -1,4 +1,4 @@
-name: Node Continuous Integration
+name: Master Branch Unit Testing
 
 on:
   pull_request:
@@ -14,10 +14,13 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: 12
-      - run: |
+      - name: npm ci
+        run: |
           npm -v
           npm ci
-      - run: |
+      - name: npm build
+        run: |
           tsc -v
           npm run build
-      - run: npm test
+      - name: npm test
+        run: npm test
