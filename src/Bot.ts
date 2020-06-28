@@ -43,10 +43,13 @@ export class Bot {
         });
 
         this.client.on('message', message => {
-            if (message.guild && message.guild.me && message.channel.type == 'text' && message.member &&
-                message.member.id != message.guild.me.id) {
-                this.handleCommands(message as GuildMessage);
-            }
+            if (!(message.guild && message.channel.type == 'text')) return;
+
+            const guildMessage = message as GuildMessage;
+            if (guildMessage.member.id == guildMessage.guild.me.id) return;
+            if (this.options.ignoreBots && guildMessage.author.bot) return;
+
+            this.handleCommands(guildMessage);
         });
     }
 

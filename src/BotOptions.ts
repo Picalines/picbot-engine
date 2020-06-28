@@ -14,9 +14,15 @@ export type BotOptions = {
     permissions: {
         /**
          * Аргумент [checkAdmin](https://discord.js.org/#/docs/main/stable/class/Permissions?scrollTo=has) из discord.js
+         * @default true
          */
         checkAdmin: boolean;
     };
+    /**
+     * Игнорировать ли сообщения других ботов
+     * @default true
+     */
+    ignoreBots: boolean;
 };
 
 /**
@@ -48,5 +54,6 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
     return {
         prefixes,
         permissions,
+        ignoreBots: optionsArg.ignoreBots ?? true,
     };
 }
