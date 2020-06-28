@@ -4,6 +4,8 @@
 
 Все функции API дискорда библиотека берёт из [discord.js](https://github.com/discordjs/discord.js)
 
+[Документация](https://picalines.github.io/picbot-engine/)
+
 ### Важно!
 
 Проект находится на ранней стадии разработки. Если и использовать, то только на свой страх и риск

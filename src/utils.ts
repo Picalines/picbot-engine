@@ -1,5 +1,8 @@
 import { Message, Guild, TextChannel, GuildMember } from "discord.js";
 
+/**
+ * Сообщение в текстовом канале на сервере (Вспомогательный тип)
+ */
 export type GuildMessage = Message & {
     guild: Guild,
     channel: TextChannel & { type: 'text' },
@@ -8,16 +11,29 @@ export type GuildMessage = Message & {
 
 export type PromiseVoid = Promise<void> | void
 
-export type StringResolvable<T> = new (str: string) => T
-
+/**
+ * Массив, который содержит хотя бы 1 элемент
+ */
 export type NonEmptyArray<T> = [T, ...T[]]
 
-export type ReadOnlyNonEmptyArray<T> = readonly [T, ...T[]]
+/**
+ * Массив, который содержит хотя бы 1 элемент. Элементы доступны только для чтения
+ */
+export type ReadOnlyNonEmptyArray<T> = readonly [T, ...T[]];
 
+/**
+ * Возвращает имя свойства
+ * @param name имя свойства
+ */
 export function nameof<T>(name: Extract<keyof T, string>): string {
     return name;
 }
 
+/**
+ * Вспомогательный тип для функций. Если какая-то операция прошла успешно,
+ * функция возвращает объект этого типа со значениеми `isError: false, value: R`.
+ * Иначе `isError: true, error: E`
+ */
 export type Failable<R, E> = {
     isError: true,
     error: E,
