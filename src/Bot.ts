@@ -1,4 +1,4 @@
-import { Client, ClientOptions, Message, MessageEmbed } from "discord.js";
+import { Client, ClientOptions, Message, MessageEmbed, PermissionResolvable } from "discord.js";
 import { ArgumentReaderStorage } from "./command/argument/Storage";
 import { GuildMessage, PromiseVoid, nameof } from "./utils";
 import { CommandStorage } from "./command/Storage";
@@ -83,6 +83,11 @@ export class Bot {
 
         await this.catchErrorEmbedReply(message, async () => {
             const command = this.commands.getByName(commandName);
+            const memberPermissions = (message as GuildMessage).member.permissions;
+            const commandPermissions = (command.permissions || []) as PermissionResolvable[];
+            if (!memberPermissions.has(commandPermissions)) {
+                throw new Error("Not enough permissions");
+            }
             const context = new CommandContext(this, message as GuildMessage);
             await command.execute(context);
         });
