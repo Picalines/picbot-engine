@@ -1,4 +1,3 @@
-import { GuildMessage, Failable } from "./utils";
 import { ClientOptions } from "discord.js";
 
 /**
@@ -6,9 +5,9 @@ import { ClientOptions } from "discord.js";
  */
 export type BotOptions = {
     /**
-     * Читает префикс в сообщении пользователя
+     * Список префиксов бота
      */
-    prefix: (message: GuildMessage) => Failable<number, 'notFound'>;
+    prefixes: string[];
     /**
      * Настройки проверки прав
      */
@@ -24,8 +23,8 @@ export type BotOptions = {
  * Аргумент настроек бота в его конструкторе
  * @ignore
  */
-export type BotOptionsArgument = Partial<Omit<BotOptions, 'prefix'>> & {
-    prefix: BotOptions['prefix'] | string | string[];
+export type BotOptionsArgument = Partial<Omit<BotOptions, 'prefixes'>> & {
+    prefixes: string[] | string;
     clientOptions?: ClientOptions;
 };
 
@@ -34,31 +33,20 @@ export type BotOptionsArgument = Partial<Omit<BotOptions, 'prefix'>> & {
  * @ignore
  */
 export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOptions {
-    let prefixReader: BotOptions['prefix'];
-
-    const optionsPrefix = optionsArg.prefix;
-    if (typeof optionsPrefix == 'function') {
-        prefixReader = optionsPrefix;
+    let prefixes = optionsArg.prefixes;
+    if (typeof prefixes == 'string') {
+        prefixes = [ prefixes ];
     }
-    else {
-        let prefixes = optionsPrefix instanceof Array ? optionsPrefix : [ optionsPrefix ];
-        prefixes = prefixes.map(String.prototype.toLowerCase);
 
-        prefixReader = message => {
-            const lowerMessage = message.content.toLowerCase();
-            for (const prefix of prefixes) {
-                if (lowerMessage.startsWith(prefix)) {
-                    return { isError: false, value: prefix.length };
-                }
-            }
-            return { isError: true, error: 'notFound' };
+    let permissions = optionsArg.permissions;
+    if (!permissions) {
+        permissions = {
+            checkAdmin: true,
         };
     }
 
     return {
-        prefix: prefixReader,
-        permissions: optionsArg.permissions || {
-            checkAdmin: true
-        },
+        prefixes,
+        permissions,
     };
 }

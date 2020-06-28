@@ -42,23 +42,37 @@ export class Bot {
             console.log("logged in as " + String(this.client.user?.username));
         });
 
-        this.client.on('message', msg => this.handleCommands(msg));
+        this.client.on('message', message => {
+            if (message.guild && message.guild.me && message.channel.type == 'text' && message.member &&
+                message.member.id != message.guild.me.id) {
+                this.handleCommands(message as GuildMessage);
+            }
+        });
     }
 
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
      * @param message сообщение пользователя
      */
-    public async handleCommands(message: Message): Promise<void> {
-        if (!(message.guild && message.member && message.channel.type == 'text')) return;
+    public async handleCommands(message: GuildMessage): Promise<void> {
+        let prefixLength = 0;
+        const msgLowerContent = message.content.toLowerCase();
+        for (const p of this.options.prefixes) {
+            if (msgLowerContent.startsWith(p)) {
+                prefixLength = p.length;
+                break;
+            }
+        }
 
-        const prefixReadResult = this.options.prefix(message as GuildMessage);
-        if (prefixReadResult.isError) {
+        if (!prefixLength) {
             return;
         }
 
-        const content = message.content.slice(prefixReadResult.value);
+        const content = message.content.slice(prefixLength);
         const commandName = content.replace(/\s.*$/, '');
+        if (!commandName) {
+            return;
+        }
 
         const executor = message.member;
 

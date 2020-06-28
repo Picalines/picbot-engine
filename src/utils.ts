@@ -1,7 +1,7 @@
 import { Message, Guild, TextChannel, GuildMember } from "discord.js";
 
 export type GuildMessage = Message & {
-    guild: Guild,
+    guild: Guild & { me: GuildMember },
     channel: TextChannel & { type: 'text' },
     member: GuildMember,
 }
