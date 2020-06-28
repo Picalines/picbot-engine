@@ -1,12 +1,12 @@
 import { ReadOnlyNonEmptyArray, PromiseVoid } from "../utils";
-import { PermissionResolvable } from "discord.js";
+import { PermissionString } from "discord.js";
 import { CommandContext } from "./Context";
 
 export interface CommandInfo {
     readonly name: string;
     readonly aliases?: ReadOnlyNonEmptyArray<string>;
     readonly description?: string;
-    readonly permissions?: ReadonlyArray<PermissionResolvable>;
+    readonly permissions?: Readonly<PermissionString[]>;
 }
 
 export type CommandExecuteable = (context: CommandContext) => PromiseVoid;
