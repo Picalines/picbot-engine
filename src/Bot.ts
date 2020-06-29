@@ -5,6 +5,7 @@ import { GuildMessage, PromiseVoid } from "./utils";
 import { CommandStorage } from "./command/Storage";
 import { CommandContext } from "./command/Context";
 import { readFileSync, PathLike } from "fs";
+import { BotPrefixes } from "./BotPrefixes";
 
 /**
  * Обёртка клиента API из discord.js
@@ -31,12 +32,19 @@ export class Bot {
     public readonly commands = new CommandStorage();
 
     /**
+     * Префиксы бота
+     */
+    public readonly prefixes: BotPrefixes;
+
+    /**
      * @param options настройки клиента API discord.js
      */
-    constructor(options: BotOptionsArgument) {
+    constructor(options: BotOptionsArgument = {}) {
         this.client = new Client(options.clientOptions);
 
         this.options = ParseBotOptionsArgument(options);
+
+        this.prefixes = new BotPrefixes(this);
 
         this.client.on('ready', () => {
             console.log("logged in as " + String(this.client.user?.username));
@@ -58,15 +66,7 @@ export class Bot {
      * @param message сообщение пользователя
      */
     public async handleCommands(message: GuildMessage): Promise<void> {
-        let prefixLength = 0;
-        const msgLowerContent = message.content.toLowerCase();
-        for (const p of this.options.prefixes) {
-            if (msgLowerContent.startsWith(p)) {
-                prefixLength = p.length;
-                break;
-            }
-        }
-
+        const prefixLength = this.prefixes.getMessagePrefixLength(message);
         if (!prefixLength) {
             return;
         }
