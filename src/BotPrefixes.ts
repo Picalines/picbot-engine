@@ -35,7 +35,7 @@ export class BotPrefixes {
     }
 
     /**
-     * @param guild сервер
+     * @param {Guild} guild сервер
      * @param create создать ли хранилище, если его нет
      * @returns хранилище префиксов сервера
      */
