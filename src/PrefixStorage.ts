@@ -1,4 +1,4 @@
-import { ReadOnlyNonEmptyArray } from "./utils";
+import { ReadOnlyNonEmptyArray, NonEmptyArray } from "./utils";
 
 /**
  * Хранилище префиксов команд
@@ -69,12 +69,19 @@ export class PrefixStorage implements Iterable<string> {
     }
 
     /**
-     * Устанавливает единственный префикс в хранилище
-     * @param prefix единственный префикс хранилища
+     * Ставит список префиксов в хранилище
+     * @param prefixes
      */
-    set(prefix: string) {
+    set(...prefixes: NonEmptyArray<string>) {
+        const old = new Set(this.#prefixes);
         this.#prefixes.clear();
-        this.#prefixes.add(prefix.toLowerCase());
+        try {
+            prefixes.forEach(prefix => this.add(prefix));
+        }
+        catch (err) {
+            this.#prefixes = old;
+            throw err;
+        }
     }
 
     public toString(): string {
