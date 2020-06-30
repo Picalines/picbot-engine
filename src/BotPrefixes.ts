@@ -7,8 +7,9 @@ export class BotPrefixes {
     /**
      * Хранилище глобальных префиксов.
      * Глобальные префиксы команд доступны на всех серверах
+     * @default PrefixStorage(['!'])
      */
-    public readonly global = new PrefixStorage();
+    public readonly global = new PrefixStorage(['!']);
 
     /**
      * Стандартные префиксы для новых серверов
@@ -51,10 +52,22 @@ export class BotPrefixes {
         return storage;
     }
 
+    private *getPrefixesToCheck(message: GuildMessage): IterableIterator<string> {
+        const seen: Record<string, true> = {};
+        for (const prefix of this.guild(message.guild)) {
+            yield prefix;
+            seen[prefix] = true;
+        }
+        for (const prefix of this.global) {
+            if (!seen[prefix]) {
+                yield prefix;
+            }
+        }
+    }
+
     public getMessagePrefixLength(message: GuildMessage): number {
         const msgLower = message.content.toLowerCase();
-        const prefixes = this.global.list.concat(this.guild(message.guild).list);
-        for (const prefix of prefixes) {
+        for (const prefix of this.getPrefixesToCheck(message)) {
             if (msgLower.startsWith(prefix)) {
                 return prefix.length;
             }

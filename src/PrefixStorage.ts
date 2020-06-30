@@ -1,13 +1,15 @@
+import { ReadOnlyNonEmptyArray } from "./utils";
+
 /**
  * Хранилище префиксов команд
  */
-export class PrefixStorage {
+export class PrefixStorage implements Iterable<string> {
     #prefixes: Set<string>;
 
     /**
      * @param initialPrefixes изначальные префиксы в хранилище
      */
-    constructor(initialPrefixes: ReadonlyArray<string> | PrefixStorage = []) {
+    constructor(initialPrefixes: ReadOnlyNonEmptyArray<string> | PrefixStorage) {
         this.#prefixes = new Set();
         if (initialPrefixes instanceof PrefixStorage) {
             initialPrefixes = initialPrefixes.list;
@@ -19,14 +21,18 @@ export class PrefixStorage {
      * Свойство, возвращающее список префиксов в хранилище.
      * Список доступен только для чтения
      */
-    get list(): ReadonlyArray<string> {
-        return [...this.#prefixes];
+    get list(): ReadOnlyNonEmptyArray<string> {
+        return [...this.#prefixes] as any;
+    }
+
+    public [Symbol.iterator](): IterableIterator<string> {
+        return this.#prefixes.values();
     }
 
     /**
      * Количество префиксов в хранилище
      */
-    get length(): number {
+    get size(): number {
         return this.#prefixes.size;
     }
 
@@ -46,12 +52,12 @@ export class PrefixStorage {
     }
 
     /**
-     * Удаляет префикс из хранилища
+     * Удаляет префикс из хранилища (если он не единственный)
      * @param prefix префикс, который нужно удалить
      * @returns true, если префикс был удалён
      */
     remove(prefix: string): boolean {
-        return this.#prefixes.delete(prefix.toLowerCase());
+        return this.size > 1 ? this.#prefixes.delete(prefix.toLowerCase()) : false;
     }
 
     /**
@@ -69,5 +75,9 @@ export class PrefixStorage {
     set(prefix: string) {
         this.#prefixes.clear();
         this.#prefixes.add(prefix.toLowerCase());
+    }
+
+    public toString(): string {
+        return `${PrefixStorage.name}(${this.size}) { ${this.list.join(', ')} }`;
     }
 }

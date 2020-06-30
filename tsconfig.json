@@ -5,6 +5,7 @@
         "target": "ES6",
         "module": "commonjs",
         "outDir": "dist",
+        "incremental": true,
         "moduleResolution": "node",
         "removeComments": false,
         "skipLibCheck": true,
