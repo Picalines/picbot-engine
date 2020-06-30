@@ -4,7 +4,7 @@ import { Message, Guild, TextChannel, GuildMember } from "discord.js";
  * Сообщение в текстовом канале на сервере (Вспомогательный тип)
  */
 export type GuildMessage = Message & {
-    guild: Guild,
+    guild: Guild & { me: GuildMember },
     channel: TextChannel & { type: 'text' },
     member: GuildMember,
 }
@@ -19,7 +19,7 @@ export type NonEmptyArray<T> = [T, ...T[]]
 /**
  * Массив, который содержит хотя бы 1 элемент. Элементы доступны только для чтения
  */
-export type ReadOnlyNonEmptyArray<T> = readonly [T, ...T[]];
+export type ReadOnlyNonEmptyArray<T> = Readonly<[T, ...T[]]>
 
 /**
  * Возвращает имя свойства

@@ -2,9 +2,9 @@ name: Master Branch Unit Testing
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ master, develop ]
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
 
 jobs:
   unit_test_request:

@@ -1,5 +1,5 @@
 import { ReadOnlyNonEmptyArray, PromiseVoid } from "../utils";
-import { PermissionResolvable } from "discord.js";
+import { PermissionString } from "discord.js";
 import { CommandContext } from "./Context";
 
 /**
@@ -24,7 +24,7 @@ export interface CommandInfo {
     /**
      * Права участника сервера
      */
-    readonly permissions?: ReadonlyArray<PermissionResolvable>;
+    readonly permissions?: Readonly<PermissionString[]>;
 }
 
 /**

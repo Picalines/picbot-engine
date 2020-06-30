@@ -1,9 +1,11 @@
-import { Client, ClientOptions, Message, MessageEmbed } from "discord.js";
+import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
+import { Client, Message, MessageEmbed, PermissionString } from "discord.js";
 import { ArgumentReaderStorage } from "./command/argument/Storage";
-import { GuildMessage, PromiseVoid, nameof } from "./utils";
+import { GuildMessage, PromiseVoid } from "./utils";
 import { CommandStorage } from "./command/Storage";
 import { CommandContext } from "./command/Context";
-import { readFileSync } from "fs";
+import { readFileSync, PathLike } from "fs";
+import { BotPrefixes } from "./BotPrefixes";
 
 /**
  * Обёртка клиента API из discord.js
@@ -13,6 +15,11 @@ export class Bot {
      * Клиент API discord.js
      */
     public readonly client: Client;
+
+    /**
+     * Настройки бота
+     */
+    public readonly options: BotOptions;
 
     /**
      * Хранилище типов аргументов команд бота
@@ -25,65 +32,64 @@ export class Bot {
     public readonly commands = new CommandStorage();
 
     /**
-     * Функция, читающая префикс команды в сообщении.
-     * Возвращает длину префикса. Если префикс не найден,
-     * должна вернуть 0 или undefined.
+     * Префиксы бота
      */
-    public readCommandPrefix?: (message: GuildMessage) => number | undefined;
+    public readonly prefixes: BotPrefixes;
 
     /**
      * @param options настройки клиента API discord.js
      */
-    constructor(options?: ClientOptions) {
-        this.client = new Client(options);
+    constructor(options: BotOptionsArgument = {}) {
+        this.client = new Client(options.clientOptions);
+
+        this.options = ParseBotOptionsArgument(options);
+
+        this.prefixes = new BotPrefixes(this);
 
         this.client.on('ready', () => {
             console.log("logged in as " + String(this.client.user?.username));
         });
 
-        this.client.on('message', msg => this.handleCommands(msg));
-    }
+        this.client.on('message', message => {
+            if (!(message.guild && message.channel.type == 'text')) return;
 
-    /**
-     * Устанавливает боту единственный префикс команд.
-     * (Меняет значение `readCommandPrefix`)
-     * @param prefix префикс команд
-     */
-    public setPrefix(prefix: string): never | void {
-        if (!prefix || prefix.includes(' ')) {
-            throw new Error(`invalid prefix '${prefix}'`);
-        }
-        this.readCommandPrefix = message => {
-            if (message.content.startsWith(prefix)) {
-                return prefix.length;
-            }
-        }
+            const guildMessage = message as GuildMessage;
+            if (guildMessage.member.id == guildMessage.guild.me.id) return;
+            if (this.options.ignoreBots && guildMessage.author.bot) return;
+
+            this.handleCommands(guildMessage);
+        });
     }
 
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
      * @param message сообщение пользователя
      */
-    public async handleCommands(message: Message): Promise<void> {
-        if (!this.readCommandPrefix) {
-            console.warn(`bot.${nameof<Bot>('readCommandPrefix')} is undefined, so commands are ignored`);
-            return;
-        }
-
-        if (!(message.guild && message.channel.type == 'text')) return;
-
-        const prefixLength = this.readCommandPrefix(message as GuildMessage);
+    public async handleCommands(message: GuildMessage): Promise<void> {
+        const prefixLength = this.prefixes.getMessagePrefixLength(message);
         if (!prefixLength) {
             return;
         }
 
-        let content = message.content.slice(prefixLength);
-
+        const content = message.content.slice(prefixLength);
         const commandName = content.replace(/\s.*$/, '');
+        if (!commandName) {
+            return;
+        }
 
-        await this.catchErrorEmbedReply(message, async () => {
+        const executor = message.member;
+
+        await Bot.catchErrorEmbedReply(message, async () => {
             const command = this.commands.getByName(commandName);
-            const context = new CommandContext(this, message as GuildMessage);
+
+            const commandPermissions = (command.permissions || []) as PermissionString[];
+            const checkAdmin = this.options.permissions.checkAdmin;
+            const missingPermissions = executor.permissions.missing(commandPermissions, checkAdmin);
+            if (missingPermissions.length) {
+                throw new Error(`Not enough permissions: ${missingPermissions.join(', ')}`);
+            }
+
+            const context = new CommandContext(this, message as GuildMessage, executor);
             await command.execute(context);
         });
     }
@@ -92,7 +98,7 @@ export class Bot {
      * Возвращает эмбед с описанием ошибки
      * @param error ошибка
      */
-    public makeErrorEmbed(error: Error | { message: string }) {
+    public static makeErrorEmbed(error: { message: string }) {
         return new MessageEmbed()
             .setTitle('Произошла ошибка')
             .setColor(0xd61111)
@@ -105,7 +111,7 @@ export class Bot {
      * @param message сообщение, на которое бот ответит информацией об ошибке
      * @param tryBlock функция в блоке try...catch
      */
-    public async catchErrorEmbedReply(message: Message, tryBlock: () => PromiseVoid): Promise<void> {
+    public static async catchErrorEmbedReply(message: Message, tryBlock: () => PromiseVoid): Promise<void> {
         try {
             await tryBlock();
         }
@@ -114,7 +120,7 @@ export class Bot {
 
             let embed: MessageEmbed;
             try {
-                embed = this.makeErrorEmbed(error);
+                embed = Bot.makeErrorEmbed(error);
             }
             catch {
                 await message.reply(`Произошла ошибка: ${error.message}`);
@@ -138,7 +144,7 @@ export class Bot {
      * Сначала читает токен из файла, а потом использует его в методе login
      * @param path путь до файла с токеном
      */
-    public async loginFromFile(path: string) {
+    public async loginFromFile(path: PathLike) {
         return await this.login(readFileSync(path).toString());
     }
 }
