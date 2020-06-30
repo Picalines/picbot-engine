@@ -145,7 +145,7 @@ export const MakeMentionReader = <T>(
 /**
  * Читает упоминание участника сервера
  */
-export const ReadMember = MakeMentionReader('<@\\!?\\d+>', (msg, id) => msg.guild.member(id));
+export const ReadMember = MakeMentionReader('<@!?\\d+>', (msg, id) => msg.guild.member(id));
 
 /**
  * Читает упоминание роли

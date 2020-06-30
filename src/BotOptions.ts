@@ -5,10 +5,6 @@ import { ClientOptions } from "discord.js";
  */
 export type BotOptions = {
     /**
-     * Список префиксов бота
-     */
-    prefixes: string[];
-    /**
      * Настройки проверки прав
      */
     permissions: {
@@ -29,8 +25,7 @@ export type BotOptions = {
  * Аргумент настроек бота в его конструкторе
  * @ignore
  */
-export type BotOptionsArgument = Partial<Omit<BotOptions, 'prefixes'>> & {
-    prefixes: string[] | string;
+export type BotOptionsArgument = Partial<BotOptions> & {
     clientOptions?: ClientOptions;
 };
 
@@ -39,11 +34,6 @@ export type BotOptionsArgument = Partial<Omit<BotOptions, 'prefixes'>> & {
  * @ignore
  */
 export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOptions {
-    let prefixes = optionsArg.prefixes;
-    if (typeof prefixes == 'string') {
-        prefixes = [ prefixes ];
-    }
-
     let permissions = optionsArg.permissions;
     if (!permissions) {
         permissions = {
@@ -52,7 +42,6 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
     }
 
     return {
-        prefixes,
         permissions,
         ignoreBots: optionsArg.ignoreBots ?? true,
     };
