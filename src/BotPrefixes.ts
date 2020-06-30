@@ -39,8 +39,7 @@ export class BotPrefixes {
      * @param create создать ли хранилище, если его нет
      * @returns хранилище префиксов сервера
      */
-    public guild(guild: Guild, create: boolean = false): PrefixStorage {
-        const { id } = guild;
+    public guild({ id }: Guild, create: boolean = false): PrefixStorage {
         let storage = this.#guildPrefixes.get(id);
         if (!storage) {
             if (create) {
