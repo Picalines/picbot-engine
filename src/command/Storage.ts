@@ -1,24 +1,18 @@
-import { Command, CommandExecuteable, CommandInfo } from "./Info";
-
-type CommandOptionalInfo = Omit<CommandInfo, 'name'>;
-
-type CommandRegisterData = {
-    executeable: CommandExecuteable,
-    info?: CommandOptionalInfo,
-}
+import { Command, CommandExecuteable } from "./Info";
 
 /**
  * Хранилище команд
  */
-export class CommandStorage {
+export class CommandStorage implements Iterable<Command> {
     readonly #commands = new Map<string, Command>();
+    #size = 0;
 
     /**
      * Добавляет новую команду в память бота
      * @param name имя команды
      * @param data информация команды (функция или объект с дополнительной информацией)
      */
-    public register(name: string, data: CommandRegisterData | CommandExecuteable) {
+    public register(name: string, data: Omit<Command, 'name'> | CommandExecuteable) {
         const validateName = (name: string) => name.length > 0 && !name.includes(' ');
 
         if (!validateName(name)) {
@@ -30,7 +24,7 @@ export class CommandStorage {
             command = { name, execute: data };
         }
         else {
-            command = { name, execute: data.executeable, ...data.info };
+            command = { name, ...data };
         }
 
         this.#commands.set(name, command);
@@ -43,6 +37,8 @@ export class CommandStorage {
                 console.warn(`invalid command alias '${alias}' (ignored)`);
             }
         });
+
+        this.#size += 1;
     }
 
     /**
@@ -58,9 +54,20 @@ export class CommandStorage {
     }
 
     /**
+     * Количество команд в хранилище
+     */
+    get size(): number {
+        return this.#size;
+    }
+
+    /**
      * Свойство, возвращающее список всех команд в хранилище
      */
-    get all(): readonly Command[] {
+    get list(): readonly Command[] {
         return [...new Set(this.#commands.values())];
+    }
+
+    public [Symbol.iterator]() {
+        return new Set(this.#commands.values()).values();
     }
 }

@@ -17,9 +17,19 @@ export interface CommandInfo {
     readonly aliases?: ReadOnlyNonEmptyArray<string>;
 
     /**
+     * Группа, к которой принадлежит команда
+     */
+    readonly group?: string;
+
+    /**
      * Описание
      */
     readonly description?: string;
+
+    /**
+     * Примеры использования
+     */
+    readonly examples?: ReadOnlyNonEmptyArray<string>;
 
     /**
      * Права участника сервера

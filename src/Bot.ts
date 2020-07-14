@@ -6,6 +6,7 @@ import { CommandStorage } from "./command/Storage";
 import { CommandContext } from "./command/Context";
 import { readFileSync, PathLike } from "fs";
 import { BotPrefixes } from "./BotPrefixes";
+import HelpCommand from "./command/builtIn/Help";
 
 /**
  * Обёртка клиента API из discord.js
@@ -45,6 +46,8 @@ export class Bot {
         this.options = ParseBotOptionsArgument(options);
 
         this.prefixes = new BotPrefixes(this);
+
+        this.commands.register(HelpCommand.name, HelpCommand);
 
         this.client.on('ready', () => {
             console.log("logged in as " + String(this.client.user?.username));
