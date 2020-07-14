@@ -28,12 +28,10 @@ describe('get by name test', () => {
     const aliases: NonEmptyArray<string> = ['main2', 'second', 'wow', 'test'];
 
     commands.register('main', {
-        executeable: emptyCommand,
-        info: {
-            description: 'test command',
-            aliases,
-            permissions: ['MANAGE_GUILD'],
-        },
+        execute: emptyCommand,
+        description: 'test command',
+        aliases,
+        permissions: ['MANAGE_GUILD'],
     });
 
     test('not found', () => {
@@ -82,7 +80,7 @@ describe('commands list tests', () => {
     const commands = new CommandStorage();
 
     test('empty', () => {
-        let commandsList = commands.all;
+        let commandsList = commands.list;
         expect(commandsList.length).toEqual(0);
     });
 
@@ -90,15 +88,15 @@ describe('commands list tests', () => {
         for (let i = 0; i < 3; i++) {
             commands.register(String(i), emptyCommand);
         }
-        expect(commands.all.length).toEqual(3);
+        expect(commands.list.length).toEqual(3);
     });
 
     test('aliases', () => {
-        let oldLength = commands.all.length;
+        let oldLength = commands.list.length;
         commands.register('999', {
-            info: { aliases: ['9999', '99999', '-1'] },
-            executeable: emptyCommand,
+            aliases: ['9999', '99999', '-1'],
+            execute: emptyCommand,
         });
-        expect(commands.all.length).toEqual(oldLength + 1);
+        expect(commands.list.length).toEqual(oldLength + 1);
     });
 });

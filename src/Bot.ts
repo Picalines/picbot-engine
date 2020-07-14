@@ -7,6 +7,8 @@ import { CommandContext } from "./command/Context";
 import { readFileSync, PathLike } from "fs";
 import { BotPrefixes } from "./BotPrefixes";
 
+import BuiltInCommands from "./command/builtIn/index";
+
 /**
  * Обёртка клиента API из discord.js
  */
@@ -45,6 +47,16 @@ export class Bot {
         this.options = ParseBotOptionsArgument(options);
 
         this.prefixes = new BotPrefixes(this);
+
+        for (const [name, enabled] of Object.entries(this.options.commands.builtIn)) {
+            if (enabled) {
+                type BuiltInCommandKey = keyof BotOptions['commands']['builtIn'];
+                this.commands.register(
+                    BuiltInCommands[name as BuiltInCommandKey].name,
+                    BuiltInCommands[name as BuiltInCommandKey]
+                );
+            }
+        }
 
         this.client.on('ready', () => {
             console.log("logged in as " + String(this.client.user?.username));
