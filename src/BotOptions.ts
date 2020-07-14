@@ -1,4 +1,5 @@
 import { ClientOptions } from "discord.js";
+import { DeepPartial } from "./utils";
 
 /**
  * Объект с настройками бота
@@ -19,13 +20,27 @@ export type BotOptions = {
      * @default true
      */
     ignoreBots: boolean;
+    /**
+     * Настройки команд бота
+     */
+    commands: {
+        /**
+         * Включение встроенных команд
+         * @default true (для всех)
+         */
+        builtIn: {
+            help: boolean;
+            ban: boolean;
+            kick: boolean;
+        };
+    };
 };
 
 /**
  * Аргумент настроек бота в его конструкторе
  * @ignore
  */
-export type BotOptionsArgument = Partial<BotOptions> & {
+export type BotOptionsArgument = DeepPartial<BotOptions> & {
     clientOptions?: ClientOptions;
 };
 
@@ -34,15 +49,17 @@ export type BotOptionsArgument = Partial<BotOptions> & {
  * @ignore
  */
 export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOptions {
-    let permissions = optionsArg.permissions;
-    if (!permissions) {
-        permissions = {
-            checkAdmin: true,
-        };
-    }
-
     return {
-        permissions,
+        permissions: {
+            checkAdmin: optionsArg.permissions?.checkAdmin ?? true
+        },
         ignoreBots: optionsArg.ignoreBots ?? true,
+        commands: {
+            builtIn: {
+                help: optionsArg.commands?.builtIn?.help ?? true,
+                ban: optionsArg.commands?.builtIn?.ban ?? true,
+                kick: optionsArg.commands?.builtIn?.kick ?? true,
+            },
+        },
     };
 }

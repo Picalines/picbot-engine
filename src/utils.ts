@@ -12,6 +12,13 @@ export type GuildMessage = Message & {
 export type PromiseVoid = Promise<void> | void
 
 /**
+ * Расширение стандартного Partial<T> из TypeScript
+ * https://gist.github.com/navix/6c25c15e0a2d3cd0e5bce999e0086fc9
+ */
+export type DeepPartial<T> = T extends Function ? T
+    : (T extends object ? { [P in keyof T]?: DeepPartial<T[P]>; } : T);
+
+/**
  * Массив, который содержит хотя бы 1 элемент
  */
 export type NonEmptyArray<T> = [T, ...T[]]
