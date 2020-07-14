@@ -69,6 +69,28 @@ bot.commands.register('ban', async ({ message, read: { member, remainingText }, 
 });
 ```
 
+#### Информация для help
+
+```js
+bot.commands.register('ban', {
+    permissions: ['BAN_MEMBERS'],
+    aliases: ['kill'],
+
+    description: 'Банит участника сервера',
+    group: 'Администрирование',
+    examples: [
+        '`ban @Test` забанит участника @Test',
+        '`ban @Test спам` забанит @Test по причине "спам"',
+    ],
+
+    execute: async ({ message, read }) => {
+        // ... код команды ...
+    },
+});
+```
+
+У бота есть встроенная команда `help`, которая может показать все эти данные в embed'е
+
 ### События discord.js
 
 ```js
