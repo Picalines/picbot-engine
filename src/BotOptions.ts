@@ -32,6 +32,7 @@ export type BotOptions = {
             help: boolean;
             ban: boolean;
             kick: boolean;
+            prefix: boolean;
         };
     };
 };
@@ -59,6 +60,7 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
                 help: optionsArg.commands?.builtIn?.help ?? true,
                 ban: optionsArg.commands?.builtIn?.ban ?? true,
                 kick: optionsArg.commands?.builtIn?.kick ?? true,
+                prefix: optionsArg.commands?.builtIn?.prefix ?? true,
             },
         },
     };
