@@ -7,6 +7,7 @@ type DefaultArgumentReadersMap = {
     role: Arguments.ArgumentReader<Role>,
     textChannel: Arguments.ArgumentReader<TextChannel>,
     remainingText: Arguments.ArgumentReader<string>,
+    word: Arguments.ArgumentReader<string>,
 }
 
 export type ArgumentReaderData = {
@@ -27,6 +28,7 @@ export class ArgumentReaderStorage implements Iterable<ArgumentReaderData> {
         role: Arguments.ReadRole,
         textChannel: Arguments.ReadTextChannel,
         remainingText: Arguments.ReadRemainingText,
+        word: Arguments.ReadWord,
     };
 
     /**
