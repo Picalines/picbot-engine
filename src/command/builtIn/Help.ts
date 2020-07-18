@@ -38,6 +38,10 @@ function makeCommandInfo(embed: MessageEmbed, command: Command) {
 
     embed.addField('Описание', command.description || '*Отсутствует*');
 
+    if (command.syntax) {
+        embed.addField('Синтаксис', `\`${command.syntax}\``);
+    }
+
     if (command.examples) {
         embed.addField('Примеры использования', command.examples.map(e => '- ' + e).join('\n'));
     }
@@ -52,15 +56,16 @@ export default {
 
     description: 'Помощь по командам бота',
     group: 'Информация',
+
+    syntax: '<word:commandName=_>',
     examples: [
         '`!help` даст список команд',
         '`!help test` даст информацию о команде `test`'
     ],
 
-    execute: ({ message, read: { remainingText }, isEOL, bot: { commands } }) => {
+    execute: ({ message, bot: { commands }, args: { commandName } }) => {
         const embed = new MessageEmbed().setColor(0x45ff83);
 
-        const commandName = isEOL() ? '' : remainingText();
         if (!commandName) {
             makeCommandsList(embed, message.member, commands);
         }

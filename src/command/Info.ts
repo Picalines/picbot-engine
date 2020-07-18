@@ -2,6 +2,12 @@ import { ReadOnlyNonEmptyArray, PromiseVoid } from "../utils";
 import { PermissionString } from "discord.js";
 import { CommandContext } from "./Context";
 
+export type CommandArgumentData = {
+    name: string;
+    type: string;
+    readDefault?: (context: CommandContext) => any;
+};
+
 /**
  * Информация о команде
  */
@@ -28,8 +34,17 @@ export interface CommandInfo {
     
     /**
      * Синтаксис
+     * Пример: !ban `<member:target> <remainingText:reason=спам>`
      */
     readonly syntax?: string;
+
+    /**
+     * Аргументы команды.
+     * Если это свойство указано, то в [[Command.execute]] из контекста будет доступно
+     * свойство [[CommandContext.args]].
+     * Это свойство заполняется автоматически, если указано свойство [[CommandInfo.syntax]]
+     */
+    readonly arguments?: CommandArgumentData[];
 
     /**
      * Примеры использования

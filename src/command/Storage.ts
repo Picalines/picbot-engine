@@ -1,4 +1,6 @@
-import { Command, CommandExecuteable } from "./Info";
+import { Command, CommandExecuteable, CommandArgumentData } from "./Info";
+import { ArgumentReaderStorage } from "./argument/Storage";
+import { CommandContext } from "./Context";
 
 /**
  * Хранилище команд
@@ -6,6 +8,12 @@ import { Command, CommandExecuteable } from "./Info";
 export class CommandStorage implements Iterable<Command> {
     readonly #commands = new Map<string, Command>();
     #size = 0;
+
+    #argumentReaders: ArgumentReaderStorage;
+
+    constructor(argumentReaders: ArgumentReaderStorage) {
+        this.#argumentReaders = argumentReaders;
+    }
 
     /**
      * Добавляет новую команду в память бота
@@ -24,7 +32,16 @@ export class CommandStorage implements Iterable<Command> {
             command = { name, execute: data };
         }
         else {
-            command = { name, ...data };
+            if (data.syntax && !data.arguments) {
+                command = {
+                    name,
+                    ...data,
+                    arguments: this.buildCommandSyntax(name, this.#argumentReaders, data.syntax),
+                };
+            }
+            else {
+                command = { name, ...data };
+            }
         }
 
         this.#commands.set(name, command);
@@ -69,5 +86,54 @@ export class CommandStorage implements Iterable<Command> {
 
     public [Symbol.iterator]() {
         return new Set(this.#commands.values()).values();
+    }
+
+    private buildCommandSyntax(commandName: string, argReaders: ArgumentReaderStorage, syntax: string): CommandArgumentData[] {
+        if (!CommandContext.commandSyntaxRegex.test(syntax)) {
+            throw new Error(`invalid '${commandName}' command syntax: ${syntax}`);
+        }
+
+        const argMatches = syntax.matchAll(CommandContext.syntaxArgumentRegex);
+        const argDatas: CommandArgumentData[] = [];
+
+        for (const argMatch of argMatches) {
+            if (!argMatch.groups) continue;
+
+            const { type, name } = argMatch.groups;
+            if (argDatas.find(d => d.name == name)) {
+                throw new Error(`'${commandName}' command argument name '${name}' already used`);
+            }
+
+            const reader = argReaders.readers[type];
+            if (!reader) {
+                throw new Error(`unknown argument type '${type}' ('${commandName}' command syntax)`);
+            }
+
+            let readDefault: CommandArgumentData['readDefault'] = undefined;
+            if (argMatch.groups.default !== undefined) {
+                if (argMatch.groups.default == '_') {
+                    readDefault = () => undefined;
+                }
+                else {
+                    const defaultInput = argMatch.groups.default;
+                    readDefault = ({ message }) => {
+                        const result = reader(defaultInput, message);
+                        if (result.isError) {
+                            const error = typeof result.error == 'string' ? result.error : result.error.message;
+                            throw new Error(`invalid default argument value '${defaultInput}' (${error})`);
+                        }
+                        return result.value.parsedValue;
+                    }
+                }
+            }
+
+            argDatas.push({
+                name,
+                type,
+                readDefault,
+            });
+        }
+
+        return argDatas;
     }
 }

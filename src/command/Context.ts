@@ -1,8 +1,9 @@
-import { ArgumentReader, ReadSpace } from './argument/Readers';
-import { ArgumentReaderStorage } from './argument/Storage';
-import { GuildMessage } from '../utils';
-import { GuildMember } from 'discord.js';
-import { Bot } from '../Bot';
+import { ArgumentReader, ReadSpace, ArgumentReaderError, ArgumentInfo } from "./argument/Readers";
+import { ArgumentReaderStorage } from "./argument/Storage";
+import { GuildMessage, Failable } from "../utils";
+import { GuildMember } from "discord.js";
+import { CommandInfo } from "./Info";
+import { Bot } from "../Bot";
 
 /**
  * Контекст запущенной команды
@@ -22,8 +23,23 @@ export class CommandContext {
      */
     public readonly read: {
         [ArgType in keyof ArgumentReaderStorage['readers']]: () =>
-        ArgumentReaderStorage['readers'][ArgType] extends ArgumentReader<infer T> ? T : never
+            ArgumentReaderStorage['readers'][ArgType] extends ArgumentReader<infer T> ? T : never
     };
+
+    /**
+     * Регулярное выражение аргумента в синтаксисе команды
+     */
+    public static readonly syntaxArgumentRegex = /<(?<type>\w+):(?<name>\w+)(?:=(?<default>.*))?>/g;
+
+    /**
+     * Регулярное выражение синтаксиса команды (используется для валидации)
+     */
+    public static readonly commandSyntaxRegex = /(<\w+:\w+(?:=.*)?>\s*)+/;
+
+    /**
+     * Объект аргументов команды (содержит данные, если у команды прописан синтаксис. Иначе undefined)
+     */
+    public readonly args: any;
 
     /**
      * Возвращает true, если в сообщении больше нет аргументов
@@ -31,11 +47,13 @@ export class CommandContext {
     public readonly isEOL: () => boolean;
 
     /**
+     * @param command команда
      * @param bot ссылка на бота
      * @param message сообщение с командой
      * @param executor участник сервера, запустивший команду
      */
     constructor(
+        command: CommandInfo,
         public readonly bot: Bot,
         public readonly message: GuildMessage,
         executor?: GuildMember
@@ -46,28 +64,44 @@ export class CommandContext {
         this.isEOL = () => !this.#userInput;
 
         this.read = {} as any;
-        for (const [type, reader] of Object.entries(bot.commandArguments.readers)) {
+        const { readers } = bot.commandArguments;
+        for (const [type, reader] of Object.entries(readers)) {
             Object.defineProperty(this.read, type, {
-                get: () => () => this.readArgument(reader, type)
+                get: () => () => this.readUserInput(reader, type)
             });
+        }
+
+        this.args = undefined;
+        if (command.arguments !== undefined) {
+            this.args = {};
+            for (const argData of command.arguments) {
+                try {
+                    this.args[argData.name] = this.readUserInput(readers[argData.type], argData.type);
+                }
+                catch (err) {
+                    if (!(err instanceof Error)) throw err;
+                    if (!this.isEOL()) throw err;
+                    if (!argData.readDefault) throw err;
+                    try {
+                        this.args[argData.name] = argData.readDefault(this);
+                    }
+                    catch (defaultErr) {
+                        if (!(defaultErr instanceof Error)) throw defaultErr;
+                        throw new Error(`error in default argument '${argData.name}' value: ${defaultErr.message}`);
+                    }
+                }
+            }
         }
     }
 
-    private readArgument<T>(reader: ArgumentReader<T>, typeName: string): T {
+    private readUserInput<T>(reader: ArgumentReader<T>, typeName: string): T {
         if (this.isEOL()) {
             throw new Error(`argument of type '${typeName}' expected, but got end of command`);
         }
 
         let readerResult = reader(this.#userInput, this.message);
         if (readerResult.isError) {
-            let errorMessage = `argument of type '${typeName}' expected`;
-
-            const gotWord = this.#userInput.match(/^\S+/);
-            if (gotWord && gotWord[0]) {
-                errorMessage += `, but got '${gotWord[0]}'`;
-            }
-
-            throw new Error(errorMessage);
+            throw new Error(`argument of type '${typeName}' expected (${readerResult.error})`);
         }
 
         const { length: argumentLength, parsedValue } = readerResult.value;
@@ -79,18 +113,5 @@ export class CommandContext {
         }
 
         return parsedValue as T;
-    }
-    
-    private readSyntax(syntax: string): any {
-        const argDefs = syntax.replace(/\s{2,}/, ' ').split(' ');
-        
-        type ArgData = { name: string; reader: ArgumentReader<T> };
-        const args: ArgData[] = [];
-        
-        const dataRegex = /(?<type>\w+):(?<name>\w+)/;
-        const typeRegex = /(<(?<data>.+)>)|(\[(?<data>.+)\])/;
-        for (const def of argDefs) {
-            // TODO
-        }
     }
 }
