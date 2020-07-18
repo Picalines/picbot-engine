@@ -1,11 +1,14 @@
 import { CommandExecuteable, Command } from '../command/Info';
 import { CommandStorage } from '../command/Storage';
 import { NonEmptyArray } from '../utils';
+import { ArgumentReaderStorage } from '../command/argument/Storage';
 
 const emptyCommand: CommandExecuteable = () => {};
 
+const argumentReaders = new ArgumentReaderStorage();
+
 describe('name tests', () => {
-    const commands = new CommandStorage();
+    const commands = new CommandStorage(argumentReaders);
 
     test('space', () => {
         const name = 'test b';
@@ -23,7 +26,7 @@ describe('name tests', () => {
 });
 
 describe('get by name test', () => {
-    const commands = new CommandStorage();
+    const commands = new CommandStorage(argumentReaders);
 
     const aliases: NonEmptyArray<string> = ['main2', 'second', 'wow', 'test'];
 
@@ -77,7 +80,7 @@ describe('get by name test', () => {
 });
 
 describe('commands list tests', () => {
-    const commands = new CommandStorage();
+    const commands = new CommandStorage(argumentReaders);
 
     test('empty', () => {
         let commandsList = commands.list;

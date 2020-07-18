@@ -40,6 +40,7 @@ bot.loginFromFile('./token.txt');
 
 #### Сложение двух чисел
 
+Ручное чтение аргументов:
 ```js
 bot.commands.register('sum', ({ message, read: { number } }) => {
     const [a, b] = [number(), number()];
@@ -47,25 +48,31 @@ bot.commands.register('sum', ({ message, read: { number } }) => {
 });
 ```
 
+Чтение аргументов через `синтаксис`:
+```js
+bot.commands.register('sum', {
+    syntax: '<number:first> <number:second>',
+    execute: ({ message, args: { first, second } }) => {
+        message.reply(first + second);
+    },
+});
+```
+
 #### Ban
 
 ```js
-bot.commands.register('ban', async ({ message, read: { member, remainingText }, isEOL }) => {
-    const target = member();
-    if (message.member.id == target.id) {
-        throw new Error('Нельзя забанить самого себя!');
-    }
-    if (!target.bannable) {
-        throw new Error('Я не могу забанить этого участника сервера :/');
-    }
-
-    let reason = 'Злобные админы :/';
-    if (!isEOL()) { // есть ли ещё аргументы в сообщении
-        reason = remainingText();
-    }
-
-    await target.ban({ reason });
-    await message.reply(`**${target.displayName}** успешно сослан в Сибирь`);
+bot.commands.register('ban', {
+    syntax: '<member:target> <remainingText:reason=Злобные админы :/>',
+    execute: async ({ message, executor, args: { target, reason } }) => {
+        if (executor.id == target.id) {
+            throw new Error('Нельзя забанить самого себя!');
+        }
+        if (!target.bannable) {
+            throw new Error('Я не могу забанить этого участника сервера :/');
+        }
+        await target.ban({ reason });
+        await message.reply(`**${target.displayName}** успешно сослан в Сибирь`);
+    },
 });
 ```
 
@@ -80,6 +87,8 @@ bot.commands.register('ban', {
 
     description: 'Банит участника сервера',
     group: 'Администрирование',
+
+    syntax: '<member:target> <remainingText:reason>',
     examples: [
         '`ban @Test` забанит участника @Test',
         '`ban @Test спам` забанит @Test по причине "спам"',
@@ -108,7 +117,7 @@ bot.client.on('событие discord.js', () => {
 * `role` - упоминание роли на сервере
 * `textChannel` - упоминание текстового канала
 * `remainingText` - оставшийся текст команды
-* `word` - слово (последовательность символов без пробел)
+* `word` - слово (последовательность символов до пробела)
 
 ### Встроенные команды
 
