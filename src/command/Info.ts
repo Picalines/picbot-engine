@@ -25,6 +25,11 @@ export interface CommandInfo {
      * Описание
      */
     readonly description?: string;
+    
+    /**
+     * Синтаксис
+     */
+    readonly syntax?: string;
 
     /**
      * Примеры использования
@@ -45,4 +50,6 @@ export type CommandExecuteable = (context: CommandContext) => PromiseVoid;
 /**
  * Функция запуска команды вместе с её информацией
  */
-export type Command = CommandInfo & { execute: CommandExecuteable };
+export interface Command extends CommandInfo {
+    execute: CommandExecuteable;
+}

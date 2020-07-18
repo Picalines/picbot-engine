@@ -80,4 +80,17 @@ export class CommandContext {
 
         return parsedValue as T;
     }
+    
+    private readSyntax(syntax: string): any {
+        const argDefs = syntax.replace(/\s{2,}/, ' ').split(' ');
+        
+        type ArgData = { name: string; reader: ArgumentReader<T> };
+        const args: ArgData[] = [];
+        
+        const dataRegex = /(?<type>\w+):(?<name>\w+)/;
+        const typeRegex = /(<(?<data>.+)>)|(\[(?<data>.+)\])/;
+        for (const def of argDefs) {
+            // TODO
+        }
+    }
 }
