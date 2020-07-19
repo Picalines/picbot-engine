@@ -11,6 +11,9 @@
         "skipLibCheck": true,
         "declaration": true,
         "declarationDir": "types",
+        "lib": [
+            "es2020.string",
+        ],
     },
     "include": [
         "src",

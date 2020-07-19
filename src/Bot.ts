@@ -31,7 +31,7 @@ export class Bot {
     /**
      * Хранилище команд бота
      */
-    public readonly commands = new CommandStorage();
+    public readonly commands: CommandStorage;
 
     /**
      * Префиксы бота
@@ -45,6 +45,8 @@ export class Bot {
         this.client = new Client(options.clientOptions);
 
         this.options = ParseBotOptionsArgument(options);
+
+        this.commands = new CommandStorage(this.commandArguments);
 
         this.prefixes = new BotPrefixes(this);
 
@@ -101,7 +103,7 @@ export class Bot {
                 throw new Error(`Not enough permissions: ${missingPermissions.join(', ')}`);
             }
 
-            const context = new CommandContext(this, message as GuildMessage, executor);
+            const context = new CommandContext(command, this, message as GuildMessage, executor);
             await command.execute(context);
         });
     }
