@@ -25,7 +25,7 @@ export declare interface BotDatabase {
 /**
  * Класс базы данных бота
  */
-export class BotDatabase extends EventEmitter implements Iterable<GuildData> {
+export class BotDatabase extends EventEmitter {
     #guilds = new Map<GuildID, GuildData>();
 
     constructor(
@@ -44,8 +44,16 @@ export class BotDatabase extends EventEmitter implements Iterable<GuildData> {
     }
 
     /**
+     * Генератор, возвращающий все сервера в базе данных
+     */
+    get guilds(): IterableIterator<GuildData> {
+        return this.#guilds.values();
+    }
+
+    /**
      * Добавляет в базу данных бота новый сервер
      * @param guild сервер
+     * @event guildCreate
      */
     public createGuildData(guild: Guild): GuildData | undefined {
         if (this.#guilds.has(guild.id)) {
@@ -61,6 +69,7 @@ export class BotDatabase extends EventEmitter implements Iterable<GuildData> {
      * Возвращает данные сервера из базы данных.
      * Использует [[BotDatabase.createGuildData]], если сервера нет в базе.
      * @param guild сервер
+     * @event guildCreate (если сервера не было в базе данных)
      */
     public getGuildData(guild: Guild): GuildData {
         return this.#guilds.get(guild.id) ?? (this.createGuildData(guild) as GuildData);
@@ -69,6 +78,7 @@ export class BotDatabase extends EventEmitter implements Iterable<GuildData> {
     /**
      * Ссылка на функцию [[GuildData.getMemberData]]
      * @param member участник сервера
+     * @event guildCreate (если сервера не было в базе данных)
      */
     public getMemberData(member: GuildMember): GuildMemberData {
         return this.getGuildData(member.guild).getMemberData(member);
@@ -78,6 +88,7 @@ export class BotDatabase extends EventEmitter implements Iterable<GuildData> {
      * Удаляет данные сервера из базы данных
      * @param guild сервер
      * @returns true, если сервер был в базе данных до удаления
+     * @event guildDelete (если сервер был в базе данных)
      */
     public deleteGuildData(guild: Guild): boolean {
         const guildDb = this.#guilds.get(guild.id);
@@ -92,7 +103,7 @@ export class BotDatabase extends EventEmitter implements Iterable<GuildData> {
     }
 
     /**
-     * Вызывает событие `loadGuild` для каждого сервера бота
+     * @event loadGuild для каждого сервера бота
      */
     public load(): void {
         this.emit('beforeLoad');
@@ -105,7 +116,7 @@ export class BotDatabase extends EventEmitter implements Iterable<GuildData> {
     }
 
     /**
-     * Вызывает событие `saveGuild` для каждого сервера бота
+     * @event saveGuild для каждого сервера бота
      */
     public save(): void {
         this.emit('beforeSave');
@@ -113,9 +124,5 @@ export class BotDatabase extends EventEmitter implements Iterable<GuildData> {
             this.emit('saveGuild', guildData);
         });
         this.emit('saved');
-    }
-
-    public [Symbol.iterator]() {
-        return this.#guilds.values();
     }
 }

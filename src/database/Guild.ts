@@ -10,23 +10,42 @@ import { Bot } from "../Bot";
 export class GuildData {
     #members = new Map<string, GuildMemberData>();
 
+    /**
+     * Префиксы бота на сервере
+     */
     public readonly prefixes: PrefixStorage;
 
     constructor(
+        /**
+         * Ссылка на базу данных
+         */
         public readonly database: BotDatabase,
+        /**
+         * Сервер
+         */
         public readonly guild: Guild,
     ) {
         this.prefixes = new PrefixStorage(database.defaultGuildPrefixes);
     }
 
+    /**
+     * Ссылка на бота
+     */
     get bot(): Bot {
         return this.database.bot;
     }
 
+    /**
+     * Генератор, возвращающий всех участников сервера, которые есть в базе данных
+     */
     get members(): IterableIterator<GuildMemberData> {
         return this.#members.values();
     }
 
+    /**
+     * @returns данные учатсника сервера
+     * @param memberResolveable участник сервера (его id / user)
+     */
     getMemberData(memberResolveable: UserResolvable): GuildMemberData {
         const member = this.guild.member(memberResolveable);
         if (!member) {
@@ -43,6 +62,11 @@ export class GuildData {
         return memberData;
     }
 
+    /**
+     * Удаляет данные участника сервера из базы данных
+     * @param memberResolveable участник сервера (его id / user)
+     * @returns true, если данные успешно удалены
+     */
     deleteMemberData(memberResolveable: UserResolvable): boolean {
         const member = this.guild.member(memberResolveable);
         if (!member) {
