@@ -5,8 +5,7 @@ import { GuildMessage, PromiseVoid } from "./utils";
 import { CommandStorage } from "./command/Storage";
 import { CommandContext } from "./command/Context";
 import { readFileSync, PathLike } from "fs";
-import { BotPrefixes } from "./BotPrefixes";
-
+import { BotDatabase } from "./database/Bot";
 import BuiltInCommands from "./command/builtIn/index";
 
 /**
@@ -34,9 +33,9 @@ export class Bot {
     public readonly commands: CommandStorage;
 
     /**
-     * Префиксы бота
+     * База данных бота
      */
-    public readonly prefixes: BotPrefixes;
+    public readonly database: BotDatabase;
 
     /**
      * @param options настройки клиента API discord.js
@@ -48,8 +47,6 @@ export class Bot {
 
         this.commands = new CommandStorage(this.commandArguments);
 
-        this.prefixes = new BotPrefixes(this);
-
         for (const [name, enabled] of Object.entries(this.options.commands.builtIn)) {
             if (enabled) {
                 type BuiltInCommandKey = keyof BotOptions['commands']['builtIn'];
@@ -59,6 +56,8 @@ export class Bot {
                 );
             }
         }
+
+        this.database = new BotDatabase(this, this.options.guild.defaultPrefixes);
 
         this.client.on('ready', () => {
             console.log("logged in as " + String(this.client.user?.username));
@@ -80,7 +79,17 @@ export class Bot {
      * @param message сообщение пользователя
      */
     public async handleCommands(message: GuildMessage): Promise<void> {
-        const prefixLength = this.prefixes.getMessagePrefixLength(message);
+        const { prefixes } = this.database.getGuildData(message.guild);
+
+        const lowerContent = message.content.toLowerCase();
+        let prefixLength = 0;
+        for (const prefix of prefixes) {
+            if (lowerContent.startsWith(prefix)) {
+                prefixLength = prefix.length;
+                break;
+            }
+        }
+
         if (!prefixLength) {
             return;
         }

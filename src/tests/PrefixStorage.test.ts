@@ -57,7 +57,7 @@ describe('edit', () => {
     });
 
     test('set', () => {
-        prefixes.set('!');
+        prefixes.list = ['!'];
         expect(prefixes.size).toBe(1);
         expect(prefixes.list).toEqual(['!']);
     });

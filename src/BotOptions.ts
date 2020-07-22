@@ -1,5 +1,5 @@
 import { ClientOptions } from "discord.js";
-import { DeepPartial } from "./utils";
+import { DeepPartial, ReadOnlyNonEmptyArray } from "./utils";
 
 /**
  * Объект с настройками бота
@@ -35,6 +35,16 @@ export type BotOptions = {
             prefix: boolean;
         };
     };
+    /**
+     * Настройки серверов
+     */
+    guild: {
+        /**
+         * Стандартные префиксы бота
+         * @default ['!']
+         */
+        defaultPrefixes: ReadOnlyNonEmptyArray<string>;
+    };
 };
 
 /**
@@ -46,7 +56,7 @@ export type BotOptionsArgument = DeepPartial<BotOptions> & {
 };
 
 /**
- * Вспомогательная функция для перевода {@link BotOptionsArgument} в {@link BotOptions}
+ * Вспомогательная функция для перевода [[BotOptionsArgument]] в [[BotOptions]]
  * @ignore
  */
 export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOptions {
@@ -62,6 +72,9 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
                 kick: optionsArg.commands?.builtIn?.kick ?? true,
                 prefix: optionsArg.commands?.builtIn?.prefix ?? true,
             },
+        },
+        guild: {
+            defaultPrefixes: (optionsArg.guild?.defaultPrefixes as ReadOnlyNonEmptyArray<string> | undefined) ?? ['!'],
         },
     };
 }

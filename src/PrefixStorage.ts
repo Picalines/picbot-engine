@@ -1,32 +1,20 @@
-import { ReadOnlyNonEmptyArray, NonEmptyArray } from "./utils";
-
 /**
  * Хранилище префиксов команд
  */
 export class PrefixStorage implements Iterable<string> {
-    #prefixes: Set<string>;
+    #prefixes = new Set<string>();
 
     /**
      * @param initialPrefixes изначальные префиксы в хранилище
      */
-    constructor(initialPrefixes: ReadOnlyNonEmptyArray<string> | PrefixStorage) {
-        this.#prefixes = new Set();
+    constructor(initialPrefixes: Readonly<string[]> | PrefixStorage) {
         if (initialPrefixes instanceof PrefixStorage) {
             initialPrefixes = initialPrefixes.list;
         }
         initialPrefixes.forEach(prefix => this.add(prefix));
-    }
-
-    /**
-     * Свойство, возвращающее список префиксов в хранилище.
-     * Список доступен только для чтения
-     */
-    get list(): ReadOnlyNonEmptyArray<string> {
-        return [...this.#prefixes] as any;
-    }
-
-    public [Symbol.iterator](): IterableIterator<string> {
-        return this.#prefixes.values();
+        if (!this.size) {
+            throw new Error('prefix storage can not be empty');
+        }
     }
 
     /**
@@ -34,6 +22,30 @@ export class PrefixStorage implements Iterable<string> {
      */
     get size(): number {
         return this.#prefixes.size;
+    }
+
+    /**
+     * Свойство, возвращающее список префиксов в хранилище.
+     * Список доступен только для чтения
+     */
+    get list(): string[] {
+        return [...this.#prefixes];
+    }
+
+    /**
+     * Ставит список префиксов в хранилище
+     * @param prefixes
+     */
+    set list(prefixes: string[]) {
+        prefixes = prefixes.filter(p => p.length && !p.includes(' ')).map(p => p.toLowerCase());
+        this.#prefixes = new Set(prefixes);
+        if (!this.size) {
+            throw new Error('prefix storage can not be empty');
+        }
+    }
+
+    public [Symbol.iterator](): IterableIterator<string> {
+        return this.#prefixes.values();
     }
 
     /**
@@ -66,22 +78,6 @@ export class PrefixStorage implements Iterable<string> {
      */
     has(prefix: string): boolean {
         return this.#prefixes.has(prefix.toLowerCase());
-    }
-
-    /**
-     * Ставит список префиксов в хранилище
-     * @param prefixes
-     */
-    set(...prefixes: NonEmptyArray<string>) {
-        const old = new Set(this.#prefixes);
-        this.#prefixes.clear();
-        try {
-            prefixes.forEach(prefix => this.add(prefix));
-        }
-        catch (err) {
-            this.#prefixes = old;
-            throw err;
-        }
     }
 
     public toString(): string {
