@@ -45,6 +45,16 @@ export type BotOptions = {
          */
         defaultPrefixes: ReadOnlyNonEmptyArray<string>;
     };
+    /**
+     * Настройки базы данных
+     */
+    database: {
+        /**
+         * Запретить ли хранить данные по ботам на сервере
+         * @default true
+         */
+        ignoreBots: boolean;
+    };
 };
 
 /**
@@ -75,6 +85,9 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
         },
         guild: {
             defaultPrefixes: (optionsArg.guild?.defaultPrefixes as ReadOnlyNonEmptyArray<string> | undefined) ?? ['!'],
+        },
+        database: {
+            ignoreBots: optionsArg.database?.ignoreBots ?? true,
         },
     };
 }

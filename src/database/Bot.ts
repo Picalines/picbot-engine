@@ -2,6 +2,7 @@ import { Guild, GuildMember } from "discord.js";
 import { EventEmitter } from "events";
 import { GuildData } from "./Guild";
 import { Bot } from "../Bot";
+import { GuildMemberData } from "./Member";
 
 export type GuildID = Guild['id'];
 export type MemberID = GuildMember['id'];
@@ -63,6 +64,14 @@ export class BotDatabase extends EventEmitter implements Iterable<GuildData> {
      */
     public getGuildData(guild: Guild): GuildData {
         return this.#guilds.get(guild.id) ?? (this.createGuildData(guild) as GuildData);
+    }
+
+    /**
+     * Ссылка на функцию [[GuildData.getMemberData]]
+     * @param member участник сервера
+     */
+    public getMemberData(member: GuildMember): GuildMemberData {
+        return this.getGuildData(member.guild).getMemberData(member);
     }
 
     /**

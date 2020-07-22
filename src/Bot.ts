@@ -1,17 +1,29 @@
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { Client, Message, MessageEmbed, PermissionString } from "discord.js";
 import { ArgumentReaderStorage } from "./command/argument/Storage";
-import { GuildMessage, PromiseVoid } from "./utils";
+import { GuildMessage, PromiseVoid, GuildBotMessage } from "./utils";
 import { CommandStorage } from "./command/Storage";
 import { CommandContext } from "./command/Context";
 import { readFileSync, PathLike } from "fs";
 import { BotDatabase } from "./database/Bot";
 import BuiltInCommands from "./command/builtIn/index";
+import { EventEmitter } from "events";
+
+export declare interface Bot {
+    on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
+    on(event: 'memberPlainMessage', listener: (message: GuildMessage) => void): this;
+    on(event: 'memberCommandMessage', listener: (message: GuildMessage) => void): this;
+
+    on(event: 'botMessage', listener: (message: GuildBotMessage) => void): this;
+    on(event: 'myMessage', listener: (message: GuildBotMessage) => void): this;
+
+    on(event: string, listener: Function): this;
+}
 
 /**
  * Обёртка клиента API из discord.js
  */
-export class Bot {
+export class Bot extends EventEmitter {
     /**
      * Клиент API discord.js
      */
@@ -41,6 +53,8 @@ export class Bot {
      * @param options настройки клиента API discord.js
      */
     constructor(options: BotOptionsArgument = {}) {
+        super();
+
         this.client = new Client(options.clientOptions);
 
         this.options = ParseBotOptionsArgument(options);
@@ -67,18 +81,31 @@ export class Bot {
             if (!(message.guild && message.channel.type == 'text')) return;
 
             const guildMessage = message as GuildMessage;
-            if (guildMessage.member.id == guildMessage.guild.me.id) return;
-            if (this.options.ignoreBots && guildMessage.author.bot) return;
 
-            this.handleCommands(guildMessage);
+            if (guildMessage.member.id == guildMessage.guild.me.id) {
+                this.emit('myMessage', message);
+                return;
+            }
+
+            if (guildMessage.author.bot) {
+                this.emit('botMessage', message);
+                if (this.options.ignoreBots) return;
+            }
+
+            this.handleCommands(guildMessage).then(wasCommand => {
+                this.emit('memberMessage', message);
+                if (wasCommand) this.emit('memberCommandMessage', message);
+                else this.emit('memberPlainMessage', message);
+            });
         });
     }
 
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
      * @param message сообщение пользователя
+     * @returns true, если была запущена команда
      */
-    public async handleCommands(message: GuildMessage): Promise<void> {
+    public async handleCommands(message: GuildMessage): Promise<boolean> {
         const { prefixes } = this.database.getGuildData(message.guild);
 
         const lowerContent = message.content.toLowerCase();
@@ -91,13 +118,13 @@ export class Bot {
         }
 
         if (!prefixLength) {
-            return;
+            return false;
         }
 
         const content = message.content.slice(prefixLength);
         const commandName = content.replace(/\s.*$/, '');
         if (!commandName) {
-            return;
+            return false;
         }
 
         const executor = message.member;
@@ -115,6 +142,8 @@ export class Bot {
             const context = new CommandContext(command, this, message as GuildMessage, executor);
             await command.execute(context);
         });
+
+        return true;
     }
 
     /**
