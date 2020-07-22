@@ -29,7 +29,7 @@ export class CommandContext {
     /**
      * Регулярное выражение аргумента в синтаксисе команды
      */
-    public static readonly syntaxArgumentRegex = /<(?<type>\w+):(?<name>\w+)(?:=(?<default>.*))?>/g;
+    public static readonly syntaxArgumentRegex = /<(?<type>\w+):(?<name>\w+)(?:=(?<default>.*?))?>/g;
 
     /**
      * Регулярное выражение синтаксиса команды (используется для валидации)
