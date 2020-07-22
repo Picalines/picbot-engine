@@ -1,4 +1,4 @@
-import { GuildMessage, Failable } from "../../utils";
+import { Failable, GuildMessage } from "../../utils";
 
 /**
  * Информация прочитанного аргумента

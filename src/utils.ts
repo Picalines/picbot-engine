@@ -1,4 +1,4 @@
-import { Message, Guild, TextChannel, GuildMember } from "discord.js";
+import { Guild, GuildMember, Message, TextChannel } from "discord.js";
 
 /**
  * Сообщение в текстовом канале на сервере

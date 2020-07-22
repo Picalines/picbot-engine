@@ -1,6 +1,6 @@
-import { Command, CommandExecuteable, CommandArgumentData } from "./Info";
 import { ArgumentReaderStorage } from "./argument/Storage";
 import { CommandContext } from "./Context";
+import { Command, CommandArgumentData, CommandExecuteable } from "./Info";
 
 /**
  * Хранилище команд

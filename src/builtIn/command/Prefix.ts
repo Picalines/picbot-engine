@@ -1,4 +1,4 @@
-import { Command } from "../Info";
+import { Command } from "../../command/Info";
 
 export default {
     name: 'prefix',

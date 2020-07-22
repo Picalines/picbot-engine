@@ -1,8 +1,8 @@
 import { Guild, UserResolvable } from "discord.js";
-import { PrefixStorage } from "../PrefixStorage";
-import { GuildMemberData } from "./Member";
-import { BotDatabase } from "./Bot";
 import { Bot } from "../Bot";
+import { PrefixStorage } from "../PrefixStorage";
+import { BotDatabase } from "./Bot";
+import { GuildMemberData } from "./Member";
 
 /**
  * Класс базы данных сервера

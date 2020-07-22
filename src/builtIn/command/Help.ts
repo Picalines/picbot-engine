@@ -1,6 +1,6 @@
-import { MessageEmbed, GuildMember } from "discord.js";
-import { CommandStorage } from "../Storage";
-import { Command } from "../Info";
+import { GuildMember, MessageEmbed } from "discord.js";
+import { Command } from "../../command/Info";
+import { CommandStorage } from "../../command/Storage";
 
 const formatList = (list: string[]) => list.map(el => `\`${el}\``).join(', ');
 

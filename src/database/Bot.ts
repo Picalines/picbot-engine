@@ -1,7 +1,7 @@
 import { Guild, GuildMember } from "discord.js";
 import { EventEmitter } from "events";
-import { GuildData } from "./Guild";
 import { Bot } from "../Bot";
+import { GuildData } from "./Guild";
 import { GuildMemberData } from "./Member";
 
 export type GuildID = Guild['id'];

@@ -1,13 +1,13 @@
-import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { Client, Message, MessageEmbed, PermissionString } from "discord.js";
-import { ArgumentReaderStorage } from "./command/argument/Storage";
-import { GuildMessage, PromiseVoid, GuildBotMessage } from "./utils";
-import { CommandStorage } from "./command/Storage";
-import { CommandContext } from "./command/Context";
-import { readFileSync, PathLike } from "fs";
-import { BotDatabase } from "./database/Bot";
-import BuiltInCommands from "./command/builtIn/index";
 import { EventEmitter } from "events";
+import { PathLike, readFileSync } from "fs";
+import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
+import * as BuiltInCommands from "./builtIn/command";
+import { ArgumentReaderStorage } from "./command/argument/Storage";
+import { CommandContext } from "./command/Context";
+import { CommandStorage } from "./command/Storage";
+import { BotDatabase } from "./database/Bot";
+import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
 
 export declare interface Bot {
     on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
@@ -61,13 +61,10 @@ export class Bot extends EventEmitter {
 
         this.commands = new CommandStorage(this.commandArguments);
 
-        for (const [name, enabled] of Object.entries(this.options.commands.builtIn)) {
-            if (enabled) {
-                type BuiltInCommandKey = keyof BotOptions['commands']['builtIn'];
-                this.commands.register(
-                    BuiltInCommands[name as BuiltInCommandKey].name,
-                    BuiltInCommands[name as BuiltInCommandKey]
-                );
+        const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
+        for (const builtInCommand of Object.values(BuiltInCommands)) {
+            if (builtInCommandsSetting[builtInCommand.name]) {
+                this.commands.register(builtInCommand.name, builtInCommand);
             }
         }
 
@@ -98,6 +95,13 @@ export class Bot extends EventEmitter {
                 else this.emit('memberPlainMessage', message);
             });
         });
+    }
+
+    /**
+     * @returns юзернейм бота. Если [[Client.user]] равно `undefined`, вернёт `"bot"`
+     */
+    public get username(): string {
+        return this.client.user?.username ?? 'bot';
     }
 
     /**
