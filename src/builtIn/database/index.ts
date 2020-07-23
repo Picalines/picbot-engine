@@ -1,1 +1,1 @@
-export { JsonDatabase, JsonDatabaseOptions } from "./Json";
+export { JsonDatabase, JsonDatabaseParams } from "./Json";

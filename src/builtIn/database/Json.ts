@@ -2,51 +2,73 @@
 
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "fs";
 import { join, resolve } from "path";
-import { BotDatabase } from "../../database/Bot";
 import { Guild } from "discord.js";
+import { GuildData } from "../../database/Guild";
+import {
+    BotDatabase,
+    DatabaseHandler,
+    DatabaseHandlerParams,
+    DatabaseEventName
+} from "../../database/Bot";
 
-export type JsonDatabaseOptions = {
-    dirPath: string;
-    guildsPath: string;
+export interface JsonDatabaseParams extends DatabaseHandlerParams {
+    readonly dirPath: string;
+    readonly guildsPath: string;
+    readonly jsonIndent?: number;
 }
 
-export function JsonDatabase(botDatabase: BotDatabase, options: JsonDatabaseOptions) {
-    const guildsPath = resolve(join('.', options.dirPath, options.guildsPath));
+export class JsonDatabase implements DatabaseHandler, JsonDatabaseParams {
+    public readonly database!: BotDatabase;
+    public readonly dirPath!: string;
+    public readonly guildsPath!: string;
+    public readonly jsonIndent?: number;
 
-    [['beforeLoad', 'loading'], ['beforeSave', 'saving']].forEach(([event, action]) => {
-        botDatabase.on(event, () => {
-            mkdirSync(guildsPath, { recursive: true });
-            console.log(`${action} ${botDatabase.bot.username}'s database (json)...`);
+    #guildsPath: string;
+
+    constructor(params: JsonDatabaseParams) {
+        Object.assign(this, params);
+
+        this.#guildsPath = resolve(join('.', this.dirPath, this.guildsPath));
+
+        [['beforeLoad', 'loading'], ['beforeSave', 'saving']].forEach(([event, action]) => {
+            this.database.on(event as DatabaseEventName, () => {
+                mkdirSync(this.#guildsPath, { recursive: true });
+                console.log(`${action} ${this.database.bot.username}'s database (json)...`);
+            });
         });
-    });
 
-    ['loaded', 'saved'].forEach(event => {
-        botDatabase.on(event, () => {
-            console.log(`${botDatabase.bot.username}'s database successfully ${event}`);
+        ['loaded', 'saved'].forEach(event => {
+            this.database.on(event as DatabaseEventName, () => {
+                console.log(`${this.database.bot.username}'s database successfully ${event} (json)`);
+            });
         });
-    });
+    }
 
-    const guildPath = (guild: Guild) => join(guildsPath, guild.id + '.json');
+    private getGuildPath(guild: Guild): string {
+        return join(this.#guildsPath, guild.id + '.json');
+    }
 
-    botDatabase.on('saveGuild', data => {
+    saveGuild(guildData: GuildData): void {
         const saveDataObject = {
-            prefixes: data.prefixes.list,
+            prefixes: guildData.prefixes.list,
             members: {} as Record<string, any>,
         };
-        for (const memberData of data.members) {
+        for (const memberData of guildData.members) {
             if (!memberData.map) continue;
             const entries = memberData.map.entries();
             saveDataObject.members[memberData.member.id] = Object.fromEntries(entries);
         }
-        writeFileSync(guildPath(data.guild), JSON.stringify(saveDataObject));
-    });
+        writeFileSync(this.getGuildPath(guildData.guild), JSON.stringify(saveDataObject));
 
-    botDatabase.on('loadGuild', guild => {
-        const path = guildPath(guild);
+        console.log(`* guild '${guildData.guild.name}' successfully saved`);
+    }
+
+    loadGuild(guild: Guild, newGuildData: () => GuildData): void {
+        const path = this.getGuildPath(guild);
         if (!existsSync(path)) return;
 
         const dataObject = JSON.parse(readFileSync(path).toString());
-        const guildData = botDatabase.getGuildData(guild);
+        const guildData = newGuildData();
 
         if (dataObject.prefixes instanceof Array) {
             guildData.prefixes.list = dataObject.prefixes;
@@ -59,5 +81,7 @@ export function JsonDatabase(botDatabase: BotDatabase, options: JsonDatabaseOpti
                 guildData.getMemberData(member).map = new Map(Object.entries(memberSavedMap));
             }
         }
-    });
+
+        console.log(`* guild '${guild.name}' successfully loaded`);
+    }
 }

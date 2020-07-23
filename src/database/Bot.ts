@@ -4,29 +4,40 @@ import { Bot } from "../Bot";
 import { GuildData } from "./Guild";
 import { GuildMemberData } from "./Member";
 
-export type GuildID = Guild['id'];
-export type MemberID = GuildMember['id'];
+export interface DatabaseHandlerParams {
+    readonly database: BotDatabase;
+}
+
+export interface DatabaseHandler {
+    guildCreate?(guildData: GuildData): void;
+    guildDelete?(guildData: GuildData): void;
+
+    beforeLoad?(): void;
+    loadGuild(guild: Guild, newGuildData: () => GuildData): void;
+    loaded?(): void;
+
+    beforeSave?(): void;
+    saveGuild(guildData: GuildData): void;
+    saved?(): void;
+}
+
+export type DatabaseEventName = keyof DatabaseHandler;
+export type DatabaseEventListener<Event extends DatabaseEventName> = Exclude<DatabaseHandler[Event], undefined>;
+export type DatabaseEventAnyListener = Exclude<DatabaseEventListener<DatabaseEventName>, undefined>;
+
+const EventNames: DatabaseEventName[] = [
+    "guildCreate", "guildDelete", "beforeLoad", "beforeSave", "loadGuild", "saveGuild", "loaded", "saved",
+];
 
 export declare interface BotDatabase {
-    on(event: 'guildCreate', listener: (data: GuildData) => void): this;
-    on(event: 'guildDelete', listener: (data: GuildData) => void): this;
-
-    on(event: 'beforeLoad', listener: Function): this;
-    on(event: 'loadGuild', listener: (guild: Guild) => void): this;
-    on(event: 'loaded', listener: Function): this;
-
-    on(event: 'beforeSave', listener: Function): this;
-    on(event: 'saveGuild', listener: (data: GuildData) => void): this;
-    on(event: 'saved', listener: Function): this;
-
-    on(event: string, listener: Function): this;
+    on<T extends DatabaseEventName>(event: T, listener: DatabaseEventListener<T>): this;
 }
 
 /**
  * Класс базы данных бота
  */
 export class BotDatabase extends EventEmitter {
-    #guilds = new Map<GuildID, GuildData>();
+    #guilds = new Map<string, GuildData>();
 
     constructor(
         public readonly bot: Bot,
@@ -107,9 +118,9 @@ export class BotDatabase extends EventEmitter {
      */
     public load(): void {
         this.emit('beforeLoad');
-        this.bot.client.guilds.cache.forEach((guildData, id) => {
+        this.bot.client.guilds.cache.forEach((guild, id) => {
             if (!this.#guilds.has(id)) {
-                this.emit('loadGuild', guildData);
+                this.emit('loadGuild', guild, () => this.createGuildData(guild));
             }
         });
         this.emit('loaded');
@@ -124,5 +135,18 @@ export class BotDatabase extends EventEmitter {
             this.emit('saveGuild', guildData);
         });
         this.emit('saved');
+    }
+
+    /**
+     * Подключает реализацию базы данных через объект
+     * @param handler класс объекта, содержащий функции событий базы данных
+     */
+    public useHandler<T extends DatabaseHandlerParams>(handler: new (params: T) => DatabaseHandler, params: Omit<T, 'database'>) {
+        const dbObj = new handler({ ...params, database: this } as any);
+        for (const event of Object.getOwnPropertyNames(Object.getPrototypeOf(dbObj))) {
+            const method = dbObj[event as DatabaseEventName];
+            if (typeof method != 'function' || !EventNames.includes(event as DatabaseEventName)) continue;
+            this.on(event as DatabaseEventName, method.bind(dbObj));
+        }
     }
 }
