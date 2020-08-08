@@ -13,7 +13,7 @@ export class GuildData {
     /**
      * Префиксы бота на сервере
      */
-    public readonly prefixes: PrefixStorage;
+    public readonly prefixes = new PrefixStorage();
 
     constructor(
         /**
@@ -25,7 +25,7 @@ export class GuildData {
          */
         public readonly guild: Guild,
     ) {
-        this.prefixes = new PrefixStorage(database.defaultGuildPrefixes);
+        this.prefixes.list = database.bot.options.guild.defaultPrefixes as any;
     }
 
     /**

@@ -1,87 +1,72 @@
 /// <reference lib="es2019.object" />
 
-import { mkdirSync, writeFileSync, existsSync, readFileSync } from "fs";
+import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
+import { BotDatabase, BotDatabaseHandler } from "../../database/Bot";
 import { join, resolve } from "path";
 import { Guild } from "discord.js";
-import { GuildData } from "../../database/Guild";
-import {
-    BotDatabase,
-    DatabaseHandler,
-    DatabaseHandlerParams,
-    DatabaseEventName
-} from "../../database/Bot";
 
-export interface JsonDatabaseParams extends DatabaseHandlerParams {
-    readonly dirPath: string;
-    readonly guildsPath: string;
-    readonly jsonIndent?: number;
-}
+type JsonHandler = { dirPath: string, guildsPath: string, jsonIndent?: number };
 
-export class JsonDatabase implements DatabaseHandler, JsonDatabaseParams {
-    public readonly database!: BotDatabase;
-    public readonly dirPath!: string;
-    public readonly guildsPath!: string;
-    public readonly jsonIndent?: number;
+export function getJsonHandler(options: JsonHandler): BotDatabaseHandler {
+    const guildsPath = resolve(join('.', options.dirPath, options.guildsPath));
 
-    #guildsPath: string;
+    const [beforeLoad, beforeSave] = ['loading', 'saving'].map(action => (database: BotDatabase) => {
+        mkdirSync(guildsPath, { recursive: true });
+        console.log(`${action} ${database.bot.username}'s database (json)...`);
+    });
 
-    constructor(params: JsonDatabaseParams) {
-        Object.assign(this, params);
+    const [loaded, saved] = ['loaded', 'saved'].map(event => (database: BotDatabase) => {
+        console.log(`${database.bot.username}'s database successfully ${event} (json)`);
+    });
 
-        this.#guildsPath = resolve(join('.', this.dirPath, this.guildsPath));
+    const getGuildPath = (guild: Guild) => join(guildsPath, guild.id + '.json');
 
-        [['beforeLoad', 'loading'], ['beforeSave', 'saving']].forEach(([event, action]) => {
-            this.database.on(event as DatabaseEventName, () => {
-                mkdirSync(this.#guildsPath, { recursive: true });
-                console.log(`${action} ${this.database.bot.username}'s database (json)...`);
-            });
-        });
+    return {
+        beforeLoad, beforeSave,
+        loaded, saved,
 
-        ['loaded', 'saved'].forEach(event => {
-            this.database.on(event as DatabaseEventName, () => {
-                console.log(`${this.database.bot.username}'s database successfully ${event} (json)`);
-            });
-        });
-    }
+        saveGuild: (guildData) => {
+            const saveDataObject = {
+                prefixes: guildData.prefixes.list,
+                members: {} as Record<string, any>,
+            };
 
-    private getGuildPath(guild: Guild): string {
-        return join(this.#guildsPath, guild.id + '.json');
-    }
+            for (const memberData of guildData.members) {
+                if (!memberData.map) continue;
+                const entries = memberData.map.entries();
+                saveDataObject.members[memberData.member.id] = Object.fromEntries(entries);
+            }
+            writeFileSync(getGuildPath(guildData.guild), JSON.stringify(saveDataObject, null, options.jsonIndent));
 
-    saveGuild(guildData: GuildData): void {
-        const saveDataObject = {
-            prefixes: guildData.prefixes.list,
-            members: {} as Record<string, any>,
-        };
-        for (const memberData of guildData.members) {
-            if (!memberData.map) continue;
-            const entries = memberData.map.entries();
-            saveDataObject.members[memberData.member.id] = Object.fromEntries(entries);
-        }
-        writeFileSync(this.getGuildPath(guildData.guild), JSON.stringify(saveDataObject));
+            console.log(`* guild '${guildData.guild.name}' successfully saved`);
+        },
 
-        console.log(`* guild '${guildData.guild.name}' successfully saved`);
-    }
+        loadGuild: (guildData) => {
+            const path = getGuildPath(guildData.guild);
+            if (!existsSync(path)) return;
 
-    loadGuild(guild: Guild, newGuildData: () => GuildData): void {
-        const path = this.getGuildPath(guild);
-        if (!existsSync(path)) return;
+            const dataObject = JSON.parse(readFileSync(path).toString());
 
-        const dataObject = JSON.parse(readFileSync(path).toString());
-        const guildData = newGuildData();
+            if (dataObject.prefixes instanceof Array) {
+                guildData.prefixes.list = dataObject.prefixes;
+            }
 
-        if (dataObject.prefixes instanceof Array) {
-            guildData.prefixes.list = dataObject.prefixes;
-        }
+            if (typeof dataObject.members == 'object') {
+                for (const [id, memberSavedMap] of Object.entries<any>(dataObject.members)) {
+                    const member = guildData.guild.member(id);
+                    if (!member) continue;
+                    guildData.getMemberData(member).map = new Map(Object.entries(memberSavedMap));
+                }
+            }
 
-        if (typeof dataObject.members == 'object') {
-            for (const [id, memberSavedMap] of Object.entries<any>(dataObject.members)) {
-                const member = guild.member(id);
-                if (!member) continue;
-                guildData.getMemberData(member).map = new Map(Object.entries(memberSavedMap));
+            console.log(`* guild '${guildData.guild.name}' successfully loaded`);
+        },
+
+        guildDelete: (guildData) => {
+            const path = getGuildPath(guildData.guild);
+            if (existsSync(path)) {
+                unlinkSync(path);
             }
         }
-
-        console.log(`* guild '${guild.name}' successfully loaded`);
-    }
+    };
 }

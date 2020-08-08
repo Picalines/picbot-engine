@@ -1,5 +1,6 @@
 import { ClientOptions } from "discord.js";
 import { DeepPartial, ReadOnlyNonEmptyArray } from "./utils";
+import { BotDatabaseHandler } from "./database/Bot";
 
 /**
  * Объект с настройками бота
@@ -50,6 +51,11 @@ export type BotOptions = {
      */
     database: {
         /**
+         * Обработчик базы данных.
+         * Если не указать, то база данных бота будет равна null
+         */
+        handler?: BotDatabaseHandler;
+        /**
          * Запретить ли хранить данные по ботам на сервере
          * @default true
          */
@@ -87,6 +93,7 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
             defaultPrefixes: (optionsArg.guild?.defaultPrefixes as ReadOnlyNonEmptyArray<string> | undefined) ?? ['!'],
         },
         database: {
+            handler: optionsArg.database?.handler as any,
             ignoreBots: optionsArg.database?.ignoreBots ?? true,
         },
     };

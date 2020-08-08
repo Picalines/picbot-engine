@@ -68,7 +68,12 @@ export class Bot extends EventEmitter {
             }
         }
 
-        this.database = new BotDatabase(this, this.options.guild.defaultPrefixes);
+        if (this.options.database.handler) {
+            this.database = new BotDatabase(this, this.options.database.handler);
+        }
+        else {
+            this.database = null as any;
+        }
 
         this.client.on('ready', () => {
             console.log("logged in as " + String(this.client.user?.username));
@@ -110,7 +115,7 @@ export class Bot extends EventEmitter {
      * @returns true, если была запущена команда
      */
     public async handleCommands(message: GuildMessage): Promise<boolean> {
-        const { prefixes } = this.database.getGuildData(message.guild);
+        const { prefixes } = await this.database.getGuildData(message.guild);
 
         const lowerContent = message.content.toLowerCase();
         let prefixLength = 0;

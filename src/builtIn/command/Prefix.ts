@@ -14,8 +14,8 @@ export default {
         '`!prefix rm ~` удалит `~` из списка префиксов бота',
     ],
 
-    execute: ({ message, bot, args: { operation, prefix } }) => {
-        const { prefixes } = bot.database.getGuildData(message.guild);
+    execute: async ({ message, bot, args: { operation, prefix } }) => {
+        const { prefixes } = await bot.database.getGuildData(message.guild);
 
         if (!operation) {
             const strList = prefixes.list.map(p => `\`${p}\``).join(', ');

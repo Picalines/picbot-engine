@@ -4,16 +4,12 @@
 export class PrefixStorage implements Iterable<string> {
     #prefixes = new Set<string>();
 
-    /**
-     * @param initialPrefixes изначальные префиксы в хранилище
-     */
-    constructor(initialPrefixes: Readonly<string[]> | PrefixStorage) {
-        if (initialPrefixes instanceof PrefixStorage) {
-            initialPrefixes = initialPrefixes.list;
-        }
-        initialPrefixes.forEach(prefix => this.add(prefix));
-        if (!this.size) {
-            throw new Error('prefix storage can not be empty');
+    constructor(initialPrefixes?: string[]) {
+        if (initialPrefixes) {
+            initialPrefixes.forEach(p => this.add(p));
+            if (!this.size) {
+                throw new Error('prefix storage can not be empty');
+            }
         }
     }
 

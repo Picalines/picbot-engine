@@ -11,7 +11,7 @@ export { PrefixStorage } from "./PrefixStorage";
 
 export { GuildMemberData } from "./database/Member";
 export { GuildData } from "./database/Guild";
-export { BotDatabase, DatabaseHandler, DatabaseHandlerParams } from "./database/Bot";
+export { BotDatabase, BotDatabaseHandler } from "./database/Bot";
 
 export { BotOptions } from "./BotOptions";
 export { Bot } from "./Bot";

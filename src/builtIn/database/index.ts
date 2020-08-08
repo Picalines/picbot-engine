@@ -1,1 +1,1 @@
-export { JsonDatabase, JsonDatabaseParams } from "./Json";
+export { getJsonHandler } from "./Json";
