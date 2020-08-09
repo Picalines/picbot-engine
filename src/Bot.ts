@@ -70,6 +70,9 @@ export class Bot extends EventEmitter {
 
         if (this.options.database.handler) {
             this.database = new BotDatabase(this, this.options.database.handler);
+            this.client.once('ready', () => {
+                this.database.load();
+            });
         }
         else {
             this.database = null as any;

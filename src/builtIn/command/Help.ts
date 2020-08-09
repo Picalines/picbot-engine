@@ -63,7 +63,7 @@ export default {
         '`!help test` даст информацию о команде `test`'
     ],
 
-    execute: ({ message, bot: { commands }, args: { commandName } }) => {
+    execute: ({ message, bot: { commands }, args: { commandName } }): Promise<any> => {
         const embed = new MessageEmbed().setColor(0x45ff83);
 
         if (!commandName) {
@@ -73,6 +73,6 @@ export default {
             makeCommandInfo(embed, commands.getByName(commandName));
         }
 
-        message.reply(embed);
+        return message.reply({ embed });
     }
 } as Command
