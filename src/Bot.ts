@@ -77,6 +77,12 @@ export class Bot extends EventEmitter {
         this.client.once('ready', () => {
             this.database.load();
         });
+        if (this.options.database.saveOnSigint) {
+            process.once('SIGINT', async () => {
+                await this.database.save();
+                console.log('Press Ctrl+C again to exit the program');
+            });
+        }
 
         this.client.on('message', message => {
             if (!(message.guild && message.channel.type == 'text')) return;

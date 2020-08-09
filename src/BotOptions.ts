@@ -66,6 +66,11 @@ export type BotOptions = {
          * @default true
          */
         ignoreBots: boolean;
+        /**
+         * Сохранять ли базу данных на событии `process.SIGINT`.
+         * @default true
+         */
+        saveOnSigint: boolean;
     };
 };
 
@@ -104,6 +109,7 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
         database: {
             handler: optionsArg.database?.handler ?? DebugBotDatabaseHandler,
             ignoreBots: optionsArg.database?.ignoreBots ?? true,
+            saveOnSigint: optionsArg.database?.saveOnSigint ?? true,
         },
     };
 }
