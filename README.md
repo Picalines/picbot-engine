@@ -21,13 +21,11 @@
 ```js
 const { Bot } = require('picbot-engine');
 
-const bot = new Bot(); // обёртка Client из discord.js
-
-bot.prefixes.global.set('picbot.'); // Префиксы для всех серверов (глобальные)
-
-// Префиксы для одного сервера:
-// bot.prefixes.guild(guild).set('!', '~');
-// bot.prefixes.guild({ id: 'id сервера' }).set('.', '?');
+const bot = new Bot({
+    guild: {
+        defaultPrefixes: ['picbot.'], // стандартные префиксы для новых серверов
+    },
+});
 
 bot.commands.register('ping', ({ message }) => {
     message.reply('pong!');

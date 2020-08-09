@@ -1,6 +1,6 @@
 export { GuildMessage } from "./utils";
 
-export * from "./command/argument/Readers";
+export * as ArgumentReaders from "./command/argument/Readers";
 export { ArgumentReaderStorage } from "./command/argument/Storage";
 
 export { CommandInfo, CommandExecuteable, Command } from "./command/Info";

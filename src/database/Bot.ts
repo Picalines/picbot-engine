@@ -99,39 +99,43 @@ export class BotDatabase {
      * Загружает данные базы данных
      */
     public async load(): Promise<void> {
-        if (this.handler.beforeLoad) {
-            await this.handler.beforeLoad(this);
-        }
+        console.log(`loading ${this.bot.username}'s database...`);
+        await this.handler.beforeLoad?.(this);
 
         const guildsToLoad = this.bot.client.guilds.cache.filter(({ id }) => !this.#guilds.has(id));
 
-        const getLoadingPromise = (guild: Guild) => {
+        const getLoadingPromise = async (guild: Guild) => {
             const guildData = new GuildData(this, guild);
             this.#guilds.set(guild.id, guildData);
-            return this.handler.loadGuild(guildData);
+            await this.handler.loadGuild(guildData);
+            return guild;
         };
 
-        await Promise.all(guildsToLoad.map(getLoadingPromise));
-
-        if (this.handler.loaded) {
-            await this.handler.loaded(this);
+        for await (const guild of guildsToLoad.map(getLoadingPromise)) {
+            console.log(`* guild '${guild.name}' successfully loaded`);
         }
+
+        await this.handler.loaded?.(this);
+        console.log(`${this.bot.username}'s database successfully loaded`);
     }
 
     /**
      * @event saveGuild для каждого сервера бота
      */
     public async save(): Promise<void> {
-        if (this.handler.beforeSave) {
-            await this.handler.beforeSave(this);
+        console.log(`saving ${this.bot.username}'s database...`);
+        await this.handler.beforeSave?.(this);
+
+        const getSavingPromise = async (data: GuildData) => {
+            await this.handler.saveGuild(data);
+            return data.guild;
         }
 
-        const getSavingPromise = (data: GuildData) => this.handler.saveGuild(data);
-
-        await Promise.all(this.#guilds.map(getSavingPromise));
-
-        if (this.handler.saved) {
-            await this.handler.saved(this);
+        for await (const guild of this.#guilds.map(getSavingPromise)) {
+            console.log(`* guild '${guild.name}' successfully saved`);
         }
+
+        await this.handler.saved?.(this);
+        console.log(`${this.bot.username}'s database successfully saved`);
     }
 }

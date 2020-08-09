@@ -1,6 +1,7 @@
 import { ClientOptions } from "discord.js";
 import { DeepPartial, ReadOnlyNonEmptyArray } from "./utils";
 import { BotDatabaseHandler } from "./database/Bot";
+import { DebugBotDatabaseHandler } from "./builtIn/database";
 
 /**
  * Объект с настройками бота
@@ -35,6 +36,11 @@ export type BotOptions = {
             kick: boolean;
             prefix: boolean;
         };
+        /**
+         * Отсылать ли сообщение о ненайденной команде
+         * @default false
+         */
+        sendNotFoundError: boolean;
     };
     /**
      * Настройки серверов
@@ -51,10 +57,10 @@ export type BotOptions = {
      */
     database: {
         /**
-         * Обработчик базы данных.
-         * Если не указать, то база данных бота будет равна null
+         * Обработчик базы данных (объект, хранящий функции для загрузки / сохранения данных серверов)
+         * @default DebugBotDatabaseHandler
          */
-        handler?: BotDatabaseHandler;
+        handler: BotDatabaseHandler;
         /**
          * Запретить ли хранить данные по ботам на сервере
          * @default true
@@ -67,7 +73,9 @@ export type BotOptions = {
  * Аргумент настроек бота в его конструкторе
  * @ignore
  */
-export type BotOptionsArgument = DeepPartial<BotOptions> & {
+export type BotOptionsArgument = DeepPartial<Omit<BotOptions, 'database'>> & {
+    database?: Partial<BotOptions['database']>
+} & {
     clientOptions?: ClientOptions;
 };
 
@@ -88,12 +96,13 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
                 kick: optionsArg.commands?.builtIn?.kick ?? true,
                 prefix: optionsArg.commands?.builtIn?.prefix ?? true,
             },
+            sendNotFoundError: optionsArg.commands?.sendNotFoundError ?? false,
         },
         guild: {
             defaultPrefixes: (optionsArg.guild?.defaultPrefixes as ReadOnlyNonEmptyArray<string> | undefined) ?? ['!'],
         },
         database: {
-            handler: optionsArg.database?.handler as any,
+            handler: optionsArg.database?.handler ?? DebugBotDatabaseHandler,
             ignoreBots: optionsArg.database?.ignoreBots ?? true,
         },
     };

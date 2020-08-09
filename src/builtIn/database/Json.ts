@@ -1,29 +1,40 @@
 /// <reference lib="es2019.object" />
 
 import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
-import { BotDatabase, BotDatabaseHandler } from "../../database/Bot";
+import { BotDatabaseHandler } from "../../database/Bot";
 import { join, resolve } from "path";
 import { Guild } from "discord.js";
 
-type JsonHandler = { dirPath: string, guildsPath: string, jsonIndent?: number };
+type JsonHandlerOptions = {
+    /**
+     * Путь до папки базы данных бота
+     */
+    dirPath: string,
+    /**
+     * Путь до папки с данными серверов в папке базы данных бота
+     */
+    guildsPath: string,
+    /**
+     * Количество отступов в json файлах
+     * @default 0
+     */
+    jsonIndent?: number,
+};
 
-export function getJsonHandler(options: JsonHandler): BotDatabaseHandler {
+/**
+ * Возвращает json обработчик базы данных. Хранит данные серверов в json файлах из отдельной папки
+ * @param options настройки обработчика
+ */
+export function getJsonBotDatabaseHandler(options: JsonHandlerOptions): BotDatabaseHandler {
     const guildsPath = resolve(join('.', options.dirPath, options.guildsPath));
 
-    const [beforeLoad, beforeSave] = ['loading', 'saving'].map(action => (database: BotDatabase) => {
-        mkdirSync(guildsPath, { recursive: true });
-        console.log(`${action} ${database.bot.username}'s database (json)...`);
-    });
-
-    const [loaded, saved] = ['loaded', 'saved'].map(event => (database: BotDatabase) => {
-        console.log(`${database.bot.username}'s database successfully ${event} (json)`);
-    });
+    const makeGuildsFolder = () => void mkdirSync(guildsPath, { recursive: true });
 
     const getGuildPath = (guild: Guild) => join(guildsPath, guild.id + '.json');
 
     return {
-        beforeLoad, beforeSave,
-        loaded, saved,
+        beforeLoad: makeGuildsFolder,
+        beforeSave: makeGuildsFolder,
 
         saveGuild: (guildData) => {
             const saveDataObject = {
@@ -37,8 +48,6 @@ export function getJsonHandler(options: JsonHandler): BotDatabaseHandler {
                 saveDataObject.members[memberData.member.id] = Object.fromEntries(entries);
             }
             writeFileSync(getGuildPath(guildData.guild), JSON.stringify(saveDataObject, null, options.jsonIndent));
-
-            console.log(`* guild '${guildData.guild.name}' successfully saved`);
         },
 
         loadGuild: (guildData) => {
@@ -58,8 +67,6 @@ export function getJsonHandler(options: JsonHandler): BotDatabaseHandler {
                     guildData.getMemberData(member).map = new Map(Object.entries(memberSavedMap));
                 }
             }
-
-            console.log(`* guild '${guildData.guild.name}' successfully loaded`);
         },
 
         guildDelete: (guildData) => {

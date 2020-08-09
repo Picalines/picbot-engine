@@ -8,6 +8,7 @@ import { CommandContext } from "./command/Context";
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/Bot";
 import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
+import { Command } from ".";
 
 export declare interface Bot {
     on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
@@ -68,18 +69,13 @@ export class Bot extends EventEmitter {
             }
         }
 
-        if (this.options.database.handler) {
-            this.database = new BotDatabase(this, this.options.database.handler);
-            this.client.once('ready', () => {
-                this.database.load();
-            });
-        }
-        else {
-            this.database = null as any;
-        }
-
         this.client.on('ready', () => {
             console.log("logged in as " + String(this.client.user?.username));
+        });
+
+        this.database = new BotDatabase(this, this.options.database.handler);
+        this.client.once('ready', () => {
+            this.database.load();
         });
 
         this.client.on('message', message => {
@@ -142,7 +138,15 @@ export class Bot extends EventEmitter {
         const executor = message.member;
 
         await Bot.catchErrorEmbedReply(message, async () => {
-            const command = this.commands.getByName(commandName);
+            let command: Command;
+            try {
+                command = this.commands.getByName(commandName);
+            } catch (err) {
+                if (err instanceof Error && this.options.commands.sendNotFoundError) {
+                    throw err;
+                }
+                return;
+            }
 
             const commandPermissions = (command.permissions || []) as PermissionString[];
             const checkAdmin = this.options.permissions.checkAdmin;
