@@ -1,18 +1,30 @@
-import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { Client, Message, MessageEmbed, PermissionString } from "discord.js";
+import { EventEmitter } from "events";
+import { PathLike, readFileSync } from "fs";
+import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
+import * as BuiltInCommands from "./builtIn/command";
 import { ArgumentReaderStorage } from "./command/argument/Storage";
-import { GuildMessage, PromiseVoid } from "./utils";
-import { CommandStorage } from "./command/Storage";
 import { CommandContext } from "./command/Context";
-import { readFileSync, PathLike } from "fs";
-import { BotPrefixes } from "./BotPrefixes";
+import { CommandStorage } from "./command/Storage";
+import { BotDatabase } from "./database/Bot";
+import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
+import { Command } from ".";
 
-import BuiltInCommands from "./command/builtIn/index";
+export declare interface Bot {
+    on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
+    on(event: 'memberPlainMessage', listener: (message: GuildMessage) => void): this;
+    on(event: 'memberCommandMessage', listener: (message: GuildMessage) => void): this;
+
+    on(event: 'botMessage', listener: (message: GuildBotMessage) => void): this;
+    on(event: 'myMessage', listener: (message: GuildBotMessage) => void): this;
+
+    on(event: string, listener: Function): this;
+}
 
 /**
  * Обёртка клиента API из discord.js
  */
-export class Bot {
+export class Bot extends EventEmitter {
     /**
      * Клиент API discord.js
      */
@@ -34,29 +46,26 @@ export class Bot {
     public readonly commands: CommandStorage;
 
     /**
-     * Префиксы бота
+     * База данных бота
      */
-    public readonly prefixes: BotPrefixes;
+    public readonly database: BotDatabase;
 
     /**
      * @param options настройки клиента API discord.js
      */
     constructor(options: BotOptionsArgument = {}) {
+        super();
+
         this.client = new Client(options.clientOptions);
 
         this.options = ParseBotOptionsArgument(options);
 
         this.commands = new CommandStorage(this.commandArguments);
 
-        this.prefixes = new BotPrefixes(this);
-
-        for (const [name, enabled] of Object.entries(this.options.commands.builtIn)) {
-            if (enabled) {
-                type BuiltInCommandKey = keyof BotOptions['commands']['builtIn'];
-                this.commands.register(
-                    BuiltInCommands[name as BuiltInCommandKey].name,
-                    BuiltInCommands[name as BuiltInCommandKey]
-                );
+        const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
+        for (const builtInCommand of Object.values(BuiltInCommands)) {
+            if (builtInCommandsSetting[builtInCommand.name]) {
+                this.commands.register(builtInCommand.name, builtInCommand);
             }
         }
 
@@ -64,37 +73,86 @@ export class Bot {
             console.log("logged in as " + String(this.client.user?.username));
         });
 
+        this.database = new BotDatabase(this, this.options.database.handler);
+        this.client.once('ready', () => {
+            this.database.load();
+        });
+        if (this.options.database.saveOnSigint) {
+            process.once('SIGINT', async () => {
+                await this.database.save();
+                console.log('Press Ctrl+C again to exit the program');
+            });
+        }
+
         this.client.on('message', message => {
             if (!(message.guild && message.channel.type == 'text')) return;
 
             const guildMessage = message as GuildMessage;
-            if (guildMessage.member.id == guildMessage.guild.me.id) return;
-            if (this.options.ignoreBots && guildMessage.author.bot) return;
 
-            this.handleCommands(guildMessage);
+            if (guildMessage.member.id == guildMessage.guild.me.id) {
+                this.emit('myMessage', message);
+                return;
+            }
+
+            if (guildMessage.author.bot) {
+                this.emit('botMessage', message);
+                if (this.options.ignoreBots) return;
+            }
+
+            this.handleCommands(guildMessage).then(wasCommand => {
+                this.emit('memberMessage', message);
+                if (wasCommand) this.emit('memberCommandMessage', message);
+                else this.emit('memberPlainMessage', message);
+            });
         });
+    }
+
+    /**
+     * @returns юзернейм бота. Если [[Client.user]] равно `undefined`, вернёт `"bot"`
+     */
+    public get username(): string {
+        return this.client.user?.username ?? 'bot';
     }
 
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
      * @param message сообщение пользователя
+     * @returns true, если была запущена команда
      */
-    public async handleCommands(message: GuildMessage): Promise<void> {
-        const prefixLength = this.prefixes.getMessagePrefixLength(message);
+    public async handleCommands(message: GuildMessage): Promise<boolean> {
+        const { prefixes } = await this.database.getGuildData(message.guild);
+
+        const lowerContent = message.content.toLowerCase();
+        let prefixLength = 0;
+        for (const prefix of prefixes) {
+            if (lowerContent.startsWith(prefix)) {
+                prefixLength = prefix.length;
+                break;
+            }
+        }
+
         if (!prefixLength) {
-            return;
+            return false;
         }
 
         const content = message.content.slice(prefixLength);
         const commandName = content.replace(/\s.*$/, '');
         if (!commandName) {
-            return;
+            return false;
         }
 
         const executor = message.member;
 
         await Bot.catchErrorEmbedReply(message, async () => {
-            const command = this.commands.getByName(commandName);
+            let command: Command;
+            try {
+                command = this.commands.getByName(commandName);
+            } catch (err) {
+                if (err instanceof Error && this.options.commands.sendNotFoundError) {
+                    throw err;
+                }
+                return;
+            }
 
             const commandPermissions = (command.permissions || []) as PermissionString[];
             const checkAdmin = this.options.permissions.checkAdmin;
@@ -106,6 +164,8 @@ export class Bot {
             const context = new CommandContext(command, this, message as GuildMessage, executor);
             await command.execute(context);
         });
+
+        return true;
     }
 
     /**

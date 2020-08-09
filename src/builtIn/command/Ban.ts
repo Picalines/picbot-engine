@@ -1,4 +1,4 @@
-import { Command } from "../Info";
+import { Command } from "../../command/Info";
 
 export default {
     name: 'ban',
@@ -10,7 +10,7 @@ export default {
 
     syntax: '<member:target> <remainingText:reason=Злобные админы :/>',
     examples: [
-        '`ban @Test` забанит участника @Test по причине ',
+        '`ban @Test` забанит участника @Test по причине "Злобные админы :/"',
         '`ban @Test спам` забанит @Test по причине "спам"',
     ],
 

@@ -1,5 +1,5 @@
-import * as Arguments from "./Readers";
 import { GuildMember, Role, TextChannel } from "discord.js";
+import * as Arguments from "./Readers";
 
 type DefaultArgumentReadersMap = {
     number: Arguments.ArgumentReader<number>,

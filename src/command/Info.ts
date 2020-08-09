@@ -1,5 +1,5 @@
-import { ReadOnlyNonEmptyArray, PromiseVoid } from "../utils";
 import { PermissionString } from "discord.js";
+import { PromiseVoid, ReadOnlyNonEmptyArray } from "../utils";
 import { CommandContext } from "./Context";
 
 export type CommandArgumentData = {
@@ -13,7 +13,7 @@ export type CommandArgumentData = {
  */
 export interface CommandInfo {
     /**
-     * Имя
+     * Имя команды
      */
     readonly name: string;
 

@@ -1,6 +1,6 @@
-import { MessageEmbed, GuildMember } from "discord.js";
-import { CommandStorage } from "../Storage";
-import { Command } from "../Info";
+import { GuildMember, MessageEmbed } from "discord.js";
+import { Command } from "../../command/Info";
+import { CommandStorage } from "../../command/Storage";
 
 const formatList = (list: string[]) => list.map(el => `\`${el}\``).join(', ');
 
@@ -63,7 +63,7 @@ export default {
         '`!help test` даст информацию о команде `test`'
     ],
 
-    execute: ({ message, bot: { commands }, args: { commandName } }) => {
+    execute: ({ message, bot: { commands }, args: { commandName } }): Promise<any> => {
         const embed = new MessageEmbed().setColor(0x45ff83);
 
         if (!commandName) {
@@ -73,6 +73,6 @@ export default {
             makeCommandInfo(embed, commands.getByName(commandName));
         }
 
-        message.reply(embed);
+        return message.reply({ embed });
     }
 } as Command

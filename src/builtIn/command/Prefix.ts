@@ -1,4 +1,4 @@
-import { Command } from "../Info";
+import { Command } from "../../command/Info";
 
 export default {
     name: 'prefix',
@@ -14,31 +14,32 @@ export default {
         '`!prefix rm ~` удалит `~` из списка префиксов бота',
     ],
 
-    execute: ({ message, bot, args: { command: operation, prefix } }) => {
-        const prefixes = bot.prefixes.guild(message.guild);
+    execute: async ({ message, bot, args: { operation, prefix } }) => {
+        const { prefixes } = await bot.database.getGuildData(message.guild);
 
         if (!operation) {
             const strList = prefixes.list.map(p => `\`${p}\``).join(', ');
             message.reply(`список моих префиксов на этом сервере: ${strList}`);
-            return
+            return;
         }
 
         switch (operation) {
             default: throw new Error(`unsupported prefix operation '${operation}'`);
             case 'add':
-                if (prefixes.add(prefix)) {
+                if (prefix && prefixes.add(prefix)) {
                     message.reply(`новый префикс команд: \`${prefix}\``);
                 }
                 else {
                     message.reply(`невозможно добавить такой префикс`);
                 }
                 break;
+            case 'remove':
             case 'rm':
-                if (prefixes.remove(prefix)) {
+                if (prefix && prefixes.remove(prefix)) {
                     message.reply(`префикс \`${prefix}\` успешно удалён из списка`);
                 }
                 else {
-                    message.reply(`невозможно удалить префикс \`${prefix}\``);
+                    message.reply(`невозможно удалить такой префикс`);
                 }
                 break;
         }

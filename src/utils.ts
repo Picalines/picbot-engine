@@ -1,12 +1,19 @@
-import { Message, Guild, TextChannel, GuildMember } from "discord.js";
+import { Guild, GuildMember, Message, TextChannel } from "discord.js";
 
 /**
- * Сообщение в текстовом канале на сервере (Вспомогательный тип)
+ * Сообщение в текстовом канале на сервере
  */
 export type GuildMessage = Message & {
     guild: Guild & { me: GuildMember },
     channel: TextChannel & { type: 'text' },
     member: GuildMember,
+}
+
+/**
+ * Сообщение бота в текстовом канале на сервере
+ */
+export type GuildBotMessage = GuildMessage & {
+    guild: { me: { bot: true } },
 }
 
 export type PromiseVoid = Promise<void> | void
@@ -48,3 +55,13 @@ export type Failable<R, E> = {
     isError: false,
     value: R,
 }
+
+/**
+ * Приводит ритералы к примитивным типам
+ * https://stackoverflow.com/questions/56332310/how-to-prevent-a-literal-type-in-typescript
+ */
+export type WidenLiteral<T> =
+    T extends boolean ? boolean :
+    T extends string ? string :
+    T extends number ? number :
+    T;

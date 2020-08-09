@@ -1,5 +1,7 @@
 import { ClientOptions } from "discord.js";
-import { DeepPartial } from "./utils";
+import { DeepPartial, ReadOnlyNonEmptyArray } from "./utils";
+import { BotDatabaseHandler } from "./database/Bot";
+import { DebugBotDatabaseHandler } from "./builtIn/database";
 
 /**
  * Объект с настройками бота
@@ -34,6 +36,41 @@ export type BotOptions = {
             kick: boolean;
             prefix: boolean;
         };
+        /**
+         * Отсылать ли сообщение о ненайденной команде
+         * @default false
+         */
+        sendNotFoundError: boolean;
+    };
+    /**
+     * Настройки серверов
+     */
+    guild: {
+        /**
+         * Стандартные префиксы бота
+         * @default ['!']
+         */
+        defaultPrefixes: ReadOnlyNonEmptyArray<string>;
+    };
+    /**
+     * Настройки базы данных
+     */
+    database: {
+        /**
+         * Обработчик базы данных (объект, хранящий функции для загрузки / сохранения данных серверов)
+         * @default DebugBotDatabaseHandler
+         */
+        handler: BotDatabaseHandler;
+        /**
+         * Запретить ли хранить данные по ботам на сервере
+         * @default true
+         */
+        ignoreBots: boolean;
+        /**
+         * Сохранять ли базу данных на событии `process.SIGINT`.
+         * @default true
+         */
+        saveOnSigint: boolean;
     };
 };
 
@@ -41,12 +78,14 @@ export type BotOptions = {
  * Аргумент настроек бота в его конструкторе
  * @ignore
  */
-export type BotOptionsArgument = DeepPartial<BotOptions> & {
+export type BotOptionsArgument = DeepPartial<Omit<BotOptions, 'database'>> & {
+    database?: Partial<BotOptions['database']>
+} & {
     clientOptions?: ClientOptions;
 };
 
 /**
- * Вспомогательная функция для перевода {@link BotOptionsArgument} в {@link BotOptions}
+ * Вспомогательная функция для перевода [[BotOptionsArgument]] в [[BotOptions]]
  * @ignore
  */
 export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOptions {
@@ -62,6 +101,15 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
                 kick: optionsArg.commands?.builtIn?.kick ?? true,
                 prefix: optionsArg.commands?.builtIn?.prefix ?? true,
             },
+            sendNotFoundError: optionsArg.commands?.sendNotFoundError ?? false,
+        },
+        guild: {
+            defaultPrefixes: (optionsArg.guild?.defaultPrefixes as ReadOnlyNonEmptyArray<string> | undefined) ?? ['!'],
+        },
+        database: {
+            handler: optionsArg.database?.handler ?? DebugBotDatabaseHandler,
+            ignoreBots: optionsArg.database?.ignoreBots ?? true,
+            saveOnSigint: optionsArg.database?.saveOnSigint ?? true,
         },
     };
 }
