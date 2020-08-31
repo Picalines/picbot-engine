@@ -64,4 +64,30 @@ export class PropertyMap {
         }
         return this;
     }
+
+    /**
+     * @returns true, если содержит свойство с указанным именем
+     * @param key ключ значения
+     */
+    hasProperty(key: string): boolean {
+        return this.#map?.has(key) ?? false;
+    }
+
+    /**
+     * Добавляет значения в свойство-список. Если указанного свойства нет, создаёт его.
+     * @param key ключ значения списка
+     */
+    pushToArray(key: string, ...values: any[]): this {
+        if (!this.hasProperty(key)) {
+            this.setProperty(key, values);
+        }
+        else {
+            const arr = this.getProperty<any[]>(key, []);
+            if (!(arr instanceof Array)) {
+                throw new TypeError(`${key} is not an array`);
+            }
+            arr.push(...values);
+        }
+        return this;
+    }
 }
