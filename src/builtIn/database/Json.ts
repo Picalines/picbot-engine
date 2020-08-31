@@ -40,8 +40,11 @@ export function getJsonBotDatabaseHandler(options: JsonHandlerOptions): BotDatab
             const saveDataObject = {
                 prefixes: guildData.prefixes.list,
                 members: {} as Record<string, any>,
-                properties: guildData.map,
-            };
+            } as any;
+
+            if (guildData.map) {
+                saveDataObject.properties = Object.fromEntries(guildData.map.entries());
+            }
 
             for (const { member, map } of guildData.members) {
                 if (!map) continue;
