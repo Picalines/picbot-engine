@@ -1,4 +1,4 @@
-import { PrefixStorage } from "../PrefixStorage";
+import { PrefixStorage } from "../src/PrefixStorage";
 
 describe('invalid prefix', () => {
     test('initial test', () => {

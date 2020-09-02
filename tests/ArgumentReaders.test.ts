@@ -1,4 +1,4 @@
-import * as Arguments from '../command/argument/Readers';
+import * as Arguments from '../src/command/argument/Readers';
 
 const nullMessage = null as any;
 

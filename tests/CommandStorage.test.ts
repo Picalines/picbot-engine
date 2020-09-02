@@ -1,7 +1,7 @@
-import { CommandExecuteable, Command } from '../command/Info';
-import { CommandStorage } from '../command/Storage';
-import { NonEmptyArray } from '../utils';
-import { ArgumentReaderStorage } from '../command/argument/Storage';
+import { CommandExecuteable, Command } from '../src/command/Info';
+import { CommandStorage } from '../src/command/Storage';
+import { NonEmptyArray } from '../src/utils';
+import { ArgumentReaderStorage } from '../src/command/argument/Storage';
 
 const emptyCommand: CommandExecuteable = () => {};
 
