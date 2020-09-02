@@ -3,7 +3,7 @@ import { Bot } from "../Bot";
 import { PrefixStorage } from "../PrefixStorage";
 import { BotDatabase } from "./Bot";
 import { GuildMemberData } from "./Member";
-import { PropertyMap, AllowedPropertyTypes } from "./PropertyMap";
+import { PropertyMap } from "./PropertyMap";
 
 /**
  * Класс базы данных сервера
