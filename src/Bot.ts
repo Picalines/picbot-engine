@@ -2,13 +2,13 @@ import { Client, Message, MessageEmbed, PermissionString } from "discord.js";
 import { EventEmitter } from "events";
 import { PathLike, readFileSync } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
-import * as BuiltInCommands from "./builtIn/command";
 import { ArgumentReaderStorage } from "./command/argument/Storage";
 import { CommandContext } from "./command/Context";
 import { CommandStorage } from "./command/Storage";
+import { Command } from "./command/Info";
 import { BotDatabase } from "./database/Bot";
 import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
-import { Command } from ".";
+import * as BuiltInCommands from "./builtIn/command";
 
 export declare interface Bot {
     on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
@@ -25,11 +25,6 @@ export declare interface Bot {
  * Обёртка клиента API из discord.js
  */
 export class Bot extends EventEmitter {
-    /**
-     * Клиент API discord.js
-     */
-    public readonly client: Client;
-
     /**
      * Настройки бота
      */
@@ -51,12 +46,17 @@ export class Bot extends EventEmitter {
     public readonly database: BotDatabase;
 
     /**
-     * @param options настройки клиента API discord.js
+     * @param options настройки бота
      */
-    constructor(options: BotOptionsArgument = {}) {
-        super();
+    constructor(
+        /**
+         * Клиент API discord.js
+         */
+        public readonly client: Client,
 
-        this.client = new Client(options.clientOptions);
+        options: BotOptionsArgument = {}
+    ) {
+        super();
 
         this.options = ParseBotOptionsArgument(options);
 
@@ -70,13 +70,14 @@ export class Bot extends EventEmitter {
         }
 
         this.client.on('ready', () => {
-            console.log("logged in as " + String(this.client.user?.username));
+            console.log("logged in as " + this.username);
         });
 
         this.database = new BotDatabase(this, this.options.database.handler);
         this.client.once('ready', () => {
             this.database.load();
         });
+
         if (this.options.database.saveOnSigint) {
             process.once('SIGINT', async () => {
                 await this.database.save();

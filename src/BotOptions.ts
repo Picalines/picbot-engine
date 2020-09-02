@@ -1,4 +1,3 @@
-import { ClientOptions } from "discord.js";
 import { DeepPartial, ReadOnlyNonEmptyArray } from "./utils";
 import { BotDatabaseHandler } from "./database/Bot";
 import { DebugBotDatabaseHandler } from "./builtIn/database";
@@ -80,8 +79,6 @@ export type BotOptions = {
  */
 export type BotOptionsArgument = DeepPartial<Omit<BotOptions, 'database'>> & {
     database?: Partial<BotOptions['database']>
-} & {
-    clientOptions?: ClientOptions;
 };
 
 /**
