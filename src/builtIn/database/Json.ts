@@ -40,14 +40,19 @@ export function getJsonBotDatabaseHandler(options: JsonHandlerOptions): BotDatab
             const saveDataObject = {
                 prefixes: guildData.prefixes.list,
                 members: {} as Record<string, any>,
-            };
+            } as any;
 
-            for (const memberData of guildData.members) {
-                if (!memberData.map) continue;
-                const entries = memberData.map.entries();
-                saveDataObject.members[memberData.member.id] = Object.fromEntries(entries);
+            if (guildData.map) {
+                saveDataObject.properties = Object.fromEntries(guildData.map.entries());
             }
-            writeFileSync(getGuildPath(guildData.guild), JSON.stringify(saveDataObject, null, options.jsonIndent));
+
+            for (const { member, map } of guildData.members) {
+                if (!map) continue;
+                saveDataObject.members[member.id] = Object.fromEntries(map.entries());
+            }
+
+            const json = JSON.stringify(saveDataObject, null, options.jsonIndent);
+            writeFileSync(getGuildPath(guildData.guild), json);
         },
 
         loadGuild: (guildData) => {
@@ -65,6 +70,12 @@ export function getJsonBotDatabaseHandler(options: JsonHandlerOptions): BotDatab
                     const member = guildData.guild.member(id);
                     if (!member) continue;
                     guildData.getMemberData(member).map = new Map(Object.entries(memberSavedMap));
+                }
+            }
+
+            if (typeof dataObject.properties == 'object') {
+                for (const [key, value] of Object.entries<any>(dataObject.properties)) {
+                    guildData.setProperty(key, value);
                 }
             }
         },
