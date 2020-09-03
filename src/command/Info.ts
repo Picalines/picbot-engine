@@ -1,16 +1,10 @@
 import { PermissionString } from "discord.js";
-import { PromiseVoid, ReadOnlyNonEmptyArray } from "../utils";
-import { CommandContext } from "./Context";
-
-export type CommandArgumentData = {
-    name: string;
-    type: string;
-    readDefault?: (context: CommandContext) => any;
-};
-
+import { ReadOnlyNonEmptyArray } from "../utils";
+import { CommandArgument } from "./Command";
 /**
  * Информация о команде
  */
+
 export interface CommandInfo {
     /**
      * Имя команды
@@ -31,7 +25,7 @@ export interface CommandInfo {
      * Описание
      */
     readonly description?: string;
-    
+
     /**
      * Синтаксис
      * Пример: !ban `<member:target> <remainingText:reason=спам>`
@@ -44,7 +38,7 @@ export interface CommandInfo {
      * свойство [[CommandContext.args]].
      * Это свойство заполняется автоматически, если указано свойство [[CommandInfo.syntax]]
      */
-    readonly arguments?: CommandArgumentData[];
+    readonly arguments?: ReadOnlyNonEmptyArray<CommandArgument>;
 
     /**
      * Примеры использования
@@ -55,16 +49,4 @@ export interface CommandInfo {
      * Права участника сервера
      */
     readonly permissions?: Readonly<PermissionString[]>;
-}
-
-/**
- * Интерфейс функции запуска команды
- */
-export type CommandExecuteable = (context: CommandContext) => PromiseVoid;
-
-/**
- * Функция запуска команды вместе с её информацией
- */
-export interface Command extends CommandInfo {
-    execute: CommandExecuteable;
 }

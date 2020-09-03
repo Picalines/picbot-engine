@@ -3,7 +3,7 @@ import { Bot } from "../Bot";
 import { GuildMessage } from "../utils";
 import { ArgumentReader, ReadSpace } from "./argument/Readers";
 import { ArgumentReaderStorage } from "./argument/Storage";
-import { CommandInfo } from "./Info";
+import { Command } from "./Command";
 
 /**
  * Контекст запущенной команды
@@ -27,16 +27,6 @@ export class CommandContext {
     };
 
     /**
-     * Регулярное выражение аргумента в синтаксисе команды
-     */
-    public static readonly syntaxArgumentRegex = /<(?<type>\w+):(?<name>\w+)(?:=(?<default>.*?))?>/g;
-
-    /**
-     * Регулярное выражение синтаксиса команды (используется для валидации)
-     */
-    public static readonly commandSyntaxRegex = /(<\w+:\w+(?:=.*)?>\s*)+/;
-
-    /**
      * Объект аргументов команды (содержит данные, если у команды прописан синтаксис. Иначе undefined)
      */
     public readonly args: any;
@@ -53,7 +43,7 @@ export class CommandContext {
      * @param executor участник сервера, запустивший команду
      */
     constructor(
-        command: CommandInfo,
+        public readonly command: Command,
         public readonly bot: Bot,
         public readonly message: GuildMessage,
         executor?: GuildMember
@@ -71,24 +61,35 @@ export class CommandContext {
             });
         }
 
-        this.args = undefined;
-        if (command.arguments !== undefined) {
-            this.args = {};
-            for (const argData of command.arguments) {
-                try {
-                    this.args[argData.name] = this.readUserInput(readers[argData.type], argData.type);
+        const { arguments: commandArgs } = command.info;
+        if (commandArgs === undefined) {
+            this.args = undefined;
+            return;
+        }
+
+        this.args = {};
+        for (const { name, type, defaultInput } of commandArgs) {
+            const reader = readers[type];
+            try {
+                this.args[name] = this.readUserInput(reader, type);
+            }
+            catch (inputErr) {
+                if (!(inputErr instanceof Error)
+                    || !this.isEOL()
+                    || defaultInput === undefined)
+                    throw inputErr;
+
+                if (defaultInput == '') {
+                    this.args[name] = undefined;
+                    continue;
                 }
-                catch (err) {
-                    if (!(err instanceof Error)) throw err;
-                    if (!this.isEOL()) throw err;
-                    if (!argData.readDefault) throw err;
-                    try {
-                        this.args[argData.name] = argData.readDefault(this);
-                    }
-                    catch (defaultErr) {
-                        if (!(defaultErr instanceof Error)) throw defaultErr;
-                        throw new Error(`error in default argument '${argData.name}' value: ${defaultErr.message}`);
-                    }
+
+                try {
+                    this.args[name] = this.readUserInput(reader, defaultInput);
+                }
+                catch (defaultErr) {
+                    if (!(defaultErr instanceof Error)) throw defaultErr;
+                    throw new Error(`error in default argument '${name}' value: ${defaultErr.message}`);
                 }
             }
         }

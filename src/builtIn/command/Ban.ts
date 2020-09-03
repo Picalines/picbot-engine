@@ -1,6 +1,6 @@
-import { Command } from "../../command/Info";
+import { Command } from "../../command/Command";
 
-export default {
+export default new Command({
     name: 'ban',
 
     permissions: ['BAN_MEMBERS'],
@@ -25,4 +25,4 @@ export default {
         await target.ban({ reason });
         await message.reply(`**${target.displayName}** успешно забанен`);
     }
-} as Command
+});

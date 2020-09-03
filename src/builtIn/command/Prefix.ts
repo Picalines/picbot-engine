@@ -1,13 +1,13 @@
-import { Command } from "../../command/Info";
+import { Command } from "../../command/Command";
 
-export default {
+export default new Command({
     name: 'prefix',
 
     description: 'Команда управления префиксами на сервере',
     group: 'Настройки',
     permissions: ['MANAGE_GUILD'],
 
-    syntax: '<word:operation=_> <word:prefix=_>',
+    syntax: '<word:operation=> <word:prefix=>',
     examples: [
         '`!prefix` даст список префиксов бота на сервере',
         '`!prefix add ~` добавит `~` в список префиксов бота',
@@ -44,4 +44,4 @@ export default {
                 break;
         }
     },
-} as Command
+});

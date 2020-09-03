@@ -1,6 +1,6 @@
-import { Command } from "../../command/Info";
+import { Command } from "../../command/Command";
 
-export default {
+export default new Command({
     name: 'kick',
 
     permissions: ['KICK_MEMBERS'],
@@ -25,4 +25,4 @@ export default {
         await target.kick(reason);
         await message.reply(`**${target.displayName}** успешно сослан в Сибирь`);
     }
-} as Command
+});

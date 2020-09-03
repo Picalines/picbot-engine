@@ -1,11 +1,10 @@
-import { Client, Message, MessageEmbed, PermissionString } from "discord.js";
+import { Client, Message, MessageEmbed } from "discord.js";
 import { EventEmitter } from "events";
 import { PathLike, readFileSync } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { ArgumentReaderStorage } from "./command/argument/Storage";
-import { CommandContext } from "./command/Context";
 import { CommandStorage } from "./command/Storage";
-import { Command } from "./command/Info";
+import { Command } from "./command/Command";
 import { BotDatabase } from "./database/Bot";
 import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
@@ -46,26 +45,23 @@ export class Bot extends EventEmitter {
     public readonly database: BotDatabase;
 
     /**
+     * @param client Клиент API discord.js
      * @param options настройки бота
      */
     constructor(
-        /**
-         * Клиент API discord.js
-         */
         public readonly client: Client,
-
         options: BotOptionsArgument = {}
     ) {
         super();
 
         this.options = ParseBotOptionsArgument(options);
 
-        this.commands = new CommandStorage(this.commandArguments);
+        this.commands = new CommandStorage();
 
         const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
         for (const builtInCommand of Object.values(BuiltInCommands)) {
-            if (builtInCommandsSetting[builtInCommand.name]) {
-                this.commands.register(builtInCommand.name, builtInCommand);
+            if (builtInCommandsSetting[builtInCommand.info.name]) {
+                this.commands.register(builtInCommand);
             }
         }
 
@@ -142,8 +138,6 @@ export class Bot extends EventEmitter {
             return false;
         }
 
-        const executor = message.member;
-
         await Bot.catchErrorEmbedReply(message, async () => {
             let command: Command;
             try {
@@ -155,15 +149,7 @@ export class Bot extends EventEmitter {
                 return;
             }
 
-            const commandPermissions = (command.permissions || []) as PermissionString[];
-            const checkAdmin = this.options.permissions.checkAdmin;
-            const missingPermissions = executor.permissions.missing(commandPermissions, checkAdmin);
-            if (missingPermissions.length) {
-                throw new Error(`Not enough permissions: ${missingPermissions.join(', ')}`);
-            }
-
-            const context = new CommandContext(command, this, message as GuildMessage, executor);
-            await command.execute(context);
+            await command.execute(this, message);
         });
 
         return true;
@@ -202,7 +188,7 @@ export class Bot extends EventEmitter {
                 return;
             }
 
-            await message.reply(embed);
+            await message.reply({ embed });
         }
     }
 

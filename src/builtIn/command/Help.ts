@@ -1,78 +1,70 @@
 import { GuildMember, MessageEmbed } from "discord.js";
-import { Command } from "../../command/Info";
-import { CommandStorage } from "../../command/Storage";
+import { Command } from "../../command/Command";
+import { CommandInfo } from "../../command/Info";
+import { Bot } from "../../Bot";
 
 const formatList = (list: string[]) => list.map(el => `\`${el}\``).join(', ');
 
 const defaulGroup = 'Другое';
 
-function makeCommandsList(embed: MessageEmbed, { permissions }: GuildMember, commands: CommandStorage) {
+const makeCommandsList = (bot: Bot, embed: MessageEmbed, requester: GuildMember) => {
     embed.setTitle('Список команд бота');
 
-    const groupedCommands: Record<string, Command[]> = {};
-    for (const command of commands) {
-        if (command.permissions && permissions.missing(command.permissions as any).length) {
-            continue
-        }
+    const groupedCommands = bot.commands.getGrouped(defaulGroup);
 
-        let group = command.group || defaulGroup;
-        if (groupedCommands[group]) {
-            groupedCommands[group].push(command);
+    for (const [group, commands] of groupedCommands) {
+        const availableCommands = commands.filter(c => c.hasPermissions(bot, requester));
+        if (availableCommands.length) {
+            const commandNames = availableCommands.map(c => c.info.name);
+            embed.addField(group, formatList(commandNames));
         }
-        else {
-            groupedCommands[group] = [ command ];
-        }
-    }
-
-    for (const [group, commands] of Object.entries(groupedCommands)) {
-        embed.addField(group, formatList(commands.map(c => c.name)));
     }
 }
 
-function makeCommandInfo(embed: MessageEmbed, command: Command) {
-    embed.setTitle(`Информация о команде \`${command.name}\``);
+const makeCommandInfo = (embed: MessageEmbed, info: CommandInfo) => {
+    embed.setTitle(`Информация о команде \`${info.name}\``);
 
-    if (command.aliases) {
-        embed.addField('Алиасы', formatList(command.aliases as any));
+    if (info.aliases) {
+        embed.addField('Алиасы', formatList(info.aliases as any));
     }
 
-    embed.addField('Описание', command.description || '*Отсутствует*');
+    embed.addField('Описание', info.description || '*Отсутствует*');
 
-    if (command.syntax) {
-        embed.addField('Синтаксис', `\`${command.syntax}\``);
+    if (info.syntax) {
+        embed.addField('Синтаксис', `\`${info.syntax}\``);
     }
 
-    if (command.examples) {
-        embed.addField('Примеры использования', command.examples.map(e => '- ' + e).join('\n'));
+    if (info.examples) {
+        embed.addField('Примеры использования', info.examples.map(e => '- ' + e).join('\n'));
     }
 
-    if (command.permissions) {
-        embed.addField('Права доступа', formatList(command.permissions as any));
+    if (info.permissions) {
+        embed.addField('Права доступа', formatList(info.permissions as any));
     }
 }
 
-export default {
+export default new Command({
     name: 'help',
 
     description: 'Помощь по командам бота',
     group: 'Информация',
 
-    syntax: '<word:commandName=_>',
+    syntax: '<word:commandName=>',
     examples: [
         '`!help` даст список команд',
         '`!help test` даст информацию о команде `test`'
     ],
 
-    execute: ({ message, bot: { commands }, args: { commandName } }): Promise<any> => {
+    execute: ({ message, bot, args: { commandName } }): Promise<any> => {
         const embed = new MessageEmbed().setColor(0x45ff83);
 
         if (!commandName) {
-            makeCommandsList(embed, message.member, commands);
+            makeCommandsList(bot, embed, message.member);
         }
         else {
-            makeCommandInfo(embed, commands.getByName(commandName));
+            makeCommandInfo(embed, bot.commands.getByName(commandName).info);
         }
 
         return message.reply({ embed });
     }
-} as Command
+});
