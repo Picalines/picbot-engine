@@ -19,9 +19,12 @@
 #### Ping
 
 ```js
+const { Client } = require('discord.js');
 const { Bot } = require('picbot-engine');
 
-const bot = new Bot({
+const client = new Client();
+
+const bot = new Bot(client, {
     guild: {
         defaultPrefixes: ['picbot.'], // стандартные префиксы для новых серверов
     },
@@ -149,10 +152,18 @@ bot.commandArguments.register('pos', userInput => {
     };
 });
 
-// ...
-
-bot.commands.register('goto', ({ message, read: { pos } }) => {
+// использование через read
+bot.commands.register('goto', async ({ message, read: { pos } }) => {
     const { x, y } = pos();
-    message.reply(`шагаю на клетку ${x}-${y}!`);
+    await message.reply(`шагаю на клетку ${x}-${y}!`);
 });
+
+// через синтаксис
+bot.commands.register('goto', {
+    syntax: '<pos:destination>',
+    execute: async ({ message, args: { destination: { x, y } } }) => {
+        await message.reply(`шагаю на клетку ${x}-${y}!`);
+    }
+});
+
 ```
