@@ -1,4 +1,7 @@
-import { Command } from "./Command";
+import { Command, CommandExecuteable } from "./Command";
+import { CommandInfo } from "./Info";
+
+type CommandRegisterParameter = Omit<CommandInfo, 'name'> & { execute: CommandExecuteable };
 
 /**
  * Хранилище команд
@@ -8,18 +11,40 @@ export class CommandStorage implements Iterable<Command> {
     #size = 0;
 
     /**
-     * Добавляет новую команду в память бота
+     * Добавляет команду в память бота
      * @param name имя команды
-     * @param data информация команды (функция или объект с дополнительной информацией)
+     * @param info информация о команде
      */
-    public register(command: Command) {
+    public register(name: string, info: CommandRegisterParameter): void
+
+    /**
+     * Добавляет команду в память бота
+     * @param name имя команды
+     * @param executeable функция, обрабатывающая логику команды
+     */
+    public register(name: string, executeable: CommandExecuteable): void
+
+    /**
+     * Добавляет команду в память бота
+     * @param command существующая команда
+     */
+    public register(command: Command): void
+
+    public register(command: Command | string, info?: CommandRegisterParameter | CommandExecuteable): void {
+        if (typeof command == 'string') {
+            if (!info) throw new TypeError('command info or executeable is undefined');
+
+            const _info: CommandRegisterParameter = typeof info == 'function' ? { execute: info } : info;
+            command = new Command({ name: command, ..._info });
+        }
+
         this.#commands.set(command.info.name, command);
 
         command.info.aliases?.forEach(alias => {
             if (this.#commands.has(alias)) {
                 throw new Error(`command alias '${alias}' overlaps with another command`);
             }
-            this.#commands.set(alias, command);
+            this.#commands.set(alias, command as Command);
         });
 
         this.#size += 1;
