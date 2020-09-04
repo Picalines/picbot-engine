@@ -27,6 +27,9 @@
     },
     "author": "Picalines",
     "license": "ISC",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/"
+    },
     "dependencies": {
         "discord.js": "^12.3.1"
     },
