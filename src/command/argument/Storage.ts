@@ -38,7 +38,7 @@ export class ArgumentReaderStorage implements Iterable<ArgumentReaderData> {
      * @param reader функция, читающая аргумент
      */
     public register<T = any>(typeName: string, reader: Arguments.ArgumentReader<T>) {
-        if (/^\d+/.test(typeName) || typeName.includes(' ')) {
+        if (!typeName || /^\d+/.test(typeName) || typeName.includes(' ')) {
             throw new Error(`invalid argument type name '${typeName}'`);
         }
 

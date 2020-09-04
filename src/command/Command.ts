@@ -22,12 +22,12 @@ export class Command {
     /**
      * Регулярное выражение синтаксиса команды (используется для валидации)
      */
-    public static readonly syntaxRegex = /(<\w+:\w+(?:=.*)?>\s*)+/;
+    public static readonly syntaxRegex = /(<\w+:[a-zA-Z_][a-zA-Z0-9_]*(?:=.*)?>\s*)+/;
 
     /**
      * Регулярное выражение аргумента в синтаксисе команды
      */
-    public static readonly syntaxArgumentRegex = /<(?<type>\w+):(?<name>\w+)(?:(?<default>=.*?))?>/g;
+    public static readonly syntaxArgumentRegex = /<(?<type>\w+):(?<name>[a-zA-Z_][a-zA-Z0-9_]*)(?:(?<default>=.*?))?>/g;
 
     /**
      * Информация о команде
