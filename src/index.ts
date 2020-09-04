@@ -3,7 +3,8 @@ export { GuildMessage } from "./utils";
 export * as ArgumentReaders from "./command/argument/Readers";
 export { ArgumentReaderStorage } from "./command/argument/Storage";
 
-export { CommandInfo, CommandExecuteable, Command } from "./command/Info";
+export { CommandInfo } from "./command/Info";
+export { CommandExecuteable, Command } from "./command/Command";
 export { CommandStorage } from "./command/Storage";
 export { CommandContext } from "./command/Context";
 

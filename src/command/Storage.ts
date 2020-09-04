@@ -1,6 +1,7 @@
-import { ArgumentReaderStorage } from "./argument/Storage";
-import { CommandContext } from "./Context";
-import { Command, CommandArgumentData, CommandExecuteable } from "./Info";
+import { Command, CommandExecuteable } from "./Command";
+import { CommandInfo } from "./Info";
+
+type CommandRegisterParameter = Omit<CommandInfo, 'name'> & { execute: CommandExecuteable };
 
 /**
  * Хранилище команд
@@ -9,50 +10,41 @@ export class CommandStorage implements Iterable<Command> {
     readonly #commands = new Map<string, Command>();
     #size = 0;
 
-    #argumentReaders: ArgumentReaderStorage;
-
-    constructor(argumentReaders: ArgumentReaderStorage) {
-        this.#argumentReaders = argumentReaders;
-    }
+    /**
+     * Добавляет команду в память бота
+     * @param name имя команды
+     * @param info информация о команде
+     */
+    public register(name: string, info: CommandRegisterParameter): void
 
     /**
-     * Добавляет новую команду в память бота
+     * Добавляет команду в память бота
      * @param name имя команды
-     * @param data информация команды (функция или объект с дополнительной информацией)
+     * @param executeable функция, обрабатывающая логику команды
      */
-    public register(name: string, data: Omit<Command, 'name'> | CommandExecuteable) {
-        const validateName = (name: string) => name.length > 0 && !name.includes(' ');
+    public register(name: string, executeable: CommandExecuteable): void
 
-        if (!validateName(name)) {
-            throw new Error(`invalid command name '${name}'`);
+    /**
+     * Добавляет команду в память бота
+     * @param command существующая команда
+     */
+    public register(command: Command): void
+
+    public register(command: Command | string, info?: CommandRegisterParameter | CommandExecuteable): void {
+        if (typeof command == 'string') {
+            if (!info) throw new TypeError('command info or executeable is undefined');
+
+            const _info: CommandRegisterParameter = typeof info == 'function' ? { execute: info } : info;
+            command = new Command({ name: command, ..._info });
         }
 
-        let command: Command;
-        if (typeof data == 'function') {
-            command = { name, execute: data };
-        }
-        else {
-            if (data.syntax && !data.arguments) {
-                command = {
-                    name,
-                    ...data,
-                    arguments: this.buildCommandSyntax(name, this.#argumentReaders, data.syntax),
-                };
-            }
-            else {
-                command = { name, ...data };
-            }
-        }
+        this.#commands.set(command.info.name, command);
 
-        this.#commands.set(name, command);
-
-        command.aliases?.forEach(alias => {
-            if (validateName(alias)) {
-                this.#commands.set(alias, command);
+        command.info.aliases?.forEach(alias => {
+            if (this.#commands.has(alias)) {
+                throw new Error(`command alias '${alias}' overlaps with another command`);
             }
-            else {
-                console.warn(`invalid command alias '${alias}' (ignored)`);
-            }
+            this.#commands.set(alias, command as Command);
         });
 
         this.#size += 1;
@@ -71,6 +63,28 @@ export class CommandStorage implements Iterable<Command> {
     }
 
     /**
+     * Возвращает словарь с командами, сгруппированными по свойству [[CommandInfo.group]]
+     * @param defaultGroup группа команд, у которой не прописано свойство [[CommandInfo.group]]
+     */
+    public getGrouped(defaultGroup: string): Map<string, Command[]> {
+        const map = new Map<string, Command[]>();
+
+        for (const command of this) {
+            const group = command.info.group || defaultGroup;
+            const list = map.get(group);
+
+            if (list) {
+                list.push(command);
+            }
+            else {
+                map.set(group, [command]);
+            }
+        }
+
+        return map;
+    }
+
+    /**
      * Количество команд в хранилище
      */
     get size(): number {
@@ -86,54 +100,5 @@ export class CommandStorage implements Iterable<Command> {
 
     public [Symbol.iterator]() {
         return new Set(this.#commands.values()).values();
-    }
-
-    private buildCommandSyntax(commandName: string, argReaders: ArgumentReaderStorage, syntax: string): CommandArgumentData[] {
-        if (!CommandContext.commandSyntaxRegex.test(syntax)) {
-            throw new Error(`invalid '${commandName}' command syntax: ${syntax}`);
-        }
-
-        const argMatches = syntax.matchAll(CommandContext.syntaxArgumentRegex);
-        const argDatas: CommandArgumentData[] = [];
-
-        for (const argMatch of argMatches) {
-            if (!argMatch.groups) continue;
-
-            const { type, name } = argMatch.groups;
-            if (argDatas.find(d => d.name == name)) {
-                throw new Error(`'${commandName}' command argument name '${name}' already used`);
-            }
-
-            const reader = argReaders.readers[type];
-            if (!reader) {
-                throw new Error(`unknown argument type '${type}' ('${commandName}' command syntax)`);
-            }
-
-            let readDefault: CommandArgumentData['readDefault'] = undefined;
-            if (argMatch.groups.default !== undefined) {
-                if (argMatch.groups.default == '_') {
-                    readDefault = () => undefined;
-                }
-                else {
-                    const defaultInput = argMatch.groups.default;
-                    readDefault = ({ message }) => {
-                        const result = reader(defaultInput, message);
-                        if (result.isError) {
-                            const error = typeof result.error == 'string' ? result.error : result.error.message;
-                            throw new Error(`invalid default argument value '${defaultInput}' (${error})`);
-                        }
-                        return result.value.parsedValue;
-                    }
-                }
-            }
-
-            argDatas.push({
-                name,
-                type,
-                readDefault,
-            });
-        }
-
-        return argDatas;
     }
 }

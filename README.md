@@ -103,6 +103,27 @@ bot.commands.register('ban', {
 
 У бота есть встроенная команда `help`, которая может показать все эти данные в embed'е
 
+### Подключение команд из других файлов
+
+`commands/ping.js`
+```js
+const { Command } = require('picbot-engine');
+
+module.exports = new Command({
+    name: 'ping',
+    execute: ({ message }) => {
+        message.reply('pong!');
+    },
+});
+```
+
+`index.js`
+```js
+const pingCommand = require('./commands/ping');
+
+bot.commands.register(pingCommand);
+```
+
 ### События discord.js
 
 ```js
