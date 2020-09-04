@@ -16,7 +16,7 @@ export type CommandArgument = {
 export type CommandExecuteable = (context: CommandContext) => PromiseVoid;
 
 /**
- * Функция запуска команды вместе с её информацией
+ * Объект, хранящий информацию команды и её логику
  */
 export class Command {
     /**
@@ -119,7 +119,7 @@ export class Command {
 
         const argMatches = [...syntax.matchAll(Command.syntaxArgumentRegex)]
             .filter(m => m.groups !== undefined);
-        
+
         if (!argMatches.length) {
             return;
         }
