@@ -23,13 +23,11 @@
         "engine"
     ],
     "repository": {
+        "type": "git",
         "url": "https://github.com/Picalines/picbot-engine"
     },
     "author": "Picalines",
     "license": "ISC",
-    "publishConfig": {
-        "registry": "https://npm.pkg.github.com/"
-    },
     "dependencies": {
         "discord.js": "^12.3.1"
     },
