@@ -71,7 +71,7 @@ export class CommandContext {
         for (const { name, type, defaultInput } of commandArgs) {
             const reader = readers[type];
             try {
-                this.args[name] = this.readUserInput(reader, type);
+                this.args[name] = this.readUserInput(reader, type, name);
             }
             catch (inputErr) {
                 if (!(inputErr instanceof Error)
@@ -85,7 +85,9 @@ export class CommandContext {
                 }
 
                 try {
-                    this.args[name] = this.readUserInput(reader, defaultInput);
+                    const readResult = reader(defaultInput, message);
+                    if (readResult.isError) throw new Error(String(readResult.error));
+                    this.args[name] = readResult.value;
                 }
                 catch (defaultErr) {
                     if (!(defaultErr instanceof Error)) throw defaultErr;
@@ -95,14 +97,15 @@ export class CommandContext {
         }
     }
 
-    private readUserInput<T>(reader: ArgumentReader<T>, typeName: string): T {
+    private readUserInput<T>(reader: ArgumentReader<T>, typeName: string, argName?: string): T {
+        argName = argName ? ` '${argName}'` : '';
         if (this.isEOL()) {
-            throw new Error(`argument of type '${typeName}' expected, but got end of command`);
+            throw new Error(`argument${argName} of type '${typeName}' expected, but got end of command`);
         }
 
         let readerResult = reader(this.#userInput, this.message);
         if (readerResult.isError) {
-            throw new Error(`argument of type '${typeName}' expected (${readerResult.error})`);
+            throw new Error(`argument${argName} of type '${typeName}' expected (${readerResult.error})`);
         }
 
         const { length: argumentLength, parsedValue } = readerResult.value;
