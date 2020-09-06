@@ -87,7 +87,7 @@ export class CommandContext {
                 try {
                     const readResult = reader(defaultInput, message);
                     if (readResult.isError) throw new Error(String(readResult.error));
-                    this.args[name] = readResult.value;
+                    this.args[name] = readResult.value.parsedValue;
                 }
                 catch (defaultErr) {
                     if (!(defaultErr instanceof Error)) throw defaultErr;
