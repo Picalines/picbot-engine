@@ -2,7 +2,7 @@
 
 Библиотека для лёгкого написания дискорд бота на JavaScript
 
-Все функции API дискорда библиотека берёт из [discord.js](https://github.com/discordjs/discord.js)
+Все функции API дискорда библиотека берёт из [discord.js](https://github.com/discordjs/discord.js) (версия 12 и выше!)
 
 [Документация](https://picalines.github.io/picbot-engine/)
 
