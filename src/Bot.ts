@@ -152,6 +152,10 @@ export class Bot extends EventEmitter {
             await command.execute(this, message);
         });
 
+        if (this.options.utils.autoStopTyping) {
+            message.channel.stopTyping(true);
+        }
+
         return true;
     }
 

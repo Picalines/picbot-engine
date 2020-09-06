@@ -71,6 +71,13 @@ export type BotOptions = {
          */
         saveOnSigint: boolean;
     };
+    utils: {
+        /**
+         * Если true, бот автоматически перестаёт печатать после завершения работы команды
+         * @default true
+         */
+        autoStopTyping: boolean;
+    };
 };
 
 /**
@@ -107,6 +114,9 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
             handler: optionsArg.database?.handler ?? DebugBotDatabaseHandler,
             ignoreBots: optionsArg.database?.ignoreBots ?? true,
             saveOnSigint: optionsArg.database?.saveOnSigint ?? true,
+        },
+        utils: {
+            autoStopTyping: optionsArg.utils?.autoStopTyping ?? true,
         },
     };
 }
