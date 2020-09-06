@@ -1,3 +1,5 @@
+import { Message } from "discord.js";
+
 /**
  * Хранилище префиксов команд
  */
@@ -78,5 +80,19 @@ export class PrefixStorage implements Iterable<string> {
 
     public toString(): string {
         return `${PrefixStorage.name}(${this.size}) { ${this.list.join(', ')} }`;
+    }
+
+    /**
+     * @returns длину префикса в сообщении (0, если префикс не найден)
+     * @param message сообщение
+     */
+    public getMessagePrefixLength(message: Message): number {
+        const lowerContent = message.cleanContent.toLowerCase();
+        for (const prefix of this) {
+            if (lowerContent.startsWith(prefix)) {
+                return prefix.length;
+            }
+        }
+        return 0;
     }
 }

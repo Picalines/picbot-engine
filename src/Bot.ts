@@ -37,7 +37,7 @@ export class Bot extends EventEmitter {
     /**
      * Хранилище команд бота
      */
-    public readonly commands: CommandStorage;
+    public readonly commands = new CommandStorage();
 
     /**
      * База данных бота
@@ -55,8 +55,6 @@ export class Bot extends EventEmitter {
         super();
 
         this.options = ParseBotOptionsArgument(options);
-
-        this.commands = new CommandStorage();
 
         const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
         for (const builtInCommand of Object.values(BuiltInCommands)) {
@@ -119,21 +117,12 @@ export class Bot extends EventEmitter {
     public async handleCommands(message: GuildMessage): Promise<boolean> {
         const { prefixes } = await this.database.getGuildData(message.guild);
 
-        const lowerContent = message.content.toLowerCase();
-        let prefixLength = 0;
-        for (const prefix of prefixes) {
-            if (lowerContent.startsWith(prefix)) {
-                prefixLength = prefix.length;
-                break;
-            }
-        }
-
+        const prefixLength = prefixes.getMessagePrefixLength(message);
         if (!prefixLength) {
             return false;
         }
 
-        const content = message.content.slice(prefixLength);
-        const commandName = content.replace(/\s.*$/, '');
+        const commandName = message.cleanContent.slice(prefixLength).toLowerCase().replace(/\s.*$/, '');
         if (!commandName) {
             return false;
         }

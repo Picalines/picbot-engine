@@ -53,6 +53,9 @@ export class Command {
             if (!Command.validateName(alias)) {
                 throw new Error(`invalid command alias '${alias}' ('${otherInfo.name}')`);
             }
+            if (alias == info.name) {
+                throw new Error(`command '${info.name}' has the same alias`);
+            }
         });
 
         const _info = { ...otherInfo };
@@ -100,11 +103,11 @@ export class Command {
     }
 
     /**
-     * @returns true, если имя команды не пустая строка и не содержит пробелов
+     * @returns true, если имя команды не пустая строка, не содержит пробелов и в нижнем регистре
      * @param name имя команды
      */
     public static validateName(name: string): boolean {
-        return name.length > 0 && !name.includes(' ');
+        return name.length > 0 && !name.includes(' ') && name == name.toLowerCase();
     }
 
     /**

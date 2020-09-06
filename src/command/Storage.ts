@@ -38,7 +38,9 @@ export class CommandStorage implements Iterable<Command> {
             command = new Command({ name: command, ..._info });
         }
 
-        this.#commands.set(command.info.name, command);
+        if (this.#commands.has(command.info.name)) {
+            throw new Error(`command name '${command.info.name}' overlaps with another command`);
+        }
 
         command.info.aliases?.forEach(alias => {
             if (this.#commands.has(alias)) {
@@ -47,6 +49,8 @@ export class CommandStorage implements Iterable<Command> {
             this.#commands.set(alias, command as Command);
         });
 
+        this.#commands.set(command.info.name, command);
+        
         this.#size += 1;
     }
 
@@ -55,6 +59,7 @@ export class CommandStorage implements Iterable<Command> {
      * @param name имя или алиас команды
      */
     public getByName(name: string): Command | never {
+        name = name.toLowerCase();
         const command = this.#commands.get(name);
         if (!command) {
             throw new Error(`command '${name}' not found`);
