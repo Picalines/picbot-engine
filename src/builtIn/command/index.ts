@@ -4,3 +4,4 @@ export { default as ClearCommand } from "./Clear";
 export { default as HelpCommand } from "./Help";
 export { default as PrefixCommand } from "./Prefix";
 export { default as AvatarCommand } from "./Avatar";
+export { default as SetGreetingCommand } from "./SetGreeting";

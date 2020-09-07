@@ -36,6 +36,7 @@ export type BotOptions = {
             clear: boolean;
             prefix: boolean;
             avatar: boolean;
+            setgreeting: boolean;
         };
         /**
          * Отсылать ли сообщение о ненайденной команде
@@ -108,6 +109,7 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
                 clear: optionsArg.commands?.builtIn?.clear ?? true,
                 prefix: optionsArg.commands?.builtIn?.prefix ?? true,
                 avatar: optionsArg.commands?.builtIn?.avatar ?? true,
+                setgreeting: optionsArg.commands?.builtIn?.setgreeting ?? true,
             },
             sendNotFoundError: optionsArg.commands?.sendNotFoundError ?? false,
         },
