@@ -1,4 +1,4 @@
-import { Client, Message, MessageEmbed } from "discord.js";
+import { Client, Message, MessageEmbed, TextChannel } from "discord.js";
 import { EventEmitter } from "events";
 import { PathLike, readFileSync } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
@@ -100,6 +100,25 @@ export class Bot extends EventEmitter {
                 else this.emit('memberPlainMessage', message);
             });
         });
+        
+        if (this.options.commands.builtIn.setgreeting) {
+            this.client.on('guildMemberAdd', async member => {
+                const { systemChannel } = member.guild;
+                if (!(systemChannel instanceof TextChannel)) {
+                    return;
+                }
+                
+                const guildData = await this.database.getGuildData(member.guild);
+                
+                let greeting = guildData.getProperty('greeting', '');
+                if (!greeting) {
+                    return;
+                }
+                
+                greeting = greeting.replace('@member', member.toString());
+                await systemChannel.send(greeting);
+            });
+        }
     }
 
     /**
