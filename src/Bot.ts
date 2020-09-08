@@ -104,13 +104,13 @@ export class Bot extends EventEmitter {
         if (this.options.commands.builtIn.setgreeting) {
             this.client.on('guildMemberAdd', async member => {
                 const { systemChannel } = member.guild;
-                if (!(systemChannel instanceof TextChannel)) {
+                if (!systemChannel) {
                     return;
                 }
 
-                const guildData = await this.database.getGuildData(member.guild);
+                let greeting = (await this.database.getGuildData(member.guild))
+                    .getProperty('greeting', '');
 
-                let greeting = guildData.getProperty('greeting', '');
                 if (!greeting) {
                     return;
                 }
