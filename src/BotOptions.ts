@@ -2,6 +2,16 @@ import { DeepPartial, ReadOnlyNonEmptyArray } from "./utils";
 import { BotDatabaseHandler } from "./database/Bot";
 import { DebugBotDatabaseHandler } from "./builtIn/database";
 
+const builtInCommandNames = [
+    'help',
+    'ban',
+    'kick',
+    'clear',
+    'prefix',
+    'avatar',
+    'setgreeting',
+] as const;
+
 /**
  * Объект с настройками бота
  */
@@ -29,15 +39,7 @@ export type BotOptions = {
          * Включение встроенных команд
          * @default true (для всех)
          */
-        builtIn: {
-            help: boolean;
-            ban: boolean;
-            kick: boolean;
-            clear: boolean;
-            prefix: boolean;
-            avatar: boolean;
-            setgreeting: boolean;
-        };
+        builtIn: { [name in typeof builtInCommandNames[number]]: boolean };
         /**
          * Отсылать ли сообщение о ненайденной команде
          * @default false
@@ -96,21 +98,19 @@ export type BotOptionsArgument = DeepPartial<Omit<BotOptions, 'database'>> & {
  * @ignore
  */
 export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOptions {
+    const builtInCommandsArg = optionsArg.commands?.builtIn ?? {};
+    const builtInCommandsOption: BotOptions['commands']['builtIn'] = {} as any;
+    builtInCommandNames.forEach(name => {
+        builtInCommandsOption[name] = builtInCommandsArg[name] ?? true;
+    });
+
     return {
         permissions: {
             checkAdmin: optionsArg.permissions?.checkAdmin ?? true
         },
         ignoreBots: optionsArg.ignoreBots ?? true,
         commands: {
-            builtIn: {
-                help: optionsArg.commands?.builtIn?.help ?? true,
-                ban: optionsArg.commands?.builtIn?.ban ?? true,
-                kick: optionsArg.commands?.builtIn?.kick ?? true,
-                clear: optionsArg.commands?.builtIn?.clear ?? true,
-                prefix: optionsArg.commands?.builtIn?.prefix ?? true,
-                avatar: optionsArg.commands?.builtIn?.avatar ?? true,
-                setgreeting: optionsArg.commands?.builtIn?.setgreeting ?? true,
-            },
+            builtIn: builtInCommandsOption,
             sendNotFoundError: optionsArg.commands?.sendNotFoundError ?? false,
         },
         guild: {
