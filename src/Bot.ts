@@ -100,21 +100,21 @@ export class Bot extends EventEmitter {
                 else this.emit('memberPlainMessage', message);
             });
         });
-        
+
         if (this.options.commands.builtIn.setgreeting) {
             this.client.on('guildMemberAdd', async member => {
                 const { systemChannel } = member.guild;
                 if (!(systemChannel instanceof TextChannel)) {
                     return;
                 }
-                
+
                 const guildData = await this.database.getGuildData(member.guild);
-                
+
                 let greeting = guildData.getProperty('greeting', '');
                 if (!greeting) {
                     return;
                 }
-                
+
                 greeting = greeting.replace('@member', member.toString());
                 await systemChannel.send(greeting);
             });
