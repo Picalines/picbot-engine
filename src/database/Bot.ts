@@ -1,21 +1,8 @@
 import { Bot } from "../Bot";
 import { GuildData } from "./Guild";
-import { PromiseVoid } from "../utils";
 import { Guild, Collection, GuildMember } from "discord.js";
 import { GuildMemberData } from "./Member";
-
-export type BotDatabaseHandler = {
-    guildCreate?(guildData: GuildData): PromiseVoid;
-    guildDelete?(guildData: GuildData): PromiseVoid;
-
-    beforeLoad?(database: BotDatabase): PromiseVoid;
-    loadGuild(emptyData: GuildData): PromiseVoid;
-    loaded?(database: BotDatabase): PromiseVoid;
-
-    beforeSave?(database: BotDatabase): PromiseVoid;
-    saveGuild(guildData: GuildData): PromiseVoid;
-    saved?(database: BotDatabase): PromiseVoid;
-};
+import { BotDatabaseHandler } from "./Handler";
 
 /**
  * Класс базы данных бота
@@ -56,7 +43,7 @@ export class BotDatabase {
         const guildData = new GuildData(this, guild);
         this.#guilds.set(guild.id, guildData);
 
-        await this.handler.guildCreate?.(guildData);
+        await this.handler.onGuildCreate?.(guildData);
 
         return guildData;
     }
@@ -90,7 +77,7 @@ export class BotDatabase {
             return false;
         }
 
-        await this.handler.guildDelete?.(guildData);
+        await this.handler.onGuildDelete?.(guildData);
 
         return this.#guilds.delete(guild.id);
     }

@@ -1,9 +1,10 @@
 /// <reference lib="es2019.object" />
 
 import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
-import { BotDatabaseHandler } from "../../database/Bot";
+import { BotDatabaseHandler } from "../../database/Handler";
 import { join, resolve } from "path";
 import { Guild } from "discord.js";
+import { GuildData } from "../../database/Guild";
 
 type JsonHandlerOptions = {
     /**
@@ -21,70 +22,74 @@ type JsonHandlerOptions = {
     jsonIndent?: number,
 };
 
-/**
- * Возвращает json обработчик базы данных. Хранит данные серверов в json файлах из отдельной папки
- * @param options настройки обработчика
- */
-export function getJsonBotDatabaseHandler(options: JsonHandlerOptions): BotDatabaseHandler {
-    const guildsPath = resolve(join('.', options.dirPath, options.guildsPath));
+export class JsonDatabaseHandler implements BotDatabaseHandler {
+    readonly guildsPath: string;
 
-    const makeGuildsFolder = () => void mkdirSync(guildsPath, { recursive: true });
+    constructor(
+        public readonly options: JsonHandlerOptions
+    ) {
+        this.guildsPath = resolve(join('.', options.dirPath, options.guildsPath));
+    }
 
-    const getGuildPath = (guild: Guild) => join(guildsPath, guild.id + '.json');
+    beforeLoad() { this.makeGuildsFolder(); }
+    beforeSave() { this.makeGuildsFolder(); }
 
-    return {
-        beforeLoad: makeGuildsFolder,
-        beforeSave: makeGuildsFolder,
+    loadGuild(guildData: GuildData): void {
+        const path = this.getGuildPath(guildData.guild);
+        if (!existsSync(path)) return;
 
-        saveGuild: (guildData) => {
-            const saveDataObject = {
-                prefixes: guildData.prefixes.list,
-                members: {} as Record<string, any>,
-            } as any;
+        const dataObject = JSON.parse(readFileSync(path).toString());
 
-            if (guildData.map) {
-                saveDataObject.properties = Object.fromEntries(guildData.map.entries());
-            }
+        if (dataObject.prefixes instanceof Array) {
+            guildData.prefixes.list = dataObject.prefixes;
+        }
 
-            for (const { member, map } of guildData.members) {
-                if (!map) continue;
-                saveDataObject.members[member.id] = Object.fromEntries(map.entries());
-            }
-
-            const json = JSON.stringify(saveDataObject, null, options.jsonIndent);
-            writeFileSync(getGuildPath(guildData.guild), json);
-        },
-
-        loadGuild: (guildData) => {
-            const path = getGuildPath(guildData.guild);
-            if (!existsSync(path)) return;
-
-            const dataObject = JSON.parse(readFileSync(path).toString());
-
-            if (dataObject.prefixes instanceof Array) {
-                guildData.prefixes.list = dataObject.prefixes;
-            }
-
-            if (typeof dataObject.members == 'object') {
-                for (const [id, memberSavedMap] of Object.entries<any>(dataObject.members)) {
-                    const member = guildData.guild.member(id);
-                    if (!member) continue;
-                    guildData.getMemberData(member).map = new Map(Object.entries(memberSavedMap));
-                }
-            }
-
-            if (typeof dataObject.properties == 'object') {
-                for (const [key, value] of Object.entries<any>(dataObject.properties)) {
-                    guildData.setProperty(key, value);
-                }
-            }
-        },
-
-        guildDelete: (guildData) => {
-            const path = getGuildPath(guildData.guild);
-            if (existsSync(path)) {
-                unlinkSync(path);
+        if (typeof dataObject.members == 'object') {
+            for (const [id, memberSavedMap] of Object.entries<any>(dataObject.members)) {
+                const member = guildData.guild.member(id);
+                if (!member) continue;
+                guildData.getMemberData(member).map = new Map(Object.entries(memberSavedMap));
             }
         }
-    };
+
+        if (typeof dataObject.properties == 'object') {
+            for (const [key, value] of Object.entries<any>(dataObject.properties)) {
+                guildData.setProperty(key, value);
+            }
+        }
+    }
+
+    saveGuild(guildData: GuildData): void {
+        const saveDataObject = {
+            prefixes: guildData.prefixes.list,
+            members: {} as Record<string, any>,
+        } as any;
+
+        if (guildData.map) {
+            saveDataObject.properties = Object.fromEntries(guildData.map.entries());
+        }
+
+        for (const { member, map } of guildData.members) {
+            if (!map) continue;
+            saveDataObject.members[member.id] = Object.fromEntries(map.entries());
+        }
+
+        const json = JSON.stringify(saveDataObject, null, this.options.jsonIndent);
+        writeFileSync(this.getGuildPath(guildData.guild), json);
+    }
+
+    onGuildDelete(guildData: GuildData) {
+        const path = this.getGuildPath(guildData.guild);
+        if (existsSync(path)) {
+            unlinkSync(path);
+        }
+    }
+
+    private makeGuildsFolder() {
+        mkdirSync(this.guildsPath, { recursive: true });
+    }
+
+    private getGuildPath(guild: Guild) {
+        return join(this.guildsPath, guild.id + '.json');
+    }
 }

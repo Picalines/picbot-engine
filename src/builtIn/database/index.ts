@@ -1,2 +1,1 @@
-export { getJsonBotDatabaseHandler } from "./Json";
-export { DebugBotDatabaseHandler } from "./Debug";
+export { JsonDatabaseHandler } from "./Json";

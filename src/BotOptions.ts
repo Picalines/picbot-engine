@@ -1,6 +1,6 @@
 import { DeepPartial, ReadOnlyNonEmptyArray } from "./utils";
-import { BotDatabaseHandler } from "./database/Bot";
-import { DebugBotDatabaseHandler } from "./builtIn/database";
+import { BotDatabaseHandler } from "./database/Handler";
+import { JsonDatabaseHandler } from "./builtIn/database";
 
 /**
  * Объект с настройками бота
@@ -59,7 +59,7 @@ export type BotOptions = {
     database: {
         /**
          * Обработчик базы данных (объект, хранящий функции для загрузки / сохранения данных серверов)
-         * @default DebugBotDatabaseHandler
+         * @default JsonDatabaseHandler({ dirPath: '/database/', guildsPath: '/guilds/' })
          */
         handler: BotDatabaseHandler;
         /**
@@ -115,7 +115,9 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
             defaultPrefixes: (optionsArg.guild?.defaultPrefixes as ReadOnlyNonEmptyArray<string> | undefined) ?? ['!'],
         },
         database: {
-            handler: optionsArg.database?.handler ?? DebugBotDatabaseHandler,
+            handler: optionsArg.database?.handler ?? new JsonDatabaseHandler({
+                dirPath: '/database/', guildsPath: '/guilds/',
+            }),
             ignoreBots: optionsArg.database?.ignoreBots ?? true,
             saveOnSigint: optionsArg.database?.saveOnSigint ?? true,
         },
