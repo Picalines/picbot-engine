@@ -1,8 +1,19 @@
 import { GuildData } from "./Guild";
 import { PromiseVoid } from "../utils";
 import { BotDatabase } from "./Bot";
+import { DatabasePropertyMap } from "./PropertyMap";
 
 export interface BotDatabaseHandler {
+    /**
+     * Класс карты свойств сервера
+     */
+    readonly guildPropertyMapClass: new () => DatabasePropertyMap;
+    
+    /**
+     * Класс карты свойств участника сервера
+     */
+    readonly memberDataClass: new () => DatabasePropertyMap;
+
     /**
      * Обработчик события `guildCreate`
      * @param guildData данные сервера

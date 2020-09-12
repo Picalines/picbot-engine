@@ -3,12 +3,12 @@ import { Bot } from "../Bot";
 import { PrefixStorage } from "../PrefixStorage";
 import { BotDatabase } from "./Bot";
 import { GuildMemberData } from "./Member";
-import { PropertyMap } from "./PropertyMap";
+import { DatabasePropertyMap } from "./PropertyMap";
 
 /**
  * Класс базы данных сервера
  */
-export class GuildData extends PropertyMap {
+export class GuildData {
     #members = new Map<string, GuildMemberData>();
 
     /**
@@ -16,17 +16,21 @@ export class GuildData extends PropertyMap {
      */
     public readonly prefixes = new PrefixStorage();
 
+    /**
+     * Свойства сервера
+     */
+    public readonly properties: DatabasePropertyMap;
+
+    /**
+     * @param database ссылка на базу данных
+     * @param guild сервер
+     */
     constructor(
-        /**
-         * Ссылка на базу данных
-         */
         public readonly database: BotDatabase,
-        /**
-         * Сервер
-         */
         public readonly guild: Guild,
     ) {
-        super();
+        this.properties = new database.handler.guildPropertyMapClass();
+
         this.prefixes.list = database.bot.options.guild.defaultPrefixes as any;
     }
 

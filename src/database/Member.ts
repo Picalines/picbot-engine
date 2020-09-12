@@ -1,18 +1,28 @@
 import { GuildMember } from "discord.js";
 import { GuildData } from "./Guild";
-import { PropertyMap } from "./PropertyMap";
+import { DatabasePropertyMap } from "./PropertyMap";
 
-export class GuildMemberData extends PropertyMap {
+export class GuildMemberData {
+    /**
+     * Свойства участника сервера
+     */
+    public readonly properties: DatabasePropertyMap;
+
+    /**
+     * @param guildData ссылка на данные сервера
+     * @param member участник сервера
+     */
     constructor(
-        /**
-         * Ссылка на данные сервера
-         */
         public readonly guildData: GuildData,
-        /**
-         * Участник сервера
-         */
         public readonly member: GuildMember,
     ) {
-        super();
+        this.properties = new this.database.handler.memberDataClass();
+    }
+
+    /**
+     * @returns ссылка на базу данных
+     */
+    get database() {
+        return this.guildData.database;
     }
 }

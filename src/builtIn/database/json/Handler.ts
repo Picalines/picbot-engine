@@ -1,10 +1,9 @@
-/// <reference lib="es2019.object" />
-
 import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
-import { BotDatabaseHandler } from "../../database/Handler";
+import { BotDatabaseHandler } from "../../../database/Handler";
 import { join, resolve } from "path";
 import { Guild } from "discord.js";
-import { GuildData } from "../../database/Guild";
+import { GuildData } from "../../../database/Guild";
+import { JsonDatabasePropertyMap } from "./PropertyMap";
 
 type JsonHandlerOptions = {
     /**
@@ -24,6 +23,9 @@ type JsonHandlerOptions = {
 
 export class JsonDatabaseHandler implements BotDatabaseHandler {
     readonly guildsPath: string;
+
+    readonly guildPropertyMapClass = JsonDatabasePropertyMap;
+    readonly memberDataClass = JsonDatabasePropertyMap;
 
     constructor(
         public readonly options: JsonHandlerOptions
@@ -48,30 +50,31 @@ export class JsonDatabaseHandler implements BotDatabaseHandler {
             for (const [id, memberSavedMap] of Object.entries<any>(dataObject.members)) {
                 const member = guildData.guild.member(id);
                 if (!member) continue;
-                guildData.getMemberData(member).map = new Map(Object.entries(memberSavedMap));
+                guildData.getMemberData(member).properties.setObject(memberSavedMap);
             }
         }
 
         if (typeof dataObject.properties == 'object') {
             for (const [key, value] of Object.entries<any>(dataObject.properties)) {
-                guildData.setProperty(key, value);
+                guildData.properties.set(key, value);
             }
         }
     }
 
-    saveGuild(guildData: GuildData): void {
+    async saveGuild(guildData: GuildData) {
         const saveDataObject = {
             prefixes: guildData.prefixes.list,
             members: {} as Record<string, any>,
         } as any;
 
-        if (guildData.map) {
-            saveDataObject.properties = Object.fromEntries(guildData.map.entries());
+        if (!guildData.properties.isEmpty) {
+            saveDataObject.properties = await guildData.properties.entries();
         }
 
-        for (const { member, map } of guildData.members) {
-            if (!map) continue;
-            saveDataObject.members[member.id] = Object.fromEntries(map.entries());
+        for (const memberData of guildData.members) {
+            if (!memberData.properties.isEmpty) {
+                saveDataObject.members[memberData.member.id] = await memberData.properties.object();
+            }
         }
 
         const json = JSON.stringify(saveDataObject, null, this.options.jsonIndent);
