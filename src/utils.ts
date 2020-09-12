@@ -16,7 +16,9 @@ export type GuildBotMessage = GuildMessage & {
     guild: { me: { bot: true } },
 }
 
-export type PromiseVoid = Promise<void> | void
+export type PromiseOrSync<T> = Promise<T> | T
+
+export type PromiseVoid = PromiseOrSync<void>
 
 /**
  * Расширение стандартного Partial<T> из TypeScript
