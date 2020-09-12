@@ -19,34 +19,35 @@ export interface BotDatabaseHandler {
      * Запускается перед загрузкой базы данных
      * @param database база данных
      */
-    beforeLoad?(database: BotDatabase): PromiseVoid;
+    prepareForLoading?(database: BotDatabase): PromiseVoid;
 
     /**
      * Загружает данные сервера
      * @param emptyData пустые данные сервера
      */
-    loadGuild(emptyData: GuildData): PromiseVoid;
+    loadGuild?(emptyData: GuildData): PromiseVoid;
 
     /**
-     * Запускается после успешной загрузки базы данных
+     * Обработчик события базы данных `loaded`
      * @param database база данных
      */
-    loaded?(database: BotDatabase): PromiseVoid;
+    onLoaded?(database: BotDatabase): PromiseVoid;
 
     /**
      * Запускается перед сохранением базы данных
      * @param database база данных
      */
-    beforeSave?(database: BotDatabase): PromiseVoid;
+    prepareForSaving?(database: BotDatabase): PromiseVoid;
+
     /**
      * Сохраняет данные сервера
      * @param guildData данные сервера
      */
-    saveGuild(guildData: GuildData): PromiseVoid;
+    saveGuild?(guildData: GuildData): PromiseVoid;
 
     /**
-     * Запускается после успешного сохранения базы данных
+     * Обработчик события базы данных `loaded`
      * @param database база данных
      */
-    saved?(database: BotDatabase): PromiseVoid;
+    onSaved?(database: BotDatabase): PromiseVoid;
 }

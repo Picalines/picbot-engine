@@ -31,8 +31,8 @@ export class JsonDatabaseHandler implements BotDatabaseHandler {
         this.guildsPath = resolve(join('.', options.dirPath, options.guildsPath));
     }
 
-    beforeLoad() { this.makeGuildsFolder(); }
-    beforeSave() { this.makeGuildsFolder(); }
+    prepareForLoading() { this.makeGuildsFolder(); }
+    prepareForSaving() { this.makeGuildsFolder(); }
 
     loadGuild(guildData: GuildData): void {
         const path = this.getGuildPath(guildData.guild);
