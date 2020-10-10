@@ -116,7 +116,7 @@ export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOpti
         },
         database: {
             handler: optionsArg.database?.handler ?? new JsonDatabaseHandler({
-                dirPath: '/database/', guildsPath: '/guilds/',
+                rootFolderPath: '/database/', guildsPath: '/guilds/',
             }),
             ignoreBots: optionsArg.database?.ignoreBots ?? true,
             saveOnSigint: optionsArg.database?.saveOnSigint ?? true,

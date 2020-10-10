@@ -2,14 +2,16 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "
 import { BotDatabaseHandler } from "../../../database/Handler";
 import { join, resolve } from "path";
 import { Guild } from "discord.js";
-import { GuildData } from "../../../database/Guild";
-import { JsonDatabasePropertyMap } from "./PropertyMap";
+import { JsonDatabaseValueStorage } from "./ValueStorage";
+import { BotDatabase } from "../../../database/BotDatabase";
+import { Entity, Property as Property, WidenEntity as WidenEntity } from "../../../database/Property/Definition";
+import { PropertyAccess as PropertyAccess } from "../../../database/Property/Access";
 
-type JsonHandlerOptions = {
+interface JsonHandlerOptions {
     /**
      * Путь до папки базы данных бота
      */
-    dirPath: string,
+    rootFolderPath: string,
     /**
      * Путь до папки с данными серверов в папке базы данных бота
      */
@@ -19,80 +21,96 @@ type JsonHandlerOptions = {
      * @default 0
      */
     jsonIndent?: number,
-};
+}
 
 export class JsonDatabaseHandler implements BotDatabaseHandler {
     readonly guildsPath: string;
 
-    readonly guildPropertyMapClass = JsonDatabasePropertyMap;
-    readonly memberDataClass = JsonDatabasePropertyMap;
+    readonly guildPropertyStorageClass = JsonDatabaseValueStorage;
+    readonly memberPropertyStorageClass = JsonDatabaseValueStorage;
 
     constructor(
         public readonly options: JsonHandlerOptions
     ) {
-        this.guildsPath = resolve(join('.', options.dirPath, options.guildsPath));
+        this.guildsPath = resolve(join('.', options.rootFolderPath, options.guildsPath));
     }
 
-    prepareForLoading() { this.makeGuildsFolder(); }
-    prepareForSaving() { this.makeGuildsFolder(); }
+    prepareForLoading() { mkdirSync(this.guildsPath, { recursive: true }); }
+    prepareForSaving() { this.prepareForLoading(); }
 
-    loadGuild(guildData: GuildData): void {
-        const path = this.getGuildPath(guildData.guild);
+    async loadGuild(database: BotDatabase, guild: Guild) {
+        const path = this.guildPath(guild);
         if (!existsSync(path)) return;
 
         const dataObject = JSON.parse(readFileSync(path).toString());
 
-        if (dataObject.prefixes instanceof Array) {
-            guildData.prefixes.list = dataObject.prefixes;
+        if (dataObject.properties === undefined) {
+            dataObject.properties = {};
         }
 
-        if (typeof dataObject.members == 'object') {
-            for (const [id, memberSavedMap] of Object.entries<any>(dataObject.members)) {
-                const member = guildData.guild.member(id);
-                if (!member) continue;
-                guildData.getMemberData(member).properties.setObject(memberSavedMap);
-            }
+        if (dataObject.prefixes instanceof Array) {
+            dataObject.properties.prefixes = dataObject.prefixes;
+        }
+
+        const setPropsObject = async <E extends Entity>(entityType: E, entity: WidenEntity<E>, obj: any) => {
+            const properties = database.definedProperties(entityType).filter(p => p.key in obj);
+            await Promise.all(properties.map(p => database.accessProperty(entity, p).set(obj[p.key])));
         }
 
         if (typeof dataObject.properties == 'object') {
-            for (const [key, value] of Object.entries<any>(dataObject.properties)) {
-                guildData.properties.set(key, value);
-            }
+            await setPropsObject('guild', guild, dataObject.properties);
+        }
+
+        if (typeof dataObject.members == 'object') {
+            const members = Object.keys(dataObject.members).map(id => guild.member(id)!).filter(m => m != null);
+            await Promise.all(members.map(m => setPropsObject('member', m, dataObject.members[m.id])));
         }
     }
 
-    async saveGuild(guildData: GuildData) {
-        const saveDataObject = {
-            prefixes: guildData.prefixes.list,
-            members: {} as Record<string, any>,
-        } as any;
+    async saveGuild(database: BotDatabase, guild: Guild) {
+        const jsonObject = {
+            properties: {} as Record<string, any>,
+            members: {} as Record<string, Record<string, any>>,
+        };
 
-        if (!guildData.properties.isEmpty) {
-            saveDataObject.properties = await guildData.properties.entries();
+        const getValues = async <E extends Entity>(props: Property<E, any, PropertyAccess<any>>[], entity: WidenEntity<E>) => {
+            const vPromises = props.map<Promise<[string, any]>>(async p => [
+                p.key, await database.accessProperty(entity, p).rawValue(),
+            ]);
+            return (await Promise.all(vPromises)).filter(v => v[1] != undefined);
         }
 
-        for (const memberData of guildData.members) {
-            if (!memberData.properties.isEmpty) {
-                saveDataObject.members[memberData.member.id] = await memberData.properties.object();
+        const saveValues = async <E extends Entity>(entityType: E, props: Property<E, any, PropertyAccess<any>>[], entity: WidenEntity<E>) => {
+            const values = await getValues(props, entity);
+            if (!values.length) return;
+            if (entityType == 'guild') {
+                values.forEach(([key, value]) => jsonObject.properties[key] = value);
+            }
+            else {
+                jsonObject.members[entity.id] = {};
+                values.forEach(([key, value]) => jsonObject.members[entity.id][key] = value);
             }
         }
 
-        const json = JSON.stringify(saveDataObject, null, this.options.jsonIndent);
-        writeFileSync(this.getGuildPath(guildData.guild), json);
+        const guildDefinedProps = database.definedProperties('guild');
+        await saveValues('guild', guildDefinedProps, guild);
+
+        const memberDefinedProps = database.definedProperties('member');
+        const { cache: members } = guild.members;
+        await Promise.all(members.map(member => saveValues('member', memberDefinedProps, member)));
+
+        const json = JSON.stringify(jsonObject, null, this.options.jsonIndent);
+        writeFileSync(this.guildPath(guild), json);
     }
 
-    onGuildDelete(guildData: GuildData) {
-        const path = this.getGuildPath(guildData.guild);
+    onGuildDelete(_: BotDatabase, guild: Guild) {
+        const path = this.guildPath(guild);
         if (existsSync(path)) {
             unlinkSync(path);
         }
     }
 
-    private makeGuildsFolder() {
-        mkdirSync(this.guildsPath, { recursive: true });
-    }
-
-    private getGuildPath(guild: Guild) {
+    private guildPath(guild: Guild) {
         return join(this.guildsPath, guild.id + '.json');
     }
 }

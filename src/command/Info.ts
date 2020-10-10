@@ -1,10 +1,10 @@
 import { PermissionString } from "discord.js";
 import { ReadOnlyNonEmptyArray } from "../utils";
 import { CommandArgument } from "./Command";
+
 /**
  * Информация о команде
  */
-
 export interface CommandInfo {
     /**
      * Имя команды

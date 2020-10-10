@@ -1,4 +1,5 @@
 import { Command } from "../../command/Command";
+import { prefixesProperty } from "../property/prefixes";
 
 export default new Command({
     name: 'prefix',
@@ -15,31 +16,31 @@ export default new Command({
     ],
 
     execute: async ({ message, bot, args: { operation, prefix } }) => {
-        const { prefixes } = await bot.database.getGuildData(message.guild);
+        const prefixes = bot.database.accessProperty(message.guild, prefixesProperty);
 
         if (!operation) {
-            const strList = prefixes.list.map(p => `\`${p}\``).join(', ');
-            message.reply(`список моих префиксов на этом сервере: ${strList}`);
+            const strList = (await prefixes.value()).map(p => `\`${p}\``).join(', ');
+            await message.reply(`список моих префиксов на этом сервере: ${strList}`);
             return;
         }
 
         switch (operation) {
             default: throw new Error(`unsupported prefix operation '${operation}'`);
             case 'add':
-                if (prefix && prefixes.add(prefix)) {
-                    message.reply(`новый префикс команд: \`${prefix}\``);
+                if (prefix && await prefixes.add(prefix)) {
+                    await message.reply(`новый префикс команд: \`${prefix}\``);
                 }
                 else {
-                    message.reply(`невозможно добавить такой префикс`);
+                    await message.reply(`невозможно добавить такой префикс`);
                 }
                 break;
             case 'remove':
             case 'rm':
-                if (prefix && prefixes.remove(prefix)) {
-                    message.reply(`префикс \`${prefix}\` успешно удалён из списка`);
+                if (prefix && await prefixes.remove(prefix)) {
+                    await message.reply(`префикс \`${prefix}\` успешно удалён из списка`);
                 }
                 else {
-                    message.reply(`невозможно удалить такой префикс`);
+                    await message.reply(`невозможно удалить такой префикс`);
                 }
                 break;
         }

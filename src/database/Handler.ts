@@ -1,30 +1,35 @@
-import { GuildData } from "./Guild";
+import { Constructable, Guild } from "discord.js";
 import { PromiseVoid } from "../utils";
-import { BotDatabase } from "./Bot";
-import { DatabasePropertyMap } from "./PropertyMap";
+import { BotDatabase } from "./BotDatabase";
+import { DatabaseValueStorage } from "./Property/Storage";
 
+/**
+ * Пользовательский интерфейс базы данных
+ */
 export interface BotDatabaseHandler {
     /**
-     * Класс карты свойств сервера
+     * Класс хранилища значений свойств серверов
      */
-    readonly guildPropertyMapClass: new () => DatabasePropertyMap;
-    
+    guildPropertyStorageClass: Constructable<DatabaseValueStorage<'guild'>>;
+
     /**
-     * Класс карты свойств участника сервера
+     * Класс хранилища значений свойств участников серверов
      */
-    readonly memberDataClass: new () => DatabasePropertyMap;
+    memberPropertyStorageClass: Constructable<DatabaseValueStorage<'member'>>;
 
     /**
      * Обработчик события `guildCreate`
-     * @param guildData данные сервера
+     * @param database база данных
+     * @param guild сервер
      */
-    onGuildCreate?(guildData: GuildData): PromiseVoid;
+    onGuildCreate?(database: BotDatabase, guild: Guild): PromiseVoid;
 
     /**
      * Обработчик события `guildDelete`
-     * @param guildData данные сервера
+     * @param database база данных
+     * @param guild сервер
      */
-    onGuildDelete?(guildData: GuildData): PromiseVoid;
+    onGuildDelete?(database: BotDatabase, guild: Guild): PromiseVoid;
 
     /**
      * Запускается перед загрузкой базы данных
@@ -34,9 +39,10 @@ export interface BotDatabaseHandler {
 
     /**
      * Загружает данные сервера
-     * @param emptyData пустые данные сервера
+     * @param database база данных
+     * @param guild сервер
      */
-    loadGuild?(emptyData: GuildData): PromiseVoid;
+    loadGuild?(database: BotDatabase, guild: Guild): PromiseVoid;
 
     /**
      * Обработчик события базы данных `loaded`
@@ -52,9 +58,10 @@ export interface BotDatabaseHandler {
 
     /**
      * Сохраняет данные сервера
-     * @param guildData данные сервера
+     * @param database база данных
+     * @param guild сервер
      */
-    saveGuild?(guildData: GuildData): PromiseVoid;
+    saveGuild?(database: BotDatabase, guild: Guild): PromiseVoid;
 
     /**
      * Обработчик события базы данных `loaded`

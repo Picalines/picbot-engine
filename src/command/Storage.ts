@@ -50,7 +50,7 @@ export class CommandStorage implements Iterable<Command> {
         });
 
         this.#commands.set(command.info.name, command);
-        
+
         this.#size += 1;
     }
 
