@@ -54,11 +54,3 @@ export class PrefixesPropertyAccess extends PropertyAccess<string[]> {
         return prefixes.includes(prefix.toLowerCase());
     }
 }
-
-export const prefixesProperty = new Property({
-    key: 'prefixes',
-    entityType: 'guild',
-    defaultValue: [] as string[],
-    validate: prefixes => prefixes.every(validatePrefix),
-    accessorClass: PrefixesPropertyAccess,
-});

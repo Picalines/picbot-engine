@@ -1,5 +1,4 @@
 import { Command } from "../../command/Command";
-import { prefixesProperty } from "../property/prefixes";
 
 export default new Command({
     name: 'prefix',
@@ -16,7 +15,7 @@ export default new Command({
     ],
 
     execute: async ({ message, bot, args: { operation, prefix } }) => {
-        const prefixes = bot.database.accessProperty(message.guild, prefixesProperty);
+        const prefixes = bot.database.accessProperty(message.guild, bot.prefixesProperty);
 
         if (!operation) {
             const strList = (await prefixes.value()).map(p => `\`${p}\``).join(', ');
