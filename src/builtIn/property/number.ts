@@ -1,4 +1,4 @@
-import { Entity as Entity, Property, PropertyDefinition } from "../../database/Property/Definition";
+import { Entity, Property, PropertyDefinition } from "../../database/Property/Definition";
 import { PropertyAccess } from "../../database/Property/Access";
 
 export class NumberPropertyAccess extends PropertyAccess<number> {

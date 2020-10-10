@@ -1,5 +1,5 @@
 import { Constructable, Guild, GuildMember } from "discord.js";
-import { PropertyAccess as PropertyAccess } from "./Access";
+import { PropertyAccess } from "./Access";
 
 /**
  * Сущность в базе данных (сервер / участник сервера)

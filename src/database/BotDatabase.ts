@@ -1,5 +1,5 @@
-import { Entity as Entity, Property as Property, WidenEntity, AnyProperty } from "./Property/Definition";
-import { PropertyAccess as PropertyAccess } from "./Property/Access";
+import { Entity, Property, WidenEntity, AnyProperty } from "./Property/Definition";
+import { PropertyAccess } from "./Property/Access";
 import { DatabaseValueStorage } from "./Property/Storage";
 import { BotDatabaseHandler } from "./Handler";
 import { Constructable, Guild, GuildMember } from "discord.js";

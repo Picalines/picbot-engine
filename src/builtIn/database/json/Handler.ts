@@ -4,8 +4,8 @@ import { join, resolve } from "path";
 import { Guild } from "discord.js";
 import { JsonDatabaseValueStorage } from "./ValueStorage";
 import { BotDatabase } from "../../../database/BotDatabase";
-import { Entity, Property as Property, WidenEntity as WidenEntity } from "../../../database/Property/Definition";
-import { PropertyAccess as PropertyAccess } from "../../../database/Property/Access";
+import { Entity, Property, WidenEntity } from "../../../database/Property/Definition";
+import { PropertyAccess } from "../../../database/Property/Access";
 
 interface JsonHandlerOptions {
     /**

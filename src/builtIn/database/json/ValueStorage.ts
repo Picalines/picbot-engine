@@ -1,4 +1,4 @@
-import { Entity as Entity, WidenEntity } from "../../../database/Property/Definition";
+import { Entity, WidenEntity } from "../../../database/Property/Definition";
 import { DatabaseValueStorage } from "../../../database/Property/Storage";
 import { Guild, GuildMember } from "discord.js";
 
