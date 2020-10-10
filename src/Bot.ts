@@ -5,9 +5,10 @@ import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOp
 import { ArgumentReaderStorage } from "./command/argument/Storage";
 import { CommandStorage } from "./command/Storage";
 import { Command } from "./command/Command";
-import { BotDatabase } from "./database/Bot";
+import { BotDatabase } from "./database/BotDatabase";
 import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
+import { prefixesProperty } from "./builtIn/property/prefixes";
 
 export declare interface Bot {
     on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
@@ -79,6 +80,10 @@ export class Bot extends EventEmitter {
             });
         }
 
+        if (this.options.commands.builtIn.prefix) {
+            this.database.defineProperty(prefixesProperty);
+        }
+
         this.client.on('message', message => {
             if (!(message.guild && message.channel.type == 'text')) return;
 
@@ -115,9 +120,16 @@ export class Bot extends EventEmitter {
      * @returns true, если была запущена команда
      */
     public async handleCommands(message: GuildMessage): Promise<boolean> {
-        const { prefixes } = await this.database.getGuildData(message.guild);
+        const prefixes = await this.database.accessProperty(message.guild, prefixesProperty).value();
 
-        const prefixLength = prefixes.getMessagePrefixLength(message);
+        let prefixLength = 0;
+        for (const prefix of prefixes) {
+            if (message.cleanContent.startsWith(prefix)) {
+                prefixLength = prefix.length;
+                break;
+            }
+        }
+
         if (!prefixLength) {
             return false;
         }

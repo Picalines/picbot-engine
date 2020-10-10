@@ -38,16 +38,8 @@ export type NonEmptyArray<T> = [T, ...T[]]
 export type ReadOnlyNonEmptyArray<T> = Readonly<[T, ...T[]]>
 
 /**
- * Возвращает имя свойства
- * @param name имя свойства
- */
-export function nameof<T>(name: Extract<keyof T, string>): string {
-    return name;
-}
-
-/**
  * Вспомогательный тип для функций. Если какая-то операция прошла успешно,
- * функция возвращает объект этого типа со значениеми `isError: false, value: R`.
+ * функция возвращает объект этого типа со значениями `isError: false, value: R`.
  * Иначе `isError: true, error: E`
  */
 export type Failable<R, E> = {
@@ -57,13 +49,3 @@ export type Failable<R, E> = {
     isError: false,
     value: R,
 }
-
-/**
- * Приводит ритералы к примитивным типам
- * https://stackoverflow.com/questions/56332310/how-to-prevent-a-literal-type-in-typescript
- */
-export type WidenLiteral<T> =
-    T extends boolean ? boolean :
-    T extends string ? string :
-    T extends number ? number :
-    T;
