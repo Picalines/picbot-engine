@@ -1,12 +1,16 @@
-import { Entity, Property, WidenEntity, AnyProperty } from "./Property/Definition";
+import { Property, AnyProperty } from "./Property/Definition";
+import { EntitySelector, EntitySelectorOptions } from "./Selector/Definition";
+import { Entity, WidenEntity } from "./Entity";
 import { PropertyAccess } from "./Property/Access";
-import { DatabaseValueStorage } from "./Property/Storage";
+import { DatabaseValueStorage } from "./Property/ValueStorage";
 import { BotDatabaseHandler } from "./Handler";
 import { Constructable, Guild, GuildMember } from "discord.js";
 import { EventEmitter } from "events";
 import { Bot } from "../Bot";
+import { PropertyDefinitionStorage } from "./Property/DefinitionStorage";
+import { OperatorExpressions, QueryOperators } from "./Selector/Operator";
 
-export declare interface BotDatabase {
+export interface BotDatabase {
     on(event: 'beforeSaving', listener: () => void): this;
     on(event: 'saved', listener: () => void): this;
     on(event: 'beforeLoading', listener: () => void): this;
@@ -18,9 +22,13 @@ export declare interface BotDatabase {
  * Класс базы данных бота
  */
 export class BotDatabase extends EventEmitter {
-    #properties: Map<string, AnyProperty>
-    #guildProperties: DatabaseValueStorage<'guild'>;
-    #memberProperties: Map<string, DatabaseValueStorage<'member'>>;
+    /**
+     * Хранит свойства, которые использовала база данных
+     */
+    public readonly definedProperties = new PropertyDefinitionStorage();
+
+    #guildsStorage: DatabaseValueStorage<'guild'>;
+    #memberStorages: Map<string, DatabaseValueStorage<'member'>>;
 
     constructor(
         public readonly bot: Bot,
@@ -28,23 +36,22 @@ export class BotDatabase extends EventEmitter {
     ) {
         super();
 
-        this.#guildProperties = new this.handler.guildPropertyStorageClass();
-        this.#properties = new Map();
-        this.#memberProperties = new Map();
+        this.#guildsStorage = new this.handler.guildPropertyStorageClass(this, 'guild');
+        this.#memberStorages = new Map();
 
         this.on('loaded', async () => await this.handler.onLoaded?.(this));
         this.on('saved', async () => await this.handler.onSaved?.(this));
 
         bot.client.on('guildDelete', async guild => {
-            const memberStorage = this.#memberProperties.get(guild.id);
+            const memberStorage = this.#memberStorages.get(guild.id);
             await memberStorage?.cleanup();
-            await this.#guildProperties.cleanupEntity(guild);
+            await this.#guildsStorage.cleanupEntity(guild);
             await this.handler.onGuildDelete?.(this, guild);
-            this.#memberProperties.delete(guild.id)
+            this.#memberStorages.delete(guild.id)
         });
 
         bot.client.on('guildMemberRemove', async member => {
-            const memberStorage = this.#memberProperties.get(member.guild.id);
+            const memberStorage = this.#memberStorages.get(member.guild.id);
             if (memberStorage) {
                 member = member.partial ? await member.fetch() : member;
                 await memberStorage?.cleanupEntity(member);
@@ -53,55 +60,21 @@ export class BotDatabase extends EventEmitter {
     }
 
     /**
-     * Добавляет свойство сущности в память бота
-     * @param property объявление свойства
-     * @returns true, если свойство успешно добавлено
-     */
-    public defineProperty(property: AnyProperty): boolean {
-        if (this.#properties.has(property.key)) {
-            return false;
-        }
-
-        this.#properties.set(property.key, property);
-        return true;
-    }
-
-    /**
-     * @returns объявление свойства, которое 'помнит' база данных
-     * @param key ключ свойства
-     */
-    public definedProperty<E extends Entity>(key: string): AnyProperty<E> | undefined {
-        return this.#properties.get(key) as any;
-    }
-
-    /**
-     * @returns список объявлений свойст, которые 'помнит' база данных
-     * @param entityType тип сущности
-     */
-    public definedProperties<E extends Entity>(entityType: E | 'any'): AnyProperty<E>[] {
-        const props = [...this.#properties.values()];
-        if (entityType == 'any') {
-            return props as any;
-        }
-        return props.filter(p => p.entityType == entityType) as any;
-    }
-
-    /**
      * Возвращает объект, дающий доступ к чтению / изменению значения свойства
      * @param entity сущность (сервер / участник сервера)
      * @param property свойство сущности
      */
     public accessProperty<E extends Entity, T, A extends PropertyAccess<T>>(entity: WidenEntity<E>, property: Property<E, T, A>): A {
-        this.defineProperty(property);
+        this.definedProperties.add(property);
 
         type ValueStorage = DatabaseValueStorage<E>;
         let storage: ValueStorage | undefined = undefined;
 
         if ((entity as GuildMember).guild) {
-            storage = this.#memberProperties.get((entity as GuildMember).guild.id) as ValueStorage | undefined;
+            storage = this.#memberStorages.get((entity as GuildMember).guild.id) as ValueStorage | undefined;
         }
         else {
-            storage = this.#guildProperties as ValueStorage;
+            storage = this.#guildsStorage as ValueStorage;
         }
 
         const constructor = (property.accessorClass ?? PropertyAccess) as Constructable<A>;
@@ -113,8 +86,8 @@ export class BotDatabase extends EventEmitter {
                 }
 
                 if (!storage) {
-                    storage = new this.handler.memberPropertyStorageClass() as ValueStorage;
-                    this.#memberProperties.set((entity as GuildMember).guild.id, storage as DatabaseValueStorage<'member'>);
+                    storage = new this.handler.memberPropertyStorageClass(this, 'member') as ValueStorage;
+                    this.#memberStorages.set((entity as GuildMember).guild.id, storage as DatabaseValueStorage<'member'>);
                 }
 
                 await storage.storeValue(entity, property.key, value);
@@ -128,6 +101,33 @@ export class BotDatabase extends EventEmitter {
                 return await this.rawValue() ?? property.defaultValue;
             },
         });
+    }
+
+    /**
+     * @returns список сущностей, которые база данных нашла по селектору ([[EntitySelector]])
+     * @param selector селектор сущностей
+     * @param options настройки селектора
+     */
+    public async findEntities<E extends Entity>(selector: EntitySelector<E>, options: (E extends 'member' ? { guild: Guild } : {}) & Partial<EntitySelectorOptions>): Promise<WidenEntity<E>[]> {
+        const expression = selector.expression(OperatorExpressions as QueryOperators<E>);
+        let entities: IterableIterator<WidenEntity<E>>;
+        let storage: DatabaseValueStorage<E>;
+
+        if (selector.entityType == 'guild') {
+            entities = this.bot.client.guilds.cache.values() as IterableIterator<WidenEntity<E>>;
+            storage = this.#guildsStorage as DatabaseValueStorage<E>;
+        }
+        else {
+            const { id } = (options as unknown as { guild: Guild }).guild;
+            entities = this.bot.client.guilds.cache.get(id)!.members.cache.values() as IterableIterator<WidenEntity<E>>;
+            storage = this.#memberStorages.get(id) as DatabaseValueStorage<E>;
+            if (!storage) {
+                storage = new this.handler.memberPropertyStorageClass('member') as DatabaseValueStorage<E>;
+                this.#memberStorages.set(id, storage as DatabaseValueStorage<'member'>);
+            }
+        }
+
+        return await storage.selectEntities(entities, expression);
     }
 
     /**

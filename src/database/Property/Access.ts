@@ -1,4 +1,5 @@
-import { Property, Entity } from "./Definition";
+import { Property } from "./Definition";
+import { Entity } from "../Entity";
 
 interface AccessMethods<T> {
     /**

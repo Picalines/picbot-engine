@@ -1,6 +1,7 @@
 import { PromiseOrSync } from "../../utils";
 import { BotDatabase } from "../BotDatabase";
-import { Entity, WidenEntity } from "./Definition";
+import { Entity, WidenEntity } from "../Entity";
+import { AnyExpression } from "../Selector/Expression";
 
 /**
  * Абстрактный класс, хранящий значения свойств сущностей (серверов / участников)
@@ -11,6 +12,7 @@ export abstract class DatabaseValueStorage<E extends Entity> {
      */
     constructor(
         public readonly database: BotDatabase,
+        public readonly entityType: E,
     ) { }
 
     /**
@@ -34,6 +36,13 @@ export abstract class DatabaseValueStorage<E extends Entity> {
      * @param key имя свойства
      */
     abstract deleteValue(entity: WidenEntity<E>, key: string): PromiseOrSync<boolean>;
+
+    /**
+     * @returns список выбранных сущностей, которые 'подходят' по условию expression
+     * @param entities список всех сущностей
+     * @param expression выражение
+     */
+    abstract selectEntities(entities: IterableIterator<WidenEntity<E>>, expression: AnyExpression<E>): PromiseOrSync<WidenEntity<E>[]>;
 
     /**
      * Очищает все данные в хранилище. Библиотека вызывает эту функцию,

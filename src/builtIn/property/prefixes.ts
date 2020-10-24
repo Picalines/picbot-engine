@@ -1,4 +1,3 @@
-import { Property } from "../../database/Property/Definition";
 import { PropertyAccess } from "../../database/Property/Access";
 
 export const validatePrefix = (prefix: string) => prefix && !prefix.includes(' ');

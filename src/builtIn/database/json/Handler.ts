@@ -4,7 +4,8 @@ import { join, resolve } from "path";
 import { Guild } from "discord.js";
 import { JsonDatabaseValueStorage } from "./ValueStorage";
 import { BotDatabase } from "../../../database/BotDatabase";
-import { Entity, Property, WidenEntity } from "../../../database/Property/Definition";
+import { Property } from "../../../database/Property/Definition";
+import { Entity, WidenEntity } from "../../../database/Entity";
 import { PropertyAccess } from "../../../database/Property/Access";
 
 interface JsonHandlerOptions {
@@ -26,8 +27,8 @@ interface JsonHandlerOptions {
 export class JsonDatabaseHandler implements BotDatabaseHandler {
     readonly guildsPath: string;
 
-    readonly guildPropertyStorageClass = JsonDatabaseValueStorage;
-    readonly memberPropertyStorageClass = JsonDatabaseValueStorage;
+    readonly guildPropertyStorageClass = JsonDatabaseValueStorage as any;
+    readonly memberPropertyStorageClass = JsonDatabaseValueStorage as any;
 
     constructor(
         public readonly options: JsonHandlerOptions
@@ -53,7 +54,7 @@ export class JsonDatabaseHandler implements BotDatabaseHandler {
         }
 
         const setPropsObject = async <E extends Entity>(entityType: E, entity: WidenEntity<E>, obj: any) => {
-            const properties = database.definedProperties(entityType).filter(p => p.key in obj);
+            const properties = database.definedProperties.list(entityType).filter(p => p.key in obj);
             await Promise.all(properties.map(p => database.accessProperty(entity, p).set(obj[p.key])));
         }
 
@@ -92,10 +93,10 @@ export class JsonDatabaseHandler implements BotDatabaseHandler {
             }
         }
 
-        const guildDefinedProps = database.definedProperties('guild');
+        const guildDefinedProps = database.definedProperties.list('guild');
         await saveValues('guild', guildDefinedProps, guild);
 
-        const memberDefinedProps = database.definedProperties('member');
+        const memberDefinedProps = database.definedProperties.list('member');
         const { cache: members } = guild.members;
         await Promise.all(members.map(member => saveValues('member', memberDefinedProps, member)));
 

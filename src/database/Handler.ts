@@ -1,7 +1,7 @@
 import { Constructable, Guild } from "discord.js";
 import { PromiseVoid } from "../utils";
 import { BotDatabase } from "./BotDatabase";
-import { DatabaseValueStorage } from "./Property/Storage";
+import { DatabaseValueStorage } from "./Property/ValueStorage";
 
 /**
  * Пользовательский интерфейс базы данных

@@ -94,7 +94,7 @@ export class Bot extends EventEmitter {
             accessorClass: PrefixesPropertyAccess,
         });
 
-        this.database.defineProperty(this.prefixesProperty);
+        this.database.definedProperties.add(this.prefixesProperty);
 
         this.client.on('message', message => {
             if (!(message.guild && message.channel.type == 'text')) return;

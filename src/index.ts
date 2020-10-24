@@ -8,9 +8,11 @@ export { CommandExecuteable, Command } from "./command/Command";
 export { CommandStorage } from "./command/Storage";
 export { CommandContext } from "./command/Context";
 
-export { Property, Entity, WidenEntity as WidenDatabaseEntity } from "./database/Property/Definition";
+export { Entity, WidenEntity } from "./database/Entity";
+export { Property } from "./database/Property/Definition";
 export { PropertyAccess } from "./database/Property/Access";
-export { DatabaseValueStorage } from "./database/Property/Storage";
+export { EntitySelector } from "./database/Selector/Definition";
+export { DatabaseValueStorage } from "./database/Property/ValueStorage";
 export { BotDatabaseHandler } from "./database/Handler";
 export { BotDatabase } from "./database/BotDatabase";
 
