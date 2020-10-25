@@ -4,10 +4,10 @@ import { AnyExpression, BooleanExpression, UnaryExpression } from "../../../data
 
 export type CompiledExpression = (props: Record<string, any>) => boolean;
 
-export function compileExpression<E extends Entity>(expression: AnyExpression<E>): CompiledExpression {
+export function compileExpression<E extends Entity>(expression: AnyExpression<E>, usedPropsCache: Set<string>): CompiledExpression {
     if (expression instanceof UnaryExpression) {
         if (expression.operator == 'not') {
-            const compiled = compileExpression(expression.right);
+            const compiled = compileExpression(expression.right, usedPropsCache);
             return ps => !compiled(ps);
         }
 
@@ -15,8 +15,8 @@ export function compileExpression<E extends Entity>(expression: AnyExpression<E>
     }
 
     if (expression instanceof BooleanExpression) {
-        const left = compileExpression(expression.left);
-        const right = compileExpression(expression.right);
+        const left = compileExpression(expression.left, usedPropsCache);
+        const right = compileExpression(expression.right, usedPropsCache);
 
         if (expression.operator == 'and') {
             return ps => left(ps) && right(ps);
@@ -26,9 +26,11 @@ export function compileExpression<E extends Entity>(expression: AnyExpression<E>
     }
 
     const leftProp = expression.left.key;
+    usedPropsCache.add(leftProp);
 
     if (expression.right instanceof Property) {
         const rightProp = expression.right.key;
+        usedPropsCache.add(rightProp);
 
         switch (expression.operator) {
             default: throw new Error(`unsupported binary operator '${(expression as any).operator}'`);

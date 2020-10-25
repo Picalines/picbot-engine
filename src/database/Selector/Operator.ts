@@ -20,19 +20,43 @@ export type BinaryOperator =
     | BinaryLogicOperator
 
 export interface QueryOperators<E extends Entity> {
+    /**
+     * @example xpProperty > 0
+     */
     gt(l: Property<E, number>, r: Property<E, number> | number): ComparisonExpression<E, 'gt', number>;
 
+    /**
+     * @example xpProperty >= 0
+     */
     gte(l: Property<E, number>, r: Property<E, number> | number): ComparisonExpression<E, 'gte', number>;
 
+    /**
+     * @example xpProperty < 0
+     */
     lt(l: Property<E, number>, r: Property<E, number> | number): ComparisonExpression<E, 'lt', number>;
 
+    /**
+     * @example xpProperty <= 0
+     */
     lte(l: Property<E, number>, r: Property<E, number> | number): ComparisonExpression<E, 'lte', number>;
 
+    /**
+     * @example xpProperty == 0
+     */
     eq<T extends Constant>(l: Property<E, T>, r: Property<E, T> | T): ComparisonExpression<E, 'eq', T>;
 
+    /**
+     * @example (...) && (...)
+     */
     and(l: AnyExpression<E>, r: AnyExpression<E>): BooleanExpression<E, 'and'>;
+    /**
+     * @example (...) || (...)
+     */
     or(l: AnyExpression<E>, r: AnyExpression<E>): BooleanExpression<E, 'or'>;
 
+    /**
+     * @example !(...)
+     */
     not(r: AnyExpression<E>): UnaryExpression<E, 'not'>;
 }
 

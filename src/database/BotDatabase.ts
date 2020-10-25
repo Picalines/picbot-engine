@@ -108,7 +108,10 @@ export class BotDatabase extends EventEmitter {
      * @param selector селектор сущностей
      * @param options настройки селектора
      */
-    public async findEntities<E extends Entity>(selector: EntitySelector<E>, options: (E extends 'member' ? { guild: Guild } : {}) & Partial<EntitySelectorOptions>): Promise<WidenEntity<E>[]> {
+    public async selectEntities<E extends Entity>(selector: EntitySelector<E>, options: (E extends 'member' ? { guild: Guild } : {}) & Partial<EntitySelectorOptions>): Promise<WidenEntity<E>[]> {
+        options.maxCount ??= Infinity;
+        if (options.maxCount <= 0) return [];
+
         const expression = selector.expression(OperatorExpressions as QueryOperators<E>);
         let entities: IterableIterator<WidenEntity<E>>;
         let storage: DatabaseValueStorage<E>;
@@ -127,7 +130,12 @@ export class BotDatabase extends EventEmitter {
             }
         }
 
-        return await storage.selectEntities(entities, expression);
+        const selected = await storage.selectEntities(entities, expression, options.maxCount);
+        if (!selected.length && options.throwOnNotFound) {
+            throw options.throwOnNotFound;
+        }
+
+        return selected.slice(0, options.maxCount);
     }
 
     /**

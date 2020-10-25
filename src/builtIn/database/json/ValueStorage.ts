@@ -2,15 +2,13 @@ import { Entity, WidenEntity } from "../../../database/Entity";
 import { DatabaseValueStorage } from "../../../database/Property/ValueStorage";
 import { Guild, GuildMember } from "discord.js";
 import { AnyExpression } from "../../../database/Selector/Expression";
-import { PromiseOrSync } from "../../../utils";
 import { CompiledExpression, compileExpression } from "./Expression";
 
 export class JsonDatabaseValueStorage extends DatabaseValueStorage<Entity> {
     #propertyMaps = new Map<string, Map<string, any>>();
+    #compiledExpressions = new WeakMap<AnyExpression<Entity>, { arrow: CompiledExpression, usedKeys: string[] }>();
 
-    #compiledExpressions = new WeakMap<AnyExpression<Entity>, CompiledExpression>();
-
-    storeValue<T>(entity: WidenEntity<Entity>, key: string, value: T): void {
+    storeValue<T>(entity: WidenEntity<Entity>, key: string, value: T) {
         let propertyMap = this.#propertyMaps.get(key);
 
         if (!propertyMap) {
@@ -29,33 +27,42 @@ export class JsonDatabaseValueStorage extends DatabaseValueStorage<Entity> {
         return this.#propertyMaps.get(key)?.delete(entity.id) ?? false;
     }
 
-    selectEntities(entities: IterableIterator<WidenEntity<Entity>>, expression: AnyExpression<Entity>): PromiseOrSync<WidenEntity<Entity>[]> {
-        const selected: WidenEntity<Entity>[] = [];
-
+    selectEntities(entities: IterableIterator<WidenEntity<Entity>>, expression: AnyExpression<Entity>, maxCount: number): WidenEntity<Entity>[] {
         let compiledExpression = this.#compiledExpressions.get(expression);
         if (compiledExpression === undefined) {
-            compiledExpression = compileExpression(expression);
+            const usedKeysSet = new Set<string>();
+            const arrow = compileExpression(expression, usedKeysSet);
+            compiledExpression = {
+                arrow,
+                usedKeys: [...usedKeysSet.values()],
+            };
             this.#compiledExpressions.set(expression, compiledExpression);
         }
 
-        const propKeys = this.database.definedProperties.list(this.entityType).map(p => p.key);
+        const props = this.database.definedProperties.list(this.entityType)
+            .filter(p => compiledExpression!.usedKeys.includes(p.key));
+
+        const selected: WidenEntity<Entity>[] = [];
 
         for (const entity of entities) {
             const entityProps: Record<string, any> = {};
-            propKeys.map(key => entityProps[key] = this.restoreValue(entity, key));
-            if (compiledExpression(entityProps)) {
+            props.map(p => entityProps[p.key] = this.restoreValue(entity, p.key) ?? p.defaultValue);
+            if (compiledExpression.arrow(entityProps)) {
                 selected.push(entity);
+                if (selected.length >= maxCount) {
+                    return selected;
+                }
             }
         }
 
         return selected;
     }
 
-    cleanup(): void {
+    cleanup() {
         this.#propertyMaps.clear();
     }
 
-    cleanupEntity(entity: Guild | GuildMember): void {
+    cleanupEntity(entity: Guild | GuildMember) {
         for (const propMap of this.#propertyMaps.values()) {
             propMap.delete(entity.id);
         }

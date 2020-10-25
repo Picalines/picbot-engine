@@ -41,8 +41,9 @@ export abstract class DatabaseValueStorage<E extends Entity> {
      * @returns список выбранных сущностей, которые 'подходят' по условию expression
      * @param entities список всех сущностей
      * @param expression выражение
+     * @param maxCount максимальное колчиество найденых сущностей. Гарантируется, что это оно не равно нулю
      */
-    abstract selectEntities(entities: IterableIterator<WidenEntity<E>>, expression: AnyExpression<E>): PromiseOrSync<WidenEntity<E>[]>;
+    abstract selectEntities(entities: IterableIterator<WidenEntity<E>>, expression: AnyExpression<E>, maxCount: number): PromiseOrSync<WidenEntity<E>[]>;
 
     /**
      * Очищает все данные в хранилище. Библиотека вызывает эту функцию,
