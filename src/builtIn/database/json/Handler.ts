@@ -24,12 +24,21 @@ interface JsonHandlerOptions {
     jsonIndent?: number,
 }
 
+/**
+ * Обработчик json базы данных
+ */
 export class JsonDatabaseHandler implements BotDatabaseHandler {
+    /**
+     * Путь до папки с данными серверов в папке базы данных бота
+     */
     readonly guildsPath: string;
 
     readonly guildPropertyStorageClass = JsonDatabaseValueStorage as any;
     readonly memberPropertyStorageClass = JsonDatabaseValueStorage as any;
 
+    /**
+     * @param options настройки базы данных
+     */
     constructor(
         public readonly options: JsonHandlerOptions
     ) {

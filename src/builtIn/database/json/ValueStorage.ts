@@ -1,12 +1,14 @@
+import { Guild, GuildMember } from "discord.js";
 import { Entity, WidenEntity } from "../../../database/Entity";
 import { DatabaseValueStorage } from "../../../database/Property/ValueStorage";
-import { Guild, GuildMember } from "discord.js";
 import { AnyExpression } from "../../../database/Selector/Expression";
 import { CompiledExpression, compileExpression } from "./Expression";
 
+type CompiledExpressionData = { arrow: CompiledExpression, usedKeys: string[] };
+
 export class JsonDatabaseValueStorage extends DatabaseValueStorage<Entity> {
     #propertyMaps = new Map<string, Map<string, any>>();
-    #compiledExpressions = new WeakMap<AnyExpression<Entity>, { arrow: CompiledExpression, usedKeys: string[] }>();
+    #compiledExpressions = new WeakMap<AnyExpression<Entity>, CompiledExpressionData>();
 
     storeValue<T>(entity: WidenEntity<Entity>, key: string, value: T) {
         let propertyMap = this.#propertyMaps.get(key);
@@ -19,11 +21,11 @@ export class JsonDatabaseValueStorage extends DatabaseValueStorage<Entity> {
         propertyMap.set(entity.id, value);
     }
 
-    restoreValue<T>(entity: WidenEntity<Entity>, key: string): T | undefined {
+    restoreValue(entity: WidenEntity<Entity>, key: string) {
         return this.#propertyMaps.get(key)?.get(entity.id);
     }
 
-    deleteValue(entity: WidenEntity<Entity>, key: string): boolean {
+    deleteValue(entity: WidenEntity<Entity>, key: string) {
         return this.#propertyMaps.get(key)?.delete(entity.id) ?? false;
     }
 
