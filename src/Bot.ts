@@ -75,9 +75,6 @@ export class Bot extends EventEmitter {
         });
 
         this.database = new BotDatabase(this, this.options.database.handler);
-        this.client.once('ready', () => {
-            this.database.load();
-        });
 
         if (this.options.database.saveOnSigint) {
             process.once('SIGINT', async () => {
@@ -95,6 +92,13 @@ export class Bot extends EventEmitter {
         });
 
         this.database.definedProperties.add(this.prefixesProperty);
+        for (const property of this.options.database.definedProperties) {
+            this.database.definedProperties.add(property);
+        }
+
+        this.client.once('ready', () => {
+            this.database.load();
+        });
 
         this.client.on('message', message => {
             if (!(message.guild && message.channel.type == 'text')) return;
@@ -228,7 +232,7 @@ export class Bot extends EventEmitter {
      * Сначала читает токен из файла, а потом использует его в методе login
      * @param path путь до файла с токеном
      */
-    public async loginFromFile(path: PathLike) {
-        return await this.login(readFileSync(path).toString());
+    public loginFromFile(path: PathLike) {
+        return this.login(readFileSync(path).toString());
     }
 }

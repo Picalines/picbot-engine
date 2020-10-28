@@ -1,4 +1,13 @@
-export { GuildMessage, GuildBotMessage, Failable } from "./utils";
+export {
+    GuildMessage,
+    GuildBotMessage,
+    Failable,
+    DeepPartial,
+    NonEmptyArray,
+    ReadOnlyNonEmptyArray,
+    PromiseOrSync,
+    PromiseVoid,
+} from "./utils";
 
 export * as ArgumentReaders from "./command/argument/Readers";
 export { ArgumentReaderStorage } from "./command/argument/Storage";
@@ -16,7 +25,7 @@ export { DatabaseValueStorage } from "./database/Property/ValueStorage";
 export { BotDatabaseHandler } from "./database/Handler";
 export { BotDatabase } from "./database/BotDatabase";
 
-export { BotOptions } from "./BotOptions";
+export { BotOptions, DefaultBotOptions } from "./BotOptions";
 export { Bot } from "./Bot";
 
 export * as BuiltInCommands from "./builtIn/command";
