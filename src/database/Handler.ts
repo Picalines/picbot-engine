@@ -1,7 +1,7 @@
-import { Constructable, Guild } from "discord.js";
+import { Guild } from "discord.js";
 import { PromiseVoid } from "../utils";
 import { BotDatabase } from "./BotDatabase";
-import { DatabaseValueStorage } from "./Property/ValueStorage";
+import { DatabaseValueStorageConstructor } from "./Property/ValueStorage";
 
 /**
  * Пользовательский интерфейс базы данных
@@ -10,12 +10,12 @@ export interface BotDatabaseHandler {
     /**
      * Класс хранилища значений свойств серверов
      */
-    guildPropertyStorageClass: Constructable<DatabaseValueStorage<'guild'>>;
+    guildPropertyStorageClass: DatabaseValueStorageConstructor<'guild'>;
 
     /**
      * Класс хранилища значений свойств участников серверов
      */
-    memberPropertyStorageClass: Constructable<DatabaseValueStorage<'member'>>;
+    memberPropertyStorageClass: DatabaseValueStorageConstructor<'member'>;
 
     /**
      * Обработчик события `guildCreate`

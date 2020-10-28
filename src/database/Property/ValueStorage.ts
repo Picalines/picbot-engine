@@ -9,6 +9,7 @@ import { AnyExpression } from "../Selector/Expression";
 export abstract class DatabaseValueStorage<E extends Entity> {
     /**
      * @param database ссылка на базу данных
+     * @param entityType тип сущностей в хранилище
      */
     constructor(
         public readonly database: BotDatabase,
@@ -56,4 +57,8 @@ export abstract class DatabaseValueStorage<E extends Entity> {
      * @param entity сущность (сервер / участник сервера)
      */
     abstract cleanupEntity(entity: WidenEntity<E>): PromiseOrSync<void>;
+}
+
+export interface DatabaseValueStorageConstructor<E extends Entity> {
+    new (database: BotDatabase, entityType: E): DatabaseValueStorage<E>;
 }

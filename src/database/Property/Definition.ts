@@ -1,5 +1,4 @@
-import { Constructable } from "discord.js";
-import { PropertyAccess } from "./Access";
+import { PropertyAccess, PropertyAccessConstructor } from "./Access";
 import { Entity } from "../Entity";
 
 /**
@@ -32,7 +31,7 @@ export interface PropertyDefinition<E extends Entity, T, A extends PropertyAcces
      * Класс объекта, дающего доступ к чтению / изменению значения свойства.
      * Используйте этот параметр для расширения / абстракции функционала
      */
-    readonly accessorClass?: Constructable<A>;
+    readonly accessorClass?: PropertyAccessConstructor<T, A>;
 }
 
 export interface Property<E extends Entity, T, A extends PropertyAccess<T> = PropertyAccess<T>>

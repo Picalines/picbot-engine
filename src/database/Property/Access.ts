@@ -45,3 +45,7 @@ export class PropertyAccess<T> {
         Object.assign(this, methods);
     }
 }
+
+export interface PropertyAccessConstructor<T, A extends PropertyAccess<T> = PropertyAccess<T>> {
+    new (property: Property<Entity, T>, methods: AccessMethods<T>): A;
+}

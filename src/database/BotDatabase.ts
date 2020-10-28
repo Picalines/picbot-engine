@@ -1,14 +1,15 @@
-import { Property, AnyProperty } from "./Property/Definition";
+import { Property } from "./Property/Definition";
 import { EntitySelector, EntitySelectorOptions } from "./Selector/Definition";
 import { Entity, WidenEntity } from "./Entity";
-import { PropertyAccess } from "./Property/Access";
+import { PropertyAccess, PropertyAccessConstructor } from "./Property/Access";
 import { DatabaseValueStorage } from "./Property/ValueStorage";
 import { BotDatabaseHandler } from "./Handler";
-import { Constructable, Guild, GuildMember } from "discord.js";
+import { Guild, GuildMember, GuildMemberManager } from "discord.js";
 import { EventEmitter } from "events";
 import { Bot } from "../Bot";
 import { PropertyDefinitionStorage } from "./Property/DefinitionStorage";
 import { OperatorExpressions, QueryOperators } from "./Selector/Operator";
+import { filterIterable } from "../utils";
 
 export interface BotDatabase {
     on(event: 'beforeSaving', listener: () => void): this;
@@ -77,7 +78,7 @@ export class BotDatabase extends EventEmitter {
             storage = this.#guildsStorage as ValueStorage;
         }
 
-        const constructor = (property.accessorClass ?? PropertyAccess) as Constructable<A>;
+        const constructor = (property.accessorClass ?? PropertyAccess) as PropertyAccessConstructor<T, A>;
 
         return new constructor(property, {
             set: async (value: T) => {
@@ -93,11 +94,15 @@ export class BotDatabase extends EventEmitter {
                 await storage.storeValue(entity, property.key, value);
             },
 
-            reset: async () => await storage?.deleteValue(entity, property.key) ?? false,
+            async reset() {
+                return await storage?.deleteValue(entity, property.key) ?? false;
+            },
 
-            rawValue: async () => await storage?.restoreValue(entity, property.key),
+            async rawValue() {
+                return await storage?.restoreValue(entity, property.key);
+            },
 
-            value: async function () {
+            async value() {
                 return await this.rawValue() ?? property.defaultValue;
             },
         });
@@ -108,26 +113,28 @@ export class BotDatabase extends EventEmitter {
      * @param selector селектор сущностей
      * @param options настройки селектора
      */
-    public async selectEntities<E extends Entity>(selector: EntitySelector<E>, options: (E extends 'member' ? { guild: Guild } : {}) & Partial<EntitySelectorOptions>): Promise<WidenEntity<E>[]> {
+    public async selectEntities<E extends Entity>(selector: EntitySelector<E>, options: EntitySelectorOptions<E>): Promise<WidenEntity<E>[]> {
         options.maxCount ??= Infinity;
         if (options.maxCount <= 0) return [];
 
         const expression = selector.expression(OperatorExpressions as QueryOperators<E>);
-        let entities: IterableIterator<WidenEntity<E>>;
         let storage: DatabaseValueStorage<E>;
 
         if (selector.entityType == 'guild') {
-            entities = this.bot.client.guilds.cache.values() as IterableIterator<WidenEntity<E>>;
             storage = this.#guildsStorage as DatabaseValueStorage<E>;
         }
         else {
-            const { id } = (options as unknown as { guild: Guild }).guild;
-            entities = this.bot.client.guilds.cache.get(id)!.members.cache.values() as IterableIterator<WidenEntity<E>>;
-            storage = this.#memberStorages.get(id) as DatabaseValueStorage<E>;
+            const { guild } = options.manager as GuildMemberManager;
+            storage = this.#memberStorages.get(guild.id) as DatabaseValueStorage<E>;
             if (!storage) {
-                storage = new this.handler.memberPropertyStorageClass('member') as DatabaseValueStorage<E>;
-                this.#memberStorages.set(id, storage as DatabaseValueStorage<'member'>);
+                storage = new this.handler.memberPropertyStorageClass(this, 'member') as DatabaseValueStorage<E>;
+                this.#memberStorages.set(guild.id, storage as DatabaseValueStorage<'member'>);
             }
+        }
+
+        let entities = options.manager.cache.values() as IterableIterator<WidenEntity<E>>;
+        if (options.filter) {
+            entities = filterIterable(entities, options.filter);
         }
 
         const selected = await storage.selectEntities(entities, expression, options.maxCount);
