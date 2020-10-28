@@ -1,4 +1,4 @@
-import { GuildMessage, Failable } from "../../utils";
+import { Failable, GuildMessage } from "../../utils";
 
 /**
  * Информация прочитанного аргумента
@@ -58,6 +58,17 @@ export function ReadRegex(regex: string, userInput: string): string {
 }
 
 /**
+ * Читает слово (последовательность символов до пробела)
+ */
+export const ReadWord: ArgumentReader<string> = function (userInput) {
+    const word = ReadRegex('\\S+', userInput);
+    if (word) {
+        return { isError: false, value: { length: word.length, parsedValue: word } };
+    }
+    return { isError: true, error: 'notFound' };
+}
+
+/**
  * Читает пробелы между аргументами
  */
 export const ReadSpace: ArgumentReader<string> = function (userInput) {
@@ -65,9 +76,7 @@ export const ReadSpace: ArgumentReader<string> = function (userInput) {
     if (spaceLength > 0) {
         return { isError: false, value: { length: spaceLength } };
     }
-    else {
-        return { isError: true, error: 'notFound' };
-    }
+    return { isError: true, error: 'notFound' };
 }
 
 /**

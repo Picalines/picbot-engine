@@ -1,5 +1,5 @@
-import * as Arguments from "./Readers";
 import { GuildMember, Role, TextChannel } from "discord.js";
+import * as Arguments from "./Readers";
 
 type DefaultArgumentReadersMap = {
     number: Arguments.ArgumentReader<number>,
@@ -7,6 +7,7 @@ type DefaultArgumentReadersMap = {
     role: Arguments.ArgumentReader<Role>,
     textChannel: Arguments.ArgumentReader<TextChannel>,
     remainingText: Arguments.ArgumentReader<string>,
+    word: Arguments.ArgumentReader<string>,
 }
 
 export type ArgumentReaderData = {
@@ -27,6 +28,7 @@ export class ArgumentReaderStorage implements Iterable<ArgumentReaderData> {
         role: Arguments.ReadRole,
         textChannel: Arguments.ReadTextChannel,
         remainingText: Arguments.ReadRemainingText,
+        word: Arguments.ReadWord,
     };
 
     /**
@@ -36,7 +38,7 @@ export class ArgumentReaderStorage implements Iterable<ArgumentReaderData> {
      * @param reader функция, читающая аргумент
      */
     public register<T = any>(typeName: string, reader: Arguments.ArgumentReader<T>) {
-        if (/^\d+/.test(typeName) || typeName.includes(' ')) {
+        if (!typeName || /^\d+/.test(typeName) || typeName.includes(' ')) {
             throw new Error(`invalid argument type name '${typeName}'`);
         }
 

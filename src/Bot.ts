@@ -1,22 +1,31 @@
+import { Client, Message, MessageEmbed } from "discord.js";
+import { EventEmitter } from "events";
+import { PathLike, readFileSync } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
-import { Client, Message, MessageEmbed, PermissionString } from "discord.js";
 import { ArgumentReaderStorage } from "./command/argument/Storage";
-import { GuildMessage, PromiseVoid } from "./utils";
 import { CommandStorage } from "./command/Storage";
-import { CommandContext } from "./command/Context";
-import { readFileSync, PathLike } from "fs";
-import { BotPrefixes } from "./BotPrefixes";
-import HelpCommand from "./command/builtIn/Help";
+import { Command } from "./command/Command";
+import { BotDatabase } from "./database/BotDatabase";
+import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
+import * as BuiltInCommands from "./builtIn/command";
+import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/prefixes";
+import { Property } from "./database/Property/Definition";
+
+export declare interface Bot {
+    on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
+    on(event: 'memberPlainMessage', listener: (message: GuildMessage) => void): this;
+    on(event: 'memberCommandMessage', listener: (message: GuildMessage) => void): this;
+
+    on(event: 'botMessage', listener: (message: GuildBotMessage) => void): this;
+    on(event: 'myMessage', listener: (message: GuildBotMessage) => void): this;
+
+    on(event: string, listener: Function): this;
+}
 
 /**
  * Обёртка клиента API из discord.js
  */
-export class Bot {
-    /**
-     * Клиент API discord.js
-     */
-    public readonly client: Client;
-
+export class Bot extends EventEmitter {
     /**
      * Настройки бота
      */
@@ -33,68 +42,144 @@ export class Bot {
     public readonly commands = new CommandStorage();
 
     /**
-     * Префиксы бота
+     * Свойство префиксов в базе данных
      */
-    public readonly prefixes: BotPrefixes;
+    public readonly prefixesProperty: Property<'guild', string[], PrefixesPropertyAccess>;
 
     /**
-     * @param options настройки клиента API discord.js
+     * База данных бота
      */
-    constructor(options: BotOptionsArgument = {}) {
-        this.client = new Client(options.clientOptions);
+    public readonly database: BotDatabase;
+
+    /**
+     * @param client Клиент API discord.js
+     * @param options настройки бота
+     */
+    constructor(
+        public readonly client: Client,
+        options: BotOptionsArgument = {}
+    ) {
+        super();
 
         this.options = ParseBotOptionsArgument(options);
 
-        this.prefixes = new BotPrefixes(this);
-
-        this.commands.register(HelpCommand.name, HelpCommand);
+        const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
+        for (const builtInCommand of Object.values(BuiltInCommands)) {
+            if (builtInCommandsSetting[builtInCommand.info.name]) {
+                this.commands.register(builtInCommand);
+            }
+        }
 
         this.client.on('ready', () => {
-            console.log("logged in as " + String(this.client.user?.username));
+            console.log("logged in as " + this.username);
+        });
+
+        this.database = new BotDatabase(this, this.options.database.handler);
+
+        if (this.options.database.saveOnSigint) {
+            process.once('SIGINT', async () => {
+                await this.database.save();
+                console.log('Press Ctrl+C again to exit the program');
+            });
+        }
+
+        this.prefixesProperty = new Property({
+            key: 'prefixes',
+            entityType: 'guild',
+            defaultValue: this.options.guild.defaultPrefixes as any,
+            validate: prefixes => prefixes.length > 0 && prefixes.every(validatePrefix),
+            accessorClass: PrefixesPropertyAccess,
+        });
+
+        this.database.definedProperties.add(this.prefixesProperty);
+        for (const property of this.options.database.definedProperties) {
+            this.database.definedProperties.add(property);
+        }
+
+        this.client.once('ready', () => {
+            this.database.load();
         });
 
         this.client.on('message', message => {
             if (!(message.guild && message.channel.type == 'text')) return;
 
             const guildMessage = message as GuildMessage;
-            if (guildMessage.member.id == guildMessage.guild.me.id) return;
-            if (this.options.ignoreBots && guildMessage.author.bot) return;
 
-            this.handleCommands(guildMessage);
+            if (guildMessage.member.id == guildMessage.guild.me.id) {
+                this.emit('myMessage', message);
+                return;
+            }
+
+            if (guildMessage.author.bot) {
+                this.emit('botMessage', message);
+                if (this.options.ignoreBots) return;
+            }
+
+            this.handleCommands(guildMessage).then(wasCommand => {
+                this.emit('memberMessage', message);
+                if (wasCommand) this.emit('memberCommandMessage', message);
+                else this.emit('memberPlainMessage', message);
+            });
         });
+    }
+
+    /**
+     * @returns юзернейм бота. Если [[Client.user]] равно `undefined`, вернёт `"bot"`
+     */
+    public get username(): string {
+        return this.client.user?.username ?? 'bot';
     }
 
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
      * @param message сообщение пользователя
+     * @returns true, если была запущена команда
      */
-    public async handleCommands(message: GuildMessage): Promise<void> {
-        const prefixLength = this.prefixes.getMessagePrefixLength(message);
+    public async handleCommands(message: GuildMessage): Promise<boolean> {
+        const prefixesProp = this.database.accessProperty(message.guild, this.prefixesProperty);
+
+        let prefixes = await prefixesProp.value();
+        if (!prefixes.length) {
+            prefixes = this.options.guild.defaultPrefixes as any;
+            await prefixesProp.set(prefixes);
+        }
+
+        let prefixLength = 0;
+        for (const prefix of prefixes) {
+            if (message.cleanContent.startsWith(prefix)) {
+                prefixLength = prefix.length;
+                break;
+            }
+        }
+
         if (!prefixLength) {
-            return;
+            return false;
         }
 
-        const content = message.content.slice(prefixLength);
-        const commandName = content.replace(/\s.*$/, '');
+        const commandName = message.cleanContent.slice(prefixLength).toLowerCase().replace(/\s.*$/, '');
         if (!commandName) {
-            return;
+            return false;
         }
-
-        const executor = message.member;
 
         await Bot.catchErrorEmbedReply(message, async () => {
-            const command = this.commands.getByName(commandName);
-
-            const commandPermissions = (command.permissions || []) as PermissionString[];
-            const checkAdmin = this.options.permissions.checkAdmin;
-            const missingPermissions = executor.permissions.missing(commandPermissions, checkAdmin);
-            if (missingPermissions.length) {
-                throw new Error(`Not enough permissions: ${missingPermissions.join(', ')}`);
+            let command: Command;
+            try {
+                command = this.commands.getByName(commandName);
+            } catch (err) {
+                if (err instanceof Error && this.options.commands.sendNotFoundError) {
+                    throw err;
+                }
+                return;
             }
 
-            const context = new CommandContext(this, message as GuildMessage, executor);
-            await command.execute(context);
+            await command.execute(this, message);
         });
+
+        if (this.options.utils.autoStopTyping) {
+            message.channel.stopTyping(true);
+        }
+
+        return true;
     }
 
     /**
@@ -130,7 +215,7 @@ export class Bot {
                 return;
             }
 
-            await message.reply(embed);
+            await message.reply({ embed });
         }
     }
 
@@ -147,7 +232,7 @@ export class Bot {
      * Сначала читает токен из файла, а потом использует его в методе login
      * @param path путь до файла с токеном
      */
-    public async loginFromFile(path: PathLike) {
-        return await this.login(readFileSync(path).toString());
+    public loginFromFile(path: PathLike) {
+        return this.login(readFileSync(path).toString());
     }
 }

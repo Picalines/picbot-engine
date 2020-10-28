@@ -1,38 +1,25 @@
-import { CommandExecuteable, Command } from '../command/Info';
-import { CommandStorage } from '../command/Storage';
-import { NonEmptyArray } from '../utils';
+import { Command } from '../src/command/Command';
+import { CommandStorage } from '../src/command/Storage';
+import { NonEmptyArray } from '../src/utils';
 
-const emptyCommand: CommandExecuteable = () => {};
+const emptyExecuteable = () => {};
 
-describe('name tests', () => {
-    const commands = new CommandStorage();
-
-    test('space', () => {
-        const name = 'test b';
-        expect(() => commands.register(name, emptyCommand)).toThrowError(`invalid command name '${name}'`);
-    });
-
-    test('empty string', () => {
-        expect(() => commands.register('', emptyCommand)).toThrowError("invalid command name ''");
-    });
-
-    test('normal', () => {
-        const name = 'test';
-        expect(() => commands.register(name, emptyCommand)).not.toThrowError(`invalid command name '${name}'`);
-    });
-});
+const makeEmptyCommand = (name: string) => new Command({ name, execute: emptyExecuteable });
 
 describe('get by name test', () => {
     const commands = new CommandStorage();
 
     const aliases: NonEmptyArray<string> = ['main2', 'second', 'wow', 'test'];
 
-    commands.register('main', {
-        execute: emptyCommand,
+    const command = new Command({
+        name: 'main',
+        execute: emptyExecuteable,
         description: 'test command',
         aliases,
         permissions: ['MANAGE_GUILD'],
     });
+
+    commands.register(command);
 
     test('not found', () => {
         expect(() => commands.getByName('other')).toThrowError("command 'other' not found");
@@ -50,23 +37,19 @@ describe('get by name test', () => {
 
             describe(`data equality`, () => {
                 test('name', () => {
-                    expect(fromGet.name).toEqual('main');
-                });
-
-                test('executeable', () => {
-                    expect(fromGet.execute).toBe(emptyCommand);
+                    expect(fromGet.info.name).toEqual('main');
                 });
 
                 test('description', () => {
-                    expect(fromGet.description).toEqual('test command');
+                    expect(fromGet.info.description).toEqual('test command');
                 });
 
                 test('aliases', () => {
-                    expect(fromGet.aliases).toEqual(aliases);
+                    expect(fromGet.info.aliases).toEqual(aliases);
                 });
 
                 test('permissions', () => {
-                    expect(fromGet.permissions).toEqual(['MANAGE_GUILD']);
+                    expect(fromGet.info.permissions).toEqual(['MANAGE_GUILD']);
                 });
             });
         });
@@ -86,17 +69,18 @@ describe('commands list tests', () => {
 
     test('length', () => {
         for (let i = 0; i < 3; i++) {
-            commands.register(String(i), emptyCommand);
+            commands.register(makeEmptyCommand(String(i)));
         }
         expect(commands.list.length).toEqual(3);
     });
 
     test('aliases', () => {
         let oldLength = commands.list.length;
-        commands.register('999', {
+        commands.register(new Command({
+            name: '999',
             aliases: ['9999', '99999', '-1'],
-            execute: emptyCommand,
-        });
+            execute: emptyExecuteable,
+        }));
         expect(commands.list.length).toEqual(oldLength + 1);
     });
 });
