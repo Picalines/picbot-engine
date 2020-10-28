@@ -5,7 +5,7 @@ import { Guild } from "discord.js";
 import { JsonDatabaseValueStorage } from "./ValueStorage";
 import { BotDatabase } from "../../../database/BotDatabase";
 import { Property } from "../../../database/Property/Definition";
-import { Entity, WidenEntity } from "../../../database/Entity";
+import { EntityType, Entity } from "../../../database/Entity";
 import { PropertyAccess } from "../../../database/Property/Access";
 
 interface JsonHandlerOptions {
@@ -62,7 +62,7 @@ export class JsonDatabaseHandler implements BotDatabaseHandler {
             dataObject.properties.prefixes = dataObject.prefixes;
         }
 
-        const setPropsObject = async <E extends Entity>(entityType: E, entity: WidenEntity<E>, obj: any) => {
+        const setPropsObject = async <E extends EntityType>(entityType: E, entity: Entity<E>, obj: any) => {
             const properties = database.definedProperties.list(entityType).filter(p => p.key in obj);
             await Promise.all(properties.map(p => database.accessProperty(entity, p).set(obj[p.key])));
         }
@@ -83,14 +83,14 @@ export class JsonDatabaseHandler implements BotDatabaseHandler {
             members: {} as Record<string, Record<string, any>>,
         };
 
-        const getValues = async <E extends Entity>(props: Property<E, any, PropertyAccess<any>>[], entity: WidenEntity<E>) => {
+        const getValues = async <E extends EntityType>(props: Property<E, any, PropertyAccess<any>>[], entity: Entity<E>) => {
             const vPromises = props.map<Promise<[string, any]>>(async p => [
                 p.key, await database.accessProperty(entity, p).rawValue(),
             ]);
             return (await Promise.all(vPromises)).filter(v => v[1] != undefined);
         }
 
-        const saveValues = async <E extends Entity>(entityType: E, props: Property<E, any, PropertyAccess<any>>[], entity: WidenEntity<E>) => {
+        const saveValues = async <E extends EntityType>(entityType: E, props: Property<E, any, PropertyAccess<any>>[], entity: Entity<E>) => {
             const values = await getValues(props, entity);
             if (!values.length) return;
             if (entityType == 'guild') {

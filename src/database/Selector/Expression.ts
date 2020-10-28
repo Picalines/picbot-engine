@@ -1,5 +1,5 @@
 import { Property } from "../..";
-import { Entity } from "../Entity";
+import { EntityType } from "../Entity";
 import { BinaryCompareOperator, BinaryLogicOperator, UnaryOperator } from "./Operator";
 
 export type Constant =
@@ -7,14 +7,14 @@ export type Constant =
     | string
     | boolean
 
-export class UnaryExpression<E extends Entity, O extends UnaryOperator> {
+export class UnaryExpression<E extends EntityType, O extends UnaryOperator> {
     constructor(
         public readonly operator: O,
         public readonly right: UnaryExpression<E, UnaryOperator> | BinaryExpression<E>,
     ) { }
 }
 
-export class ComparisonExpression<E extends Entity, O extends BinaryCompareOperator, T extends Constant> {
+export class ComparisonExpression<E extends EntityType, O extends BinaryCompareOperator, T extends Constant> {
     constructor(
         public readonly operator: O,
         public readonly left: Property<E, T>,
@@ -22,7 +22,7 @@ export class ComparisonExpression<E extends Entity, O extends BinaryCompareOpera
     ) { }
 }
 
-export class BooleanExpression<E extends Entity, O extends BinaryLogicOperator> {
+export class BooleanExpression<E extends EntityType, O extends BinaryLogicOperator> {
     constructor(
         public readonly operator: O,
         public readonly left: AnyExpression<E>,
@@ -30,6 +30,6 @@ export class BooleanExpression<E extends Entity, O extends BinaryLogicOperator> 
     ) { }
 }
 
-export type BinaryExpression<E extends Entity> = ComparisonExpression<E, BinaryCompareOperator, Constant> | BooleanExpression<E, BinaryLogicOperator>;
+export type BinaryExpression<E extends EntityType> = ComparisonExpression<E, BinaryCompareOperator, Constant> | BooleanExpression<E, BinaryLogicOperator>;
 
-export type AnyExpression<E extends Entity> = UnaryExpression<E, UnaryOperator> | BinaryExpression<E>;
+export type AnyExpression<E extends EntityType> = UnaryExpression<E, UnaryOperator> | BinaryExpression<E>;

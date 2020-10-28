@@ -1,4 +1,4 @@
-import { Entity } from "../Entity";
+import { EntityType } from "../Entity";
 import { Property } from "../Property/Definition";
 import { ComparisonExpression, BooleanExpression, UnaryExpression, AnyExpression, Constant } from "./Expression";
 
@@ -19,7 +19,7 @@ export type BinaryOperator =
     | BinaryCompareOperator
     | BinaryLogicOperator
 
-export interface QueryOperators<E extends Entity> {
+export interface QueryOperators<E extends EntityType> {
     /**
      * @example xpProperty > 0
      */
@@ -60,7 +60,7 @@ export interface QueryOperators<E extends Entity> {
     not(r: AnyExpression<E>): UnaryExpression<E, 'not'>;
 }
 
-export const OperatorExpressions: QueryOperators<Entity> = {
+export const OperatorExpressions: QueryOperators<EntityType> = {
     'gt': (l, r) => new ComparisonExpression('gt', l, r),
     'gte': (l, r) => new ComparisonExpression('gte', l, r),
     'lt': (l, r) => new ComparisonExpression('lt', l, r),

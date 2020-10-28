@@ -1,10 +1,10 @@
 import { PropertyAccess, PropertyAccessConstructor } from "./Access";
-import { Entity } from "../Entity";
+import { EntityType } from "../Entity";
 
 /**
  * Объявление свойства в базе данных
  */
-export interface PropertyDefinition<E extends Entity, T, A extends PropertyAccess<T>> {
+export interface PropertyDefinition<E extends EntityType, T, A extends PropertyAccess<T>> {
     /**
      * Имя свойства. Для правильной работы базы данных
      * ключи свойств должны быть уникальными
@@ -34,13 +34,13 @@ export interface PropertyDefinition<E extends Entity, T, A extends PropertyAcces
     readonly accessorClass?: PropertyAccessConstructor<T, A>;
 }
 
-export interface Property<E extends Entity, T, A extends PropertyAccess<T> = PropertyAccess<T>>
+export interface Property<E extends EntityType, T, A extends PropertyAccess<T> = PropertyAccess<T>>
     extends PropertyDefinition<E, T, A> { }
 
 /**
  * Свойство сервера / участника сервера в базе данных бота
  */
-export class Property<E extends Entity, T, A extends PropertyAccess<T> = PropertyAccess<T>> {
+export class Property<E extends EntityType, T, A extends PropertyAccess<T> = PropertyAccess<T>> {
     /**
      * @param definition информация свойства
      */
@@ -49,4 +49,4 @@ export class Property<E extends Entity, T, A extends PropertyAccess<T> = Propert
     }
 }
 
-export type AnyProperty<E extends Entity = Entity> = Property<E, any>;
+export type AnyProperty<E extends EntityType = EntityType> = Property<E, any>;

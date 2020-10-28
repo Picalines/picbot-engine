@@ -1,4 +1,4 @@
-import { Entity } from "../Entity";
+import { EntityType } from "../Entity";
 import { AnyProperty } from "./Definition";
 
 export class PropertyDefinitionStorage {
@@ -30,7 +30,7 @@ export class PropertyDefinitionStorage {
      * @returns список свойств сущностей с определённым типом
      * @param entityType 
      */
-    list<E extends Entity>(entityType: E | 'any'): AnyProperty<E>[] {
+    list<E extends EntityType>(entityType: E | 'any'): AnyProperty<E>[] {
         const props = [...this.#properties.values()];
         if (entityType == 'any') {
             return props as any;

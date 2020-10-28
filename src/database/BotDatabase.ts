@@ -1,6 +1,6 @@
 import { Property } from "./Property/Definition";
 import { EntitySelector, EntitySelectorOptions } from "./Selector/Definition";
-import { Entity, WidenEntity } from "./Entity";
+import { EntityType, Entity } from "./Entity";
 import { PropertyAccess, PropertyAccessConstructor } from "./Property/Access";
 import { DatabaseValueStorage } from "./Property/ValueStorage";
 import { BotDatabaseHandler } from "./Handler";
@@ -65,7 +65,7 @@ export class BotDatabase extends EventEmitter {
      * @param entity сущность (сервер / участник сервера)
      * @param property свойство сущности
      */
-    public accessProperty<E extends Entity, T, A extends PropertyAccess<T>>(entity: WidenEntity<E>, property: Property<E, T, A>): A {
+    public accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
         this.definedProperties.add(property);
 
         type ValueStorage = DatabaseValueStorage<E>;
@@ -113,7 +113,7 @@ export class BotDatabase extends EventEmitter {
      * @param selector селектор сущностей
      * @param options настройки селектора
      */
-    public async selectEntities<E extends Entity>(selector: EntitySelector<E>, options: EntitySelectorOptions<E>): Promise<WidenEntity<E>[]> {
+    public async selectEntities<E extends EntityType>(selector: EntitySelector<E>, options: EntitySelectorOptions<E>): Promise<Entity<E>[]> {
         options.maxCount ??= Infinity;
         if (options.maxCount <= 0) return [];
 
@@ -132,7 +132,7 @@ export class BotDatabase extends EventEmitter {
             }
         }
 
-        let entities = options.manager.cache.values() as IterableIterator<WidenEntity<E>>;
+        let entities = options.manager.cache.values() as IterableIterator<Entity<E>>;
         if (options.filter) {
             entities = filterIterable(entities, options.filter);
         }

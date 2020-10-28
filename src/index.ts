@@ -17,7 +17,7 @@ export { CommandExecuteable, Command } from "./command/Command";
 export { CommandStorage } from "./command/Storage";
 export { CommandContext } from "./command/Context";
 
-export { Entity, WidenEntity } from "./database/Entity";
+export { EntityType, Entity } from "./database/Entity";
 export { Property } from "./database/Property/Definition";
 export { PropertyAccess } from "./database/Property/Access";
 export { EntitySelector } from "./database/Selector/Definition";

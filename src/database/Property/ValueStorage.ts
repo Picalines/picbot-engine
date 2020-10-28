@@ -1,12 +1,12 @@
 import { PromiseOrSync } from "../../utils";
 import { BotDatabase } from "../BotDatabase";
-import { Entity, WidenEntity } from "../Entity";
+import { EntityType, Entity } from "../Entity";
 import { AnyExpression } from "../Selector/Expression";
 
 /**
  * Абстрактный класс, хранящий значения свойств сущностей (серверов / участников)
  */
-export abstract class DatabaseValueStorage<E extends Entity> {
+export abstract class DatabaseValueStorage<E extends EntityType> {
     /**
      * @param database ссылка на базу данных
      * @param entityType тип сущностей в хранилище
@@ -22,21 +22,21 @@ export abstract class DatabaseValueStorage<E extends Entity> {
      * @param key имя свойства
      * @param value значение свойства
      */
-    abstract storeValue<T>(entity: WidenEntity<E>, key: string, value: T): PromiseOrSync<void>;
+    abstract storeValue<T>(entity: Entity<E>, key: string, value: T): PromiseOrSync<void>;
 
     /**
      * @returns значение свойства конкретной сущности (либо undefined)
      * @param entity сущность (сервер / участник сервера)
      * @param key имя свойства
      */
-    abstract restoreValue<T>(entity: WidenEntity<E>, key: string): PromiseOrSync<T | undefined>;
+    abstract restoreValue<T>(entity: Entity<E>, key: string): PromiseOrSync<T | undefined>;
 
     /**
      * @returns true, если значение свойства сущности успешно удалено из хранилища
      * @param entity сущность (сервер / участник сервера)
      * @param key имя свойства
      */
-    abstract deleteValue(entity: WidenEntity<E>, key: string): PromiseOrSync<boolean>;
+    abstract deleteValue(entity: Entity<E>, key: string): PromiseOrSync<boolean>;
 
     /**
      * @returns список выбранных сущностей, которые 'подходят' по условию expression
@@ -44,7 +44,7 @@ export abstract class DatabaseValueStorage<E extends Entity> {
      * @param expression выражение
      * @param maxCount максимальное колчиество найденых сущностей. Гарантируется, что это оно не равно нулю
      */
-    abstract selectEntities(entities: IterableIterator<WidenEntity<E>>, expression: AnyExpression<E>, maxCount: number): PromiseOrSync<WidenEntity<E>[]>;
+    abstract selectEntities(entities: IterableIterator<Entity<E>>, expression: AnyExpression<E>, maxCount: number): PromiseOrSync<Entity<E>[]>;
 
     /**
      * Очищает все данные в хранилище. Библиотека вызывает эту функцию,
@@ -56,9 +56,9 @@ export abstract class DatabaseValueStorage<E extends Entity> {
      * Очищает данные сущности
      * @param entity сущность (сервер / участник сервера)
      */
-    abstract cleanupEntity(entity: WidenEntity<E>): PromiseOrSync<void>;
+    abstract cleanupEntity(entity: Entity<E>): PromiseOrSync<void>;
 }
 
-export interface DatabaseValueStorageConstructor<E extends Entity> {
+export interface DatabaseValueStorageConstructor<E extends EntityType> {
     new (database: BotDatabase, entityType: E): DatabaseValueStorage<E>;
 }

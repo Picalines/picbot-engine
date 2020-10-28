@@ -1,16 +1,16 @@
 import { Guild, GuildMember } from "discord.js";
-import { Entity, WidenEntity } from "../../../database/Entity";
+import { EntityType, Entity } from "../../../database/Entity";
 import { DatabaseValueStorage } from "../../../database/Property/ValueStorage";
 import { AnyExpression } from "../../../database/Selector/Expression";
 import { CompiledExpression, compileExpression } from "./Expression";
 
 type CompiledExpressionData = { arrow: CompiledExpression, usedKeys: string[] };
 
-export class JsonDatabaseValueStorage extends DatabaseValueStorage<Entity> {
+export class JsonDatabaseValueStorage extends DatabaseValueStorage<EntityType> {
     #propertyMaps = new Map<string, Map<string, any>>();
-    #compiledExpressions = new WeakMap<AnyExpression<Entity>, CompiledExpressionData>();
+    #compiledExpressions = new WeakMap<AnyExpression<EntityType>, CompiledExpressionData>();
 
-    storeValue<T>(entity: WidenEntity<Entity>, key: string, value: T) {
+    storeValue<T>(entity: Entity<EntityType>, key: string, value: T) {
         let propertyMap = this.#propertyMaps.get(key);
 
         if (!propertyMap) {
@@ -21,15 +21,15 @@ export class JsonDatabaseValueStorage extends DatabaseValueStorage<Entity> {
         propertyMap.set(entity.id, value);
     }
 
-    restoreValue(entity: WidenEntity<Entity>, key: string) {
+    restoreValue(entity: Entity<EntityType>, key: string) {
         return this.#propertyMaps.get(key)?.get(entity.id);
     }
 
-    deleteValue(entity: WidenEntity<Entity>, key: string) {
+    deleteValue(entity: Entity<EntityType>, key: string) {
         return this.#propertyMaps.get(key)?.delete(entity.id) ?? false;
     }
 
-    selectEntities(entities: IterableIterator<WidenEntity<Entity>>, expression: AnyExpression<Entity>, maxCount: number): WidenEntity<Entity>[] {
+    selectEntities(entities: IterableIterator<Entity<EntityType>>, expression: AnyExpression<EntityType>, maxCount: number): Entity<EntityType>[] {
         let compiledExpression = this.#compiledExpressions.get(expression);
         if (compiledExpression === undefined) {
             const usedKeysSet = new Set<string>();
@@ -44,7 +44,7 @@ export class JsonDatabaseValueStorage extends DatabaseValueStorage<Entity> {
         const props = this.database.definedProperties.list(this.entityType)
             .filter(p => compiledExpression!.usedKeys.includes(p.key));
 
-        const selected: WidenEntity<Entity>[] = [];
+        const selected: Entity<EntityType>[] = [];
 
         for (const entity of entities) {
             const entityProps: Record<string, any> = {};

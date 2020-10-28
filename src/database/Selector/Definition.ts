@@ -1,9 +1,9 @@
 import { GuildManager, GuildMemberManager } from "discord.js";
-import { Entity, WidenEntity } from "../Entity";
+import { EntityType, Entity } from "../Entity";
 import { AnyExpression } from "./Expression";
 import { QueryOperators } from "./Operator";
 
-export interface EntitySelectorDefinition<E extends Entity> {
+export interface EntitySelectorDefinition<E extends EntityType> {
     /**
      * Тип сущностей, которые ищет селектор
      */
@@ -14,13 +14,13 @@ export interface EntitySelectorDefinition<E extends Entity> {
     readonly expression: (q: QueryOperators<E>) => AnyExpression<E>;
 }
 
-export interface EntitySelector<E extends Entity> extends EntitySelectorDefinition<E> { }
+export interface EntitySelector<E extends EntityType> extends EntitySelectorDefinition<E> { }
 
 /**
  * Селектор сущности в базе данных. Используется в
  * методе [[BotDatabase.selectEntities]]
  */
-export class EntitySelector<E extends Entity> {
+export class EntitySelector<E extends EntityType> {
     constructor(definition: EntitySelectorDefinition<E>) {
         Object.assign(this, definition);
     }
@@ -29,7 +29,7 @@ export class EntitySelector<E extends Entity> {
 /**
  * Настройки селектора
  */
-export interface EntitySelectorOptions<E extends Entity> {
+export interface EntitySelectorOptions<E extends EntityType> {
     /**
      * Менеджер сущностей, по которому библиотека должна сделать выборку
      */
@@ -37,7 +37,7 @@ export interface EntitySelectorOptions<E extends Entity> {
     /**
      * Функция фильтрации сущностей, которых библиотека получила из менеджера
      */
-    filter?: (entity: WidenEntity<E>) => boolean;
+    filter?: (entity: Entity<E>) => boolean;
     /**
      * Максимальное количество сущностей, которое может найти селектор
      * @default Infinity
