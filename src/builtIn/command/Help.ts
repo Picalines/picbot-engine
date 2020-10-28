@@ -1,5 +1,5 @@
 import { GuildMember, MessageEmbed } from "discord.js";
-import { Command } from "../../command/Command";
+import { Command } from "../../command/Definition";
 import { CommandInfo } from "../../command/Info";
 import { Bot } from "../../Bot";
 

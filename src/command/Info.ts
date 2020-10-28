@@ -1,6 +1,6 @@
 import { PermissionString } from "discord.js";
 import { ReadOnlyNonEmptyArray } from "../utils";
-import { CommandArgument } from "./Command";
+import { CommandArgument } from "./Definition";
 
 /**
  * Информация о команде

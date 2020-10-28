@@ -4,7 +4,7 @@ import { PathLike, readFileSync } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { ArgumentReaderStorage } from "./command/argument/Storage";
 import { CommandStorage } from "./command/Storage";
-import { Command } from "./command/Command";
+import { Command } from "./command/Definition";
 import { BotDatabase } from "./database/BotDatabase";
 import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";

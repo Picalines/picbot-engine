@@ -13,7 +13,7 @@ export * as ArgumentReaders from "./command/argument/Readers";
 export { ArgumentReaderStorage } from "./command/argument/Storage";
 
 export { CommandInfo } from "./command/Info";
-export { CommandExecuteable, Command } from "./command/Command";
+export { CommandExecuteable, Command } from "./command/Definition";
 export { CommandStorage } from "./command/Storage";
 export { CommandContext } from "./command/Context";
 

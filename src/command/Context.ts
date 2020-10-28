@@ -3,7 +3,7 @@ import { Bot } from "../Bot";
 import { GuildMessage } from "../utils";
 import { ArgumentReader, ReadSpace } from "./argument/Readers";
 import { ArgumentReaderStorage } from "./argument/Storage";
-import { Command } from "./Command";
+import { Command } from "./Definition";
 
 /**
  * Контекст запущенной команды

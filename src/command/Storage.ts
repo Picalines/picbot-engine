@@ -1,4 +1,4 @@
-import { Command, CommandExecuteable } from "./Command";
+import { Command, CommandExecuteable } from "./Definition";
 import { CommandInfo } from "./Info";
 
 type CommandRegisterParameter = Omit<CommandInfo, 'name'> & { execute: CommandExecuteable };

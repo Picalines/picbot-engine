@@ -1,4 +1,4 @@
-import { Command } from "../../command/Command";
+import { Command } from "../../command/Definition";
 
 export default new Command({
     name: 'prefix',
