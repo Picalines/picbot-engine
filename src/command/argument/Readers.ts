@@ -30,10 +30,7 @@ export interface ArgumentReader<T> extends ValueParser<string, ArgumentString<T>
 export const remainingTextReader: ArgumentReader<string> = userInput => {
     userInput = userInput.trim();
     if (!userInput) {
-        return {
-            isError: true,
-            error: 'notFound',
-        };
+        return { isError: true, error: 'notFound' };
     }
     return {
         isError: false,
@@ -123,10 +120,7 @@ export const parsedRegexReader = <T>(regex: RegExp, parser: ValueParser<string, 
         }
         return {
             isError: false,
-            value: {
-                length: result.value.length,
-                parsedValue: parsed.value,
-            },
+            value: { length: result.value.length, parsedValue: parsed.value },
         };
     };
 }
