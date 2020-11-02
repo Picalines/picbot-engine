@@ -28,7 +28,7 @@ export { BotDatabase } from "./database/BotDatabase";
 export { BotOptions, DefaultBotOptions } from "./BotOptions";
 export { Bot } from "./Bot";
 
-export * as builtInReaders from "./builtIn/reader";
-export * as builtInCommands from "./builtIn/command";
-export * as builtInDatabase from "./builtIn/database";
-export * as builtInProperty from "./builtIn/property";
+export * from "./builtIn/reader";
+export * from "./builtIn/command";
+export * from "./builtIn/database";
+export * from "./builtIn/property";
