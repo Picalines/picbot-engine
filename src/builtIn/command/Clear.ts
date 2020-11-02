@@ -1,5 +1,5 @@
-import { numberReader } from "../../command/Argument/Reader";
 import { Command } from "../../command/Definition";
+import { numberReader } from "../reader";
 
 export const clearCommand = new Command(
     {

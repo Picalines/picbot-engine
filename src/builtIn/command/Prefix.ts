@@ -1,5 +1,5 @@
-import { keywordReader, optionalReader, wordReader } from "../../command/Argument/Reader";
 import { Command } from "../../command/Definition";
+import { keywordReader, optionalReader, wordReader } from "../reader";
 
 export const prefixCommand = new Command(
     {
