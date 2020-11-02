@@ -7,9 +7,13 @@ export {
     NonEmptyReadonly,
     PromiseOrSync,
     PromiseVoid,
+    InferPrimitive,
+    Primitive,
+    ValueParser,
+    WidenLiteral,
 } from "./utils";
 
-export * as ArgumentReaders from "./command/Argument/Readers";
+export * as readers from "./command/Argument/Readers";
 
 export { Command } from "./command/Definition";
 export { CommandStorage } from "./command/Storage";
@@ -26,6 +30,6 @@ export { BotDatabase } from "./database/BotDatabase";
 export { BotOptions, DefaultBotOptions } from "./BotOptions";
 export { Bot } from "./Bot";
 
-export * as BuiltInCommands from "./builtIn/command";
-export * as BuiltInDatabase from "./builtIn/database";
-export * as BuiltInProperty from "./builtIn/property";
+export * as builtInCommands from "./builtIn/command";
+export * as builtInDatabase from "./builtIn/database";
+export * as builtInProperty from "./builtIn/property";
