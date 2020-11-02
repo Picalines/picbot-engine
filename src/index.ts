@@ -13,7 +13,6 @@ export {
     WidenLiteral,
 } from "./utils";
 
-
 export { Command } from "./command/Definition";
 export { CommandStorage } from "./command/Storage";
 export { CommandContext } from "./command/Context";
