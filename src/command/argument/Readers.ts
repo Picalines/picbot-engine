@@ -1,18 +1,17 @@
-import { Failable, GuildMessage } from "../../utils";
+import { Failable, GuildMessage, InferPrimitive, Primitive, ValueParser } from "../../utils";
 
 /**
  * Информация прочитанного аргумента
  */
-export type ArgumentInfo<T> = {
+export interface ArgumentString<T> {
     /**
      * Длина строки аргумента
      */
-    length: number,
+    length: number;
     /**
      * Переведённое значение аргумента
-     * (числовой аргумент -> значение типа number)
      */
-    parsedValue?: T,
+    parsedValue: T;
 }
 
 /**
@@ -23,149 +22,179 @@ export type ArgumentReaderError = 'notFound' | { message: string };
 /**
  * Интерфейс функции, читающей аргумент
  */
-export interface ArgumentReader<T> {
-    /**
-     * @param userInput не прочитанный ввод пользователя
-     * @param message сообщение пользователя
-     */
-    (userInput: string, message: GuildMessage): Failable<ArgumentInfo<T>, ArgumentReaderError>;
-}
+export interface ArgumentReader<T> extends ValueParser<string, ArgumentString<T>, GuildMessage, ArgumentReaderError> { }
 
 /**
  * Читает оставшийся текст сообщения
  */
-export const ReadRemainingText: ArgumentReader<string> = function (userInput) {
+export const remainingTextReader: ArgumentReader<string> = userInput => {
     userInput = userInput.trim();
+    if (!userInput) {
+        return {
+            isError: true,
+            error: 'notFound',
+        };
+    }
     return {
         isError: false,
-        value: {
-            length: userInput.length,
-            parsedValue: userInput,
-        },
+        value: { length: userInput.length, parsedValue: userInput },
     };
 }
 
 /**
- * Вспомогательная функция. Читает регулярное выражение в сообщении.
- * @returns прочитанная часть, либо пустая строка
- * @param regex регулярное выражение
- * @param userInput ввод пользователя
+ * @returns функцию, которая либо читает аргумент, либо возвращает _default, если аргумент не найден
+ * @param reader функция, читающая аргумент
  */
-export function ReadRegex(regex: string, userInput: string): string {
-    const regexp = new RegExp('^' + regex, 'i');
-    const matches = userInput.match(regexp);
-    return matches && matches[0] ? matches[0] : '';
+export const optionalReader = <T, D extends T | null>(reader: ArgumentReader<T>, _default: InferPrimitive<D>): ArgumentReader<T | InferPrimitive<D>> => {
+    return (userInput, message) => {
+        const result = reader(userInput, message);
+        if (result.isError && !userInput.length) {
+            return { isError: false, value: { length: 0, parsedValue: _default } };
+        }
+        return result;
+    };
 }
 
 /**
- * Читает слово (последовательность символов до пробела)
+ * Читает аргумент по регулярному выражению
+ * @param regex регулярное выражение
  */
-export const ReadWord: ArgumentReader<string> = function (userInput) {
-    const word = ReadRegex('\\S+', userInput);
-    if (word) {
-        return { isError: false, value: { length: word.length, parsedValue: word } };
+export const regexReader = (regex: RegExp): ArgumentReader<string> => {
+    if (!regex.source.startsWith('^')) {
+        regex = new RegExp('^' + regex.source);
     }
-    return { isError: true, error: 'notFound' };
+    return userInput => {
+        const firstMatch = userInput.match(regex)?.[0];
+        if (firstMatch === undefined) {
+            return { isError: true, error: 'notFound' };
+        }
+        return {
+            isError: false,
+            value: { length: firstMatch.length, parsedValue: firstMatch },
+        };
+    };
 }
 
 /**
  * Читает пробелы между аргументами
  */
-export const ReadSpace: ArgumentReader<string> = function (userInput) {
-    const spaceLength = ReadRegex('\\s*', userInput).length;
-    if (spaceLength > 0) {
-        return { isError: false, value: { length: spaceLength } };
+export const spaceReader: ArgumentReader<string> = regexReader(/\s+/);
+
+/**
+ * Читает слово (последовательность символов до пробела)
+ */
+export const wordReader: ArgumentReader<string> = regexReader(/\S+/);
+
+/**
+ * @returns функцию, читающую одно из ключевых слов
+ * @param keywords ключевые слова
+ */
+export const keywordReader = <W extends string>(...keywords: W[]): ArgumentReader<W> => {
+    if (keywords.some(w => w.includes(' '))) {
+        throw new Error('keyword in keywordReader should not include spaces');
     }
-    return { isError: true, error: 'notFound' };
+    return (userInput, message) => {
+        const wordResult = wordReader(userInput, message) as Failable<ArgumentString<W>, ArgumentReaderError>;
+        if (wordResult.isError || !(keywords as string[]).includes(wordResult.value.parsedValue)) {
+            return {
+                isError: true,
+                error: { message: `one of keywords expected: ${keywords.join(', ')}` },
+            };
+        }
+        return wordResult;
+    };
+}
+
+/**
+ * Читает аргумент по регулярному выражению, а затем переводит его с помощью парсера
+ * @param regex регулярное выражение
+ * @param parser функция парсер
+ */
+export const parsedRegexReader = <T>(regex: RegExp, parser: ValueParser<string, T, GuildMessage, { message: string }>): ArgumentReader<T> => {
+    const reader = regexReader(regex);
+    return (userInput, message) => {
+        const result = reader(userInput, message);
+        if (result.isError) {
+            return result;
+        }
+        const parsed = parser(result.value.parsedValue, message);
+        if (parsed.isError) {
+            return parsed;
+        }
+        return {
+            isError: false,
+            value: {
+                length: result.value.length,
+                parsedValue: parsed.value,
+            },
+        };
+    };
 }
 
 /**
  * Читает число (целое / дробное, положительное / отрицательное)
  */
-export const ReadNumber: ArgumentReader<number> = function (userInput) {
-    const numberInput = ReadRegex(`[+-]?\\d+(\\.\\d+)?`, userInput);
-    if (!numberInput) {
-        return {
-            isError: true,
-            error: 'notFound',
-        };
+export const numberReader = (type: 'int' | 'float', range?: [min: number, max: number]): ArgumentReader<number> => {
+    const parseNumber = type == 'int' ? parseInt : parseFloat;
+
+    let inRange: (n: number) => boolean;
+    if (range) {
+        inRange = n => n >= range![0] && n <= range![1];
     }
-    const number = parseFloat(numberInput);
-    if (isNaN(number)) {
-        return {
-            isError: true,
-            error: {
-                message: `'${numberInput}' is not a number`,
-            },
+    else {
+        inRange = _ => true;
+        range = [-Infinity, Infinity];
+    }
+
+    return parsedRegexReader<number>(/[+-]?\d+(\.\d*)?/, numberInput => {
+        const number = parseNumber(numberInput);
+        if (isNaN(number)) {
+            return { isError: true, error: { message: `'${numberInput}' is not a number (${type})` } };
         }
-    }
-    return {
-        isError: false,
-        value: {
-            length: numberInput.length,
-            parsedValue: number,
-        },
-    };
-}
+        if (!inRange(number)) {
+            return { isError: true, error: { message: `${numberInput} is not in range [${range!.slice(0, 2)}]` } }
+        }
+        return { isError: false, value: number };
+    });
+};
 
 /**
- * Вспомогательная функция. Возвращает новую функцию, читающую упоминание дискорда
- * @param mentionRegex регулярное выражение дискорда
- * @param getById функция, получающая упомянутый объект по его id
+ * Функция, получающая упомянутый объект по его id
  */
-export const MakeMentionReader = <T>(
-    mentionRegex: string,
-    getById: (msg: GuildMessage, id: string) => T | null | undefined
-): ArgumentReader<T> => (userInput, message) => {
-    const mention = ReadRegex(mentionRegex, userInput);
-    if (!mention) {
-        return {
-            isError: true,
-            error: 'notFound',
-        };
+type MentionGetter<T> = (message: GuildMessage, id: string) => T | null | undefined;
+
+/**
+ * Читает упоминание
+ * @param mentionRegex регулярное выражение дискорда
+ * @param getter функция, получающая упомянутый объект по его id
+ */
+export const mentionReader = <T>(mentionRegex: RegExp, getter: MentionGetter<T>): ArgumentReader<T> => parsedRegexReader(mentionRegex, (mention, message) => {
+    const id = mention.match(/\d+/)?.[0];
+    if (!id) {
+        return { isError: true, error: { message: 'id not found in mention' } };
     }
-    const idMatches = mention.match(/\d+/);
-    if (!idMatches) {
-        return {
-            isError: true, error: { message: 'id not found in the mention' }
-        };
+    const mentioned = getter(message, id);
+    if (!mentioned) {
+        return { isError: true, error: { message: 'mentioned object not found' } };
     }
-    let mentionedObj: T | null | undefined;
-    try {
-        mentionedObj = getById(message, idMatches[0]);
-        if (!mentionedObj) {
-            throw { message: 'mentioned object not found' };
-        }
-    }
-    catch (err) {
-        return {
-            isError: true, error: err,
-        };
-    }
-    return {
-        isError: false,
-        value: {
-            length: mention.length,
-            parsedValue: mentionedObj,
-        }
-    };
-};
+    return { isError: false, value: mentioned };
+});
 
 /**
  * Читает упоминание участника сервера
  */
-export const ReadMember = MakeMentionReader('<@!?\\d+>', (msg, id) => msg.guild.member(id));
+export const memberReader = mentionReader(/<@!?\d+>/, (message, id) => message.guild.member(id));
 
 /**
  * Читает упоминание роли
  */
-export const ReadRole = MakeMentionReader('<@&\\d+>', (msg, id) => {
-    return msg.guild.roles.cache.find(r => r.id == id);
+export const roleReader = mentionReader(/<@&\d+>/, ({ guild: { roles } }, id) => {
+    return roles.cache.find(r => r.id == id);
 });
 
 /**
  * Читает упоминание текстового канала
  */
-export const ReadTextChannel = MakeMentionReader('<#(?<id>\\d+)>', (msg, id) => {
-    return msg.guild.channels.cache.find(ch => ch.type == 'text' && ch.id == id) as any;
+export const textChannelReader = mentionReader(/<#(?<id>\d+)>/, ({ guild: { channels } }, id) => {
+    return channels.cache.find(ch => ch.type == 'text' && ch.id == id);
 });

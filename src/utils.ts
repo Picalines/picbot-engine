@@ -30,12 +30,12 @@ export type DeepPartial<T> = T extends Function ? T
 /**
  * Массив, который содержит хотя бы 1 элемент
  */
-export type NonEmptyArray<T> = [T, ...T[]];
+export type NonEmpty<T> = T extends Array<infer U> ? U[] & { '0': U } : never;
 
 /**
  * Массив, который содержит хотя бы 1 элемент. Элементы доступны только для чтения
  */
-export type ReadOnlyNonEmptyArray<T> = Readonly<[T, ...T[]]>;
+export type NonEmptyReadonly<T> = T extends ReadonlyArray<infer U> ? ReadonlyArray<U> & { '0': U } : never;
 
 /**
  * Вспомогательный тип для функций. Если какая-то операция прошла успешно,
@@ -50,12 +50,50 @@ export type Failable<R, E> = {
     value: R,
 };
 
+/**
+ * Интерфейс функции, которая переводит значение From в To, использующяя
+ * данные из Context. Возвращает [[Failable]].
+ */
+export interface ValueParser<From, To, Context, Error> {
+    (value: From, context: Context): Failable<To, Error>;
+}
+
+/**
+ * Примитивные типы JavaScript
+ */
+export type Primitive = string | symbol | number | bigint | boolean | null | undefined;
+
+/**
+ * Если T является примитивным типом, то он остаётся литералом
+ */
+export type WidenLiteral<T> = T extends string ? string
+    : T extends symbol ? symbol
+    : T extends number ? number
+    : T extends bigint ? bigint
+    : T extends boolean ? boolean
+    : T extends null ? null
+    : T extends undefined ? undefined
+    : T;
+
+/**
+ * Используется для того, чтобы TypeScript определял generic как литерал
+ */
+export type InferPrimitive<T> = T extends Primitive ? T : WidenLiteral<T>;
+
+/**
+ * Является ли объект литералом (скорее всего)
+ * @param obj объект
+ */
 export function isPlainObject(obj: any): boolean {
     return typeof obj === 'object' && obj !== null
         && obj.constructor === Object
         && Object.prototype.toString.call(obj) === '[object Object]';
 }
 
+/**
+ * @param origin оригинальный объект
+ * @param override объект со значениями для переписывания оригинала
+ */
 export function deepMerge<T>(origin: T, override: Partial<T>): T {
     const copy: T = {} as any;
 
@@ -75,6 +113,11 @@ export function deepMerge<T>(origin: T, override: Partial<T>): T {
     return copy;
 }
 
+/**
+ * Функция фильтрации, используящая генератор
+ * @param iterable итерируемый объект
+ * @param filter функция фильтрации
+ */
 export function* filterIterable<T>(iterable: IterableIterator<T>, filter: (v: T) => boolean): IterableIterator<T> {
     for (const value of iterable) {
         if (filter(value)) {

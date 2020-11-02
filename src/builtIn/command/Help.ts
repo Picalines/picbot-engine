@@ -1,7 +1,7 @@
 import { GuildMember, MessageEmbed } from "discord.js";
 import { Command } from "../../command/Definition";
-import { CommandInfo } from "../../command/Info";
 import { Bot } from "../../Bot";
+import { optionalReader, wordReader } from "../../command/Argument/Readers";
 
 const formatList = (list: string[]) => list.map(el => `\`${el}\``).join(', ');
 
@@ -10,61 +10,76 @@ const defaulGroup = 'Другое';
 const makeCommandsList = (bot: Bot, embed: MessageEmbed, requester: GuildMember) => {
     embed.setTitle('Список команд бота');
 
-    const groupedCommands = bot.commands.getGrouped(defaulGroup);
+    const groupedCommands = bot.commands.grouped(defaulGroup);
 
     for (const [group, commands] of groupedCommands) {
-        const availableCommands = commands.filter(c => c.hasPermissions(bot, requester));
+        const availableCommands = commands.filter(c => requester.permissions.has(c.permissions.bitfield));
         if (availableCommands.length) {
-            const commandNames = availableCommands.map(c => c.info.name);
+            const commandNames = availableCommands.map(c => c.name);
             embed.addField(group, formatList(commandNames));
         }
     }
 }
 
-const makeCommandInfo = (embed: MessageEmbed, info: CommandInfo) => {
-    embed.setTitle(`Информация о команде \`${info.name}\``);
+const makeCommandInfo = <Args extends any[]>(embed: MessageEmbed, command: Command<Args>) => {
+    embed.setTitle(`Информация о команде \`${command.name}\``);
 
-    if (info.aliases) {
-        embed.addField('Алиасы', formatList(info.aliases as any));
+    if (command.aliases) {
+        embed.addField('Алиасы', formatList(command.aliases as any));
     }
 
-    embed.addField('Описание', info.description || '*Отсутствует*');
+    embed.addField('Описание', command.description);
 
-    if (info.syntax) {
-        embed.addField('Синтаксис', `\`${info.syntax}\``);
+    if (command.arguments?.length) {
+        const argumentInfos = command.arguments.map(arg => `• ${arg.name} - ${arg.description}`);
+        embed.addField('Аргументы', argumentInfos.join('\n'));
     }
 
-    if (info.examples) {
-        embed.addField('Примеры использования', info.examples.map(e => '- ' + e).join('\n'));
+    if (command.examples) {
+        embed.addField('Примеры использования', command.examples.map(e => '• ' + e).join('\n'));
     }
 
-    if (info.permissions) {
-        embed.addField('Права доступа', formatList(info.permissions as any));
+    const permissions = command.permissions.toArray();
+    if (permissions.length) {
+        embed.addField('Права доступа', formatList(permissions));
     }
 }
 
-export default new Command({
-    name: 'help',
+export const helpCommand = new Command(
+    {
+        name: 'help',
 
-    description: 'Помощь по командам бота',
-    group: 'Информация',
+        description: 'Помощь по командам бота',
+        group: 'Информация',
 
-    syntax: '<word:commandName=>',
-    examples: [
-        '`!help` даст список команд',
-        '`!help test` даст информацию о команде `test`'
-    ],
+        arguments: [
+            {
+                name: 'commandName',
+                description: 'Имя команды',
+                reader: optionalReader(wordReader, null),
+            },
+        ],
 
-    execute: ({ message, bot, args: { commandName } }): Promise<any> => {
+        examples: [
+            '`!help` даст список команд',
+            '`!help test` даст информацию о команде `test`'
+        ],
+    },
+
+    async ({ message, bot, args: [commandName] }) => {
         const embed = new MessageEmbed().setColor(0x45ff83);
 
         if (!commandName) {
             makeCommandsList(bot, embed, message.member);
         }
         else {
-            makeCommandInfo(embed, bot.commands.getByName(commandName).info);
+            const command = bot.commands.get(commandName);
+            if (!command) {
+                throw new Error(`Команда '${commandName}' не найдена`);
+            }
+            makeCommandInfo(embed, command);
         }
 
-        return message.reply({ embed });
+        await message.reply({ embed });
     }
-});
+);

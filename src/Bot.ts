@@ -2,14 +2,14 @@ import { Client, Message, MessageEmbed } from "discord.js";
 import { EventEmitter } from "events";
 import { PathLike, readFileSync } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
-import { ArgumentReaderStorage } from "./command/argument/Storage";
 import { CommandStorage } from "./command/Storage";
-import { Command } from "./command/Definition";
 import { BotDatabase } from "./database/BotDatabase";
 import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
-import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/prefixes";
+import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
 import { Property } from "./database/Property/Definition";
+import { CommandContext } from "./command/Context";
+import { AnyCommand } from "./command/Definition";
 
 export declare interface Bot {
     on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
@@ -32,11 +32,6 @@ export class Bot extends EventEmitter {
     public readonly options: BotOptions;
 
     /**
-     * Хранилище типов аргументов команд бота
-     */
-    public readonly commandArguments = new ArgumentReaderStorage();
-
-    /**
      * Хранилище команд бота
      */
     public readonly commands = new CommandStorage();
@@ -55,18 +50,15 @@ export class Bot extends EventEmitter {
      * @param client Клиент API discord.js
      * @param options настройки бота
      */
-    constructor(
-        public readonly client: Client,
-        options: BotOptionsArgument = {}
-    ) {
+    constructor(readonly client: Client, options: BotOptionsArgument = {}) {
         super();
 
         this.options = ParseBotOptionsArgument(options);
 
         const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
         for (const builtInCommand of Object.values(BuiltInCommands)) {
-            if (builtInCommandsSetting[builtInCommand.info.name]) {
-                this.commands.register(builtInCommand);
+            if (builtInCommandsSetting[builtInCommand.name]) {
+                this.commands.add(builtInCommand as unknown as AnyCommand);
             }
         }
 
@@ -161,18 +153,23 @@ export class Bot extends EventEmitter {
             return false;
         }
 
-        await Bot.catchErrorEmbedReply(message, async () => {
-            let command: Command;
-            try {
-                command = this.commands.getByName(commandName);
-            } catch (err) {
-                if (err instanceof Error && this.options.commands.sendNotFoundError) {
-                    throw err;
+        await this.catchErrorReply(message, async () => {
+            const command = this.commands.get(commandName);
+            if (command === undefined) {
+                if (this.options.commands.sendNotFoundError) {
+                    throw new Error(`command '${commandName}' not found`);
                 }
                 return;
             }
 
-            await command.execute(this, message);
+            const missingPermissions = message.member.permissions.missing(command.permissions.bitfield);
+            if (missingPermissions.length) {
+                throw new Error(`not enough permissions`);
+            }
+
+            const context = new CommandContext(command, this, message);
+
+            await command.execute(context);
         });
 
         if (this.options.utils.autoStopTyping) {
@@ -186,35 +183,25 @@ export class Bot extends EventEmitter {
      * Возвращает эмбед с описанием ошибки
      * @param error ошибка
      */
-    public static makeErrorEmbed(error: { message: string }) {
+    public errorEmbed(error: string) {
         return new MessageEmbed()
             .setTitle('Произошла ошибка')
             .setColor(0xd61111)
-            .setDescription(error.message);
+            .setDescription(error);
     }
 
     /**
      * Запускает функцию `tryBlock`. В блоке `catch` бот отвечает
-     * на сообщение `message` эмбедом из `makeErrorEmbed`
+     * на сообщение `message` эмбедом из `errorEmbed`
      * @param message сообщение, на которое бот ответит информацией об ошибке
      * @param tryBlock функция в блоке try...catch
      */
-    public static async catchErrorEmbedReply(message: Message, tryBlock: () => PromiseVoid): Promise<void> {
+    public async catchErrorReply(message: Message, tryBlock: () => PromiseVoid): Promise<void> {
         try {
             await tryBlock();
         }
-        catch (error) {
-            if (!(error instanceof Error)) return;
-
-            let embed: MessageEmbed;
-            try {
-                embed = Bot.makeErrorEmbed(error);
-            }
-            catch {
-                await message.reply(`Произошла ошибка: ${error.message}`);
-                return;
-            }
-
+        catch (error: unknown) {
+            const embed = this.errorEmbed(error instanceof Error ? error.message : String(error));
             await message.reply({ embed });
         }
     }

@@ -1,21 +1,29 @@
+import { numberReader } from "../../command/Argument/Readers";
 import { Command } from "../../command/Definition";
 
-export default new Command({
-    name: 'clear',
+export const clearCommand = new Command(
+    {
+        name: 'clear',
 
-    permissions: ['MANAGE_MESSAGES'],
+        permissions: ['MANAGE_MESSAGES'],
 
-    description: 'Удаляет N сообщений',
-    group: 'Администрирование',
+        description: 'Удаляет N сообщений',
+        group: 'Администрирование',
 
-    syntax: '<number:count>',
-    examples: [
-        '`clear 10` удалит 10 сообщений"',
-    ],
+        arguments: [
+            {
+                name: 'count',
+                description: 'Количество сообщений для очистки',
+                reader: numberReader('int', [1, Infinity]),
+            },
+        ],
 
-    execute: async ({ message: { channel }, args: { count } }) => {
-        if (count > 0) {
-            await channel.bulkDelete(count + 1);
-        }
-    }
-});
+        examples: [
+            '`clear 10` удалит 10 сообщений"',
+        ],
+    },
+
+    async ({ message: { channel }, args: [count] }) => {
+        await channel.bulkDelete(count + 1);
+    },
+);

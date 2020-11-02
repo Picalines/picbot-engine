@@ -1,2 +1,2 @@
-export { PrefixesPropertyAccess, validatePrefix } from "./prefixes";
-export { NumberPropertyAccess } from "./number";
+export { PrefixesPropertyAccess, validatePrefix } from "./Prefixes";
+export { NumberPropertyAccess } from "./Number";

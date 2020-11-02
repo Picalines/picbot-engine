@@ -3,17 +3,15 @@ export {
     GuildBotMessage,
     Failable,
     DeepPartial,
-    NonEmptyArray,
-    ReadOnlyNonEmptyArray,
+    NonEmpty,
+    NonEmptyReadonly,
     PromiseOrSync,
     PromiseVoid,
 } from "./utils";
 
-export * as ArgumentReaders from "./command/argument/Readers";
-export { ArgumentReaderStorage } from "./command/argument/Storage";
+export * as ArgumentReaders from "./command/Argument/Readers";
 
-export { CommandInfo } from "./command/Info";
-export { CommandExecuteable, Command } from "./command/Definition";
+export { Command } from "./command/Definition";
 export { CommandStorage } from "./command/Storage";
 export { CommandContext } from "./command/Context";
 

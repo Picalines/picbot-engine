@@ -1,4 +1,4 @@
-import { deepMerge, DeepPartial, ReadOnlyNonEmptyArray } from "./utils";
+import { deepMerge, DeepPartial, NonEmptyReadonly } from "./utils";
 import { BotDatabaseHandler } from "./database/Handler";
 import { JsonDatabaseHandler } from "./builtIn/database";
 import { AnyProperty } from "./database/Property/Definition";
@@ -7,16 +7,6 @@ import { AnyProperty } from "./database/Property/Definition";
  * Объект с настройками бота
  */
 export type BotOptions = {
-    /**
-     * Настройки проверки прав
-     */
-    permissions: {
-        /**
-         * Аргумент [checkAdmin](https://discord.js.org/#/docs/main/stable/class/Permissions?scrollTo=has) из discord.js
-         * @default true
-         */
-        checkAdmin: boolean;
-    };
     /**
      * Игнорировать ли сообщения других ботов
      * @default true
@@ -52,7 +42,7 @@ export type BotOptions = {
          * Стандартные префиксы бота
          * @default ['!']
          */
-        defaultPrefixes: ReadOnlyNonEmptyArray<string>;
+        defaultPrefixes: NonEmptyReadonly<string[]>;
     };
     /**
      * Настройки базы данных
@@ -87,9 +77,6 @@ export type BotOptions = {
  * Стандартные настройки бота
  */
 export const DefaultBotOptions: BotOptions = {
-    permissions: {
-        checkAdmin: true,
-    },
     ignoreBots: true,
     commands: {
         builtIn: {

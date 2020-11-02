@@ -1,40 +1,25 @@
 import { GuildMember } from "discord.js";
 import { Bot } from "../Bot";
 import { GuildMessage } from "../utils";
-import { ArgumentReader, ReadSpace } from "./argument/Readers";
-import { ArgumentReaderStorage } from "./argument/Storage";
+import { CommandArgument } from "./Argument/Definition";
 import { Command } from "./Definition";
+import { spaceReader } from "./Argument/Readers";
 
 /**
  * Контекст запущенной команды
  */
-export class CommandContext {
+export class CommandContext<Args extends any[]> {
     /**
      * Участник сервера, который запустил команду
      */
     public readonly executor: GuildMember;
 
-    #userInput: string;
-    #spaceReader: ArgumentReader<string> = ReadSpace;
-
-    /**
-     * Объект, содержащий функции чтения аргументов.
-     * Зависит от хранилища типов аргументов бота.
-     */
-    public readonly read: {
-        [ArgType in keyof ArgumentReaderStorage['readers']]: () =>
-            ArgumentReaderStorage['readers'][ArgType] extends ArgumentReader<infer T> ? T : never
-    };
-
     /**
      * Объект аргументов команды (содержит данные, если у команды прописан синтаксис. Иначе undefined)
      */
-    public readonly args: any;
+    public readonly args: [...Args];
 
-    /**
-     * Возвращает true, если в сообщении больше нет аргументов
-     */
-    public readonly isEOL: () => boolean;
+    #userInput: string;
 
     /**
      * @param command команда
@@ -43,75 +28,30 @@ export class CommandContext {
      * @param executor участник сервера, запустивший команду
      */
     constructor(
-        public readonly command: Command,
-        public readonly bot: Bot,
-        public readonly message: GuildMessage,
+        readonly command: Command<Args>,
+        readonly bot: Bot,
+        readonly message: GuildMessage,
         executor?: GuildMember
     ) {
-        this.executor = executor || message.member;
+        this.executor = executor ?? message.member;
 
         this.#userInput = message.content.replace(/^\S+\s*/, '');
-        this.isEOL = () => !this.#userInput;
 
-        this.read = {} as any;
-        const { readers } = bot.commandArguments;
-        for (const [type, reader] of Object.entries(readers)) {
-            Object.defineProperty(this.read, type, {
-                get: () => () => this.readUserInput(reader, type)
-            });
-        }
-
-        const { arguments: commandArgs } = command.info;
-        if (commandArgs === undefined) {
-            this.args = undefined;
-            return;
-        }
-
-        this.args = {};
-        for (const { name, type, defaultInput } of commandArgs) {
-            const reader = readers[type];
-            try {
-                this.args[name] = this.readUserInput(reader, type, name);
-            }
-            catch (inputErr) {
-                if (!(inputErr instanceof Error)
-                    || !this.isEOL()
-                    || defaultInput === undefined)
-                    throw inputErr;
-
-                if (defaultInput == '') {
-                    this.args[name] = undefined;
-                    continue;
-                }
-
-                try {
-                    const readResult = reader(defaultInput, message);
-                    if (readResult.isError) throw new Error(String(readResult.error));
-                    this.args[name] = readResult.value.parsedValue;
-                }
-                catch (defaultErr) {
-                    if (!(defaultErr instanceof Error)) throw defaultErr;
-                    throw new Error(`error in default argument '${name}' value: ${defaultErr.message}`);
-                }
-            }
-        }
+        this.args = [] as any;
+        command.arguments?.forEach(argument => this.args.push(this.readUserInput(argument)));
     }
 
-    private readUserInput<T>(reader: ArgumentReader<T>, typeName: string, argName?: string): T {
-        argName = argName ? ` '${argName}'` : '';
-        if (this.isEOL()) {
-            throw new Error(`argument${argName} of type '${typeName}' expected, but got end of command`);
-        }
-
-        let readerResult = reader(this.#userInput, this.message);
+    private readUserInput<T>(argument: CommandArgument<T>): T {
+        const readerResult = argument.reader(this.#userInput, this.message);
         if (readerResult.isError) {
-            throw new Error(`argument${argName} of type '${typeName}' expected (${readerResult.error})`);
+            const error = typeof readerResult.error == 'string' ? 'not found' : readerResult.error.message;
+            throw new Error(`error in argument '${argument.name}': ${error}`);
         }
 
         const { length: argumentLength, parsedValue } = readerResult.value;
         this.#userInput = this.#userInput.slice(argumentLength);
 
-        const spaceReaderResult = this.#spaceReader(this.#userInput, undefined as any);
+        const spaceReaderResult = spaceReader(this.#userInput, undefined as any);
         if (!spaceReaderResult.isError && spaceReaderResult.value.length) {
             this.#userInput = this.#userInput.slice(spaceReaderResult.value.length);
         }

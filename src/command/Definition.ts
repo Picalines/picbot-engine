@@ -1,149 +1,93 @@
-import { PermissionString, GuildMember } from "discord.js";
-import { PromiseVoid, GuildMessage } from "../utils";
+import { Permissions, PermissionString } from "discord.js";
+import { NonEmptyReadonly, PromiseVoid } from "../utils";
+import { CommandArgument } from "./Argument/Definition";
 import { CommandContext } from "./Context";
-import { Bot } from "../Bot";
-import { CommandInfo } from "./Info";
-
-export type CommandArgument = {
-    name: string;
-    type: string;
-    defaultInput?: string;
-};
 
 /**
- * Интерфейс функции запуска команды
+ * Информация о команде
  */
-export type CommandExecuteable = (context: CommandContext) => PromiseVoid;
+export interface CommandInfo<Args extends any[]> {
+    /**
+     * Имя команды. Оно не должно содержать пробелов. Все буквы должны быть строчными.
+     */
+    readonly name: string;
+
+    /**
+     * Алиасы ("другие имена команды"). На алиасы распространяются те же
+     * правила, что и на [[CommandInfo.name]]
+     */
+    readonly aliases?: NonEmptyReadonly<string[]>;
+
+    /**
+     * Аргументы команды
+     */
+    readonly arguments?: [...{ [K in keyof Args]: CommandArgument<Args[K]> }];
+
+    /**
+     * Описание команды
+     */
+    readonly description: string;
+
+    /**
+     * Группа, к которой принадлежит команда
+     */
+    readonly group?: string;
+
+    /**
+     * Права участника сервера
+     */
+    readonly permissions?: NonEmptyReadonly<PermissionString[]>;
+
+    /**
+     * Примеры использования
+     */
+    readonly examples?: NonEmptyReadonly<string[]>;
+}
+
+export interface Command<Args extends any[]> extends Omit<CommandInfo<Args>, 'permissions'> { }
 
 /**
  * Объект, хранящий информацию команды и её логику
  */
-export class Command {
+export class Command<Args extends any[]> {
     /**
-     * Регулярное выражение синтаксиса команды (используется для валидации)
+     * Права участника сервера (библиотека вызывает [[Permissions.freeze]]!)
      */
-    public static readonly syntaxRegex = /(<\w+:[a-zA-Z_][a-zA-Z0-9_]*(?:=.*)?>\s*)+/;
-
-    /**
-     * Регулярное выражение аргумента в синтаксисе команды
-     */
-    public static readonly syntaxArgumentRegex = /<(?<type>\w+):(?<name>[a-zA-Z_][a-zA-Z0-9_]*)(?:(?<default>=.*?))?>/g;
-
-    /**
-     * Информация о команде
-     */
-    public readonly info: CommandInfo;
-
-    /**
-     * Функция, выполняющая основную логику команды
-     */
-    private readonly executeable: CommandExecuteable;
+    readonly permissions: Permissions;
 
     /**
      * @param info информация о команде
+     * @param execute функция, выполняющая основную логику команды
      */
-    constructor(info: CommandInfo & { execute: CommandExecuteable }) {
-        const { execute, ...otherInfo } = info;
+    constructor(
+        info: CommandInfo<Args>,
+        readonly execute: (context: CommandContext<Args>) => PromiseVoid,
+    ) {
+        Object.assign(this, { ...info, execute });
 
-        if (!Command.validateName(otherInfo.name)) {
-            throw new Error(`invalid command name '${otherInfo.name}'`);
+        this.permissions = new Permissions(info.permissions);
+        this.permissions.freeze();
+
+        const namesToValidate = [this.name];
+        if (this.aliases) {
+            namesToValidate.push(...this.aliases);
         }
 
-        otherInfo.aliases?.forEach(alias => {
-            if (!Command.validateName(alias)) {
-                throw new Error(`invalid command alias '${alias}' ('${otherInfo.name}')`);
+        for (const name of namesToValidate) {
+            if (!Command.validateName(name)) {
+                throw new Error(`invalid command name or alias '${name}'`);
             }
-            if (alias == info.name) {
-                throw new Error(`command '${info.name}' has the same alias`);
-            }
-        });
-
-        const _info = { ...otherInfo };
-        if (_info.syntax) {
-            _info.arguments = [...this.buildArgumentsFromSyntax(_info.name, _info.syntax)] as any;
         }
-
-        this.info = _info;
-        this.executeable = execute;
     }
 
     /**
-     * Запускает команду
-     * @param bot бот
-     * @param message сообщение
+     * Функция валидации имени или алиаса команды
+     * @returns true, если имя команды не содержит пробелов, и все буквы в нём строчные
+     * @param name имя или алиас команды
      */
-    public async execute(bot: Bot, message: GuildMessage): Promise<void> {
-        const missingPermissions = this.getMissingPermissions(bot, message.member);
-        if (missingPermissions.length) {
-            throw new Error(`Not enough permissions: ${missingPermissions.join(', ')}`);
-        }
-
-        const context = new CommandContext(this, bot, message);
-        await this.executeable(context);
-    }
-
-    /**
-     * @returns список прав, которые отсутствуют у участника сервера для использования команды
-     * @param bot бот
-     * @param member участник сервера
-     */
-    public getMissingPermissions(bot: Bot, member: GuildMember): PermissionString[] {
-        const permissions = this.info.permissions || [];
-        const { checkAdmin } = bot.options.permissions;
-        return member.permissions.missing(permissions, checkAdmin);
-    }
-
-    /**
-     * @returns true, если у участника сервера достаточно прав, чтобы использовать команду
-     * @param bot бот
-     * @param member участник сервера
-     */
-    public hasPermissions(bot: Bot, member: GuildMember): boolean {
-        return !this.getMissingPermissions(bot, member).length;
-    }
-
-    /**
-     * @returns true, если имя команды не пустая строка, не содержит пробелов и в нижнем регистре
-     * @param name имя команды
-     */
-    public static validateName(name: string): boolean {
-        return name.length > 0 && !name.includes(' ') && name == name.toLowerCase();
-    }
-
-    /**
-     * Возвращает список аргументов команды через её синтаксис
-     * @param commandName имя команды
-     * @param syntax синтаксис команды
-     */
-    private *buildArgumentsFromSyntax(commandName: string, syntax: string): IterableIterator<CommandArgument> {
-        if (!Command.syntaxRegex.test(syntax)) {
-            throw new Error(`invalid '${commandName}' command syntax: ${syntax}`);
-        }
-
-        const argMatches = [...syntax.matchAll(Command.syntaxArgumentRegex)]
-            .filter(m => m.groups !== undefined);
-
-        if (!argMatches.length) {
-            return;
-        }
-
-        const argNames: string[] = [];
-
-        for (const argMatch of argMatches) {
-            const { type: argType, name: argName } = argMatch.groups!;
-            if (argNames.includes(argName)) {
-                throw new Error(`'${commandName}' command argument name '${argName}' already used`);
-            }
-
-            argNames.push(argName);
-
-            let defaultInput: string | undefined = undefined;
-            const { default: defaultInputGroup } = argMatch.groups!;
-            if (defaultInputGroup) {
-                defaultInput = defaultInputGroup.slice(1);
-            }
-
-            yield { name: argName, type: argType, defaultInput };
-        }
+    static validateName(name: string): boolean {
+        return !name.includes(' ') && name.toLowerCase() == name;
     }
 }
+
+export type AnyCommand = Command<any[]>;
