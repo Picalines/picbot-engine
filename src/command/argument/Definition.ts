@@ -1,5 +1,5 @@
 import { InferPrimitive } from "../../utils";
-import { ArgumentReader } from "./Readers";
+import { ArgumentReader } from "./Reader";
 
 /**
  * Интерфейс аргумента комманды

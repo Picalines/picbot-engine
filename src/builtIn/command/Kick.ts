@@ -1,4 +1,4 @@
-import { memberReader, optionalReader, remainingTextReader } from "../../command/Argument/Readers";
+import { memberReader, optionalReader, remainingTextReader } from "../../command/Argument/Reader";
 import { Command } from "../../command/Definition";
 
 export const kickCommand = new Command(

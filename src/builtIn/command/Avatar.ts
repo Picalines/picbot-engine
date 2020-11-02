@@ -1,4 +1,4 @@
-import { memberReader, optionalReader } from "../../command/Argument/Readers";
+import { memberReader, optionalReader } from "../../command/Argument/Reader";
 import { Command } from "../../command/Definition";
 
 export const avatarCommand = new Command(

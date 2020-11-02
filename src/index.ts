@@ -13,7 +13,6 @@ export {
     WidenLiteral,
 } from "./utils";
 
-export * as readers from "./command/Argument/Readers";
 
 export { Command } from "./command/Definition";
 export { CommandStorage } from "./command/Storage";
@@ -30,6 +29,7 @@ export { BotDatabase } from "./database/BotDatabase";
 export { BotOptions, DefaultBotOptions } from "./BotOptions";
 export { Bot } from "./Bot";
 
+export * as builtInReaders from "./builtIn/reader";
 export * as builtInCommands from "./builtIn/command";
 export * as builtInDatabase from "./builtIn/database";
 export * as builtInProperty from "./builtIn/property";
