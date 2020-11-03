@@ -1,4 +1,4 @@
-import { GuildMessage, InferPrimitive, ValueParser } from "../../utils";
+import { GuildMessage, ValueParser } from "../../utils";
 import { regexReader } from "../../builtIn/reader/regex";
 
 /**
