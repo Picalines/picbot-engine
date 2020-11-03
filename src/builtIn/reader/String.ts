@@ -1,6 +1,6 @@
 import { ArgumentReader, ArgumentReaderError, ArgumentString } from "../../command/Argument/Reader";
 import { Failable } from "../../utils";
-import { regexReader } from "./regex";
+import { parsedRegexReader, regexReader } from "./regex";
 
 /**
  * Читает слово (последовательность символов до пробела)
@@ -40,3 +40,8 @@ export const keywordReader = <W extends string>(...keywords: W[]): ArgumentReade
         return wordResult;
     };
 }
+
+/**
+ * Читает строку в кавычках
+ */
+export const stringReader = parsedRegexReader(/(['"]).*?\1/, s => ({ isError: false, value: s.slice(1, s.length - 2) }));
