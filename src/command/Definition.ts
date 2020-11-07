@@ -1,6 +1,7 @@
-import { Permissions, PermissionString } from "discord.js";
-import { NonEmptyReadonly, PromiseVoid } from "../utils";
-import { CommandArgument } from "./Argument/Definition";
+import { BitFieldResolvable, Permissions, PermissionString } from "discord.js";
+import { Bot } from "../Bot";
+import { GuildMessage, NonEmptyReadonly, PromiseVoid } from "../utils";
+import { CommandArguments } from "./Argument/Definition";
 import { CommandContext } from "./Context";
 
 /**
@@ -21,7 +22,7 @@ export interface CommandInfo<Args extends any[]> {
     /**
      * Аргументы команды
      */
-    readonly arguments?: [...{ [K in keyof Args]: CommandArgument<Args[K]> }];
+    readonly arguments?: CommandArguments<Args>;
 
     /**
      * Описание команды
@@ -36,7 +37,7 @@ export interface CommandInfo<Args extends any[]> {
     /**
      * Права участника сервера
      */
-    readonly permissions?: NonEmptyReadonly<PermissionString[]>;
+    readonly permissions: Permissions;
 
     /**
      * Примеры использования
@@ -44,29 +45,50 @@ export interface CommandInfo<Args extends any[]> {
     readonly examples?: NonEmptyReadonly<string[]>;
 }
 
-export interface Command<Args extends any[]> extends Omit<CommandInfo<Args>, 'permissions'> { }
+/**
+ * Функция, выполняющая основную логику команды
+ */
+interface CommandExecuteable<Args extends any[]> {
+    (context: CommandContext<Args>): PromiseVoid;
+}
+
+/**
+ * Аргумент конструктора команды
+ */
+interface CommandConstructorArgument<Args extends any[]> extends Omit<CommandInfo<Args>, 'permissions'> {
+    /**
+     * Права участника сервера (библиотека вызывает [[Permissions.freeze]]!)
+     */
+    readonly permissions?: BitFieldResolvable<PermissionString>;
+
+    /**
+     * Функция, выполняющая основную логику команды
+     */
+    readonly execute: CommandExecuteable<Args>;
+}
+
+export interface Command<Args extends any[]> extends CommandInfo<Args> { }
 
 /**
  * Объект, хранящий информацию команды и её логику
  */
 export class Command<Args extends any[]> {
     /**
-     * Права участника сервера (библиотека вызывает [[Permissions.freeze]]!)
+     * Функция, выполняющая основную логику команды
      */
-    readonly permissions: Permissions;
+    private executeable: CommandExecuteable<Args>;
 
     /**
      * @param info информация о команде
-     * @param execute функция, выполняющая основную логику команды
      */
-    constructor(
-        info: CommandInfo<Args>,
-        readonly execute: (context: CommandContext<Args>) => PromiseVoid,
-    ) {
-        Object.assign(this, { ...info, execute });
+    constructor(info: CommandConstructorArgument<Args>) {
+        const { execute, permissions, ...docInfo } = info;
 
-        this.permissions = new Permissions(info.permissions);
-        this.permissions.freeze();
+        const frozenPermissions = new Permissions(permissions);
+        frozenPermissions.freeze();
+
+        Object.assign(this, { ...docInfo, permissions: frozenPermissions });
+        this.executeable = execute;
 
         const namesToValidate = [this.name];
         if (this.aliases) {
@@ -78,6 +100,20 @@ export class Command<Args extends any[]> {
                 throw new Error(`invalid command name or alias '${name}'`);
             }
         }
+    }
+
+    /**
+     * Запускает команду
+     * @param context контекст команды
+     */
+    async execute(bot: Bot, message: GuildMessage): Promise<void> {
+        const missingPermissions = message.member.permissions.missing(this.permissions.bitfield);
+        if (missingPermissions.length) {
+            throw new Error(`not enough permissions`);
+        }
+
+        const context = new CommandContext(this, bot, message);
+        await this.executeable.call(this, context);
     }
 
     /**

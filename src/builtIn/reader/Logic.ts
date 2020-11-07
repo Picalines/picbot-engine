@@ -1,23 +1,22 @@
-import { ArgumentReader, ArgumentReaderError, spaceReader } from "../../command/Argument/Reader";
-import { InferPrimitive } from "../../utils";
+import { ArgumentReader } from "../../command/Argument/Reader";
+import { spaceReader } from "./String";
 
 /**
  * @returns функцию, которая либо читает аргумент, либо возвращает _default, если аргумент не найден
  * @param reader функция, читающая аргумент
  */
-export const optionalReader = <T, D extends T | null>(reader: ArgumentReader<T>, _default: InferPrimitive<D>): ArgumentReader<T | InferPrimitive<D>> => {
-    return (userInput, message) => {
-        const result = reader(userInput, message);
+export function optionalReader<T, D extends T | null>(reader: ArgumentReader<T>, defaultValue: D): ArgumentReader<T | D> {
+    return (userInput, context) => {
+        const result = reader(userInput, context);
         if (result.isError && !userInput.length) {
-            return { isError: false, value: { length: 0, parsedValue: _default } };
+            return { isError: false, value: { length: 0, parsedValue: defaultValue } };
         }
         return result;
     };
 }
 
-const innerError = (error: ArgumentReaderError, inElement: string): ReturnType<ArgumentReader<any>> => {
-    const errorMsg = error == 'notFound' ? 'not found' : error.message;
-    return { isError: true, error: { message: `error in ${inElement}: ${errorMsg}` } };
+const innerError = (error: string, inElement: string): ReturnType<ArgumentReader<any>> => {
+    return { isError: true, error: `error in ${inElement}: ${error ?? 'not found'}` };
 }
 
 /**
@@ -25,12 +24,12 @@ const innerError = (error: ArgumentReaderError, inElement: string): ReturnType<A
  * @param readers функции чтения
  */
 export const mergeReaders = <T extends any[]>(...readers: { [K in keyof T]: ArgumentReader<T[K]> }): ArgumentReader<T> => {
-    return (userInput, message) => {
+    return (userInput, context) => {
         const values: T = [] as any;
         let length = 0;
 
         for (let i = 0; i < readers.length; i++) {
-            const valResult = readers[i](userInput.slice(length), message);
+            const valResult = readers[i](userInput.slice(length), context);
             if (valResult.isError) {
                 return innerError(valResult.error, `element #${i + 1}`);
             }
@@ -38,7 +37,7 @@ export const mergeReaders = <T extends any[]>(...readers: { [K in keyof T]: Argu
             values.push(valResult.value.parsedValue);
             length += valResult.value.length;
 
-            const spaceResult = spaceReader(userInput.slice(length), message);
+            const spaceResult = spaceReader(userInput.slice(length), context);
             if (!spaceResult.isError) {
                 length += spaceResult.value.length;
             }
@@ -63,12 +62,12 @@ export const repeatReader = <T>(reader: ArgumentReader<T>, count: number): Argum
  * @param reader функция чтения
  */
 export const restReader = <T>(reader: ArgumentReader<T>, atLeast?: number): ArgumentReader<T[]> => {
-    return (userInput, message) => {
-        const values: T[] = [];
+    return (userInput, context) => {
+        const values = [];
         let length = 0;
 
         while (length < userInput.length) {
-            const valResult = reader(userInput.slice(length), message);
+            const valResult = reader(userInput.slice(length), context);
             if (valResult.isError) {
                 return innerError(valResult.error, 'last element');
             }
@@ -76,14 +75,14 @@ export const restReader = <T>(reader: ArgumentReader<T>, atLeast?: number): Argu
             values.push(valResult.value.parsedValue);
             length += valResult.value.length;
 
-            const spaceResult = spaceReader(userInput.slice(length), message);
+            const spaceResult = spaceReader(userInput.slice(length), context);
             if (!spaceResult.isError) {
                 length += spaceResult.value.length;
             }
         }
 
         if (values.length < (atLeast ??= 0)) {
-            return { isError: true, error: { message: `at least ${atLeast} element(s) expected` } };
+            return { isError: true, error: `at least ${atLeast} element(s) expected` };
         }
 
         return { isError: false, value: { length, parsedValue: values } };

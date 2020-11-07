@@ -51,8 +51,8 @@ export type Failable<R, E> = {
 };
 
 /**
- * Интерфейс функции, которая переводит значение From в To, использующяя
- * данные из Context. Возвращает [[Failable]].
+ * Интерфейс функции, которая переводит значение From в To
+ * @returns [[Failable]].
  */
 export interface ValueParser<From, To, Context, Error> {
     (value: From, context: Context): Failable<To, Error>;

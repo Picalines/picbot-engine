@@ -162,14 +162,7 @@ export class Bot extends EventEmitter {
                 return;
             }
 
-            const missingPermissions = message.member.permissions.missing(command.permissions.bitfield);
-            if (missingPermissions.length) {
-                throw new Error(`not enough permissions`);
-            }
-
-            const context = new CommandContext(command, this, message);
-
-            await command.execute(context);
+            await command.execute(this, message);
         });
 
         if (this.options.utils.autoStopTyping) {

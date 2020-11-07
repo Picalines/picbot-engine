@@ -15,7 +15,10 @@ export {
 
 export { Command } from "./command/Definition";
 export { CommandStorage } from "./command/Storage";
-export { CommandContext } from "./command/Context";
+export { CommandContext as CommandContext } from "./command/Context";
+
+export { ArgumentReader, ArgumentString } from "./command/Argument/Reader";
+export { CommandArgument, CommandArguments } from "./command/Argument/Definition";
 
 export { EntityType, Entity } from "./database/Entity";
 export { Property } from "./database/Property/Definition";

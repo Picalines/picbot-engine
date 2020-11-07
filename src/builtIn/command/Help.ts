@@ -1,4 +1,5 @@
 import { Command } from "../../command/Definition";
+import { CommandArguments } from "../../command/Argument/Definition";
 import { optionalReader, wordReader } from "../reader";
 import { GuildMember, MessageEmbed } from "discord.js";
 import { Bot } from "../../Bot";
@@ -30,8 +31,8 @@ const makeCommandInfo = <Args extends any[]>(embed: MessageEmbed, command: Comma
 
     embed.addField('Описание', command.description);
 
-    if (command.arguments?.length) {
-        const argumentInfos = command.arguments.map(arg => `• ${arg.name} - ${arg.description}`);
+    if (command.arguments) {
+        const argumentInfos = command.arguments.definitons.map(arg => `• ${arg.name} - ${arg.description}`);
         embed.addField('Аргументы', argumentInfos.join('\n'));
     }
 
@@ -45,28 +46,26 @@ const makeCommandInfo = <Args extends any[]>(embed: MessageEmbed, command: Comma
     }
 }
 
-export const helpCommand = new Command(
-    {
-        name: 'help',
+export const helpCommand = new Command({
+    name: 'help',
 
-        description: 'Помощь по командам бота',
-        group: 'Информация',
+    description: 'Помощь по командам бота',
+    group: 'Информация',
 
-        arguments: [
-            {
-                name: 'commandName',
-                description: 'Имя команды',
-                reader: optionalReader(wordReader, null),
-            },
-        ],
+    arguments: new CommandArguments(
+        {
+            name: 'commandName',
+            description: 'Имя команды',
+            reader: optionalReader(wordReader, null),
+        },
+    ),
 
-        examples: [
-            '`!help` даст список команд',
-            '`!help test` даст информацию о команде `test`'
-        ],
-    },
+    examples: [
+        '`!help` даст список команд',
+        '`!help test` даст информацию о команде `test`'
+    ],
 
-    async ({ message, bot, args: [commandName] }) => {
+    execute: async ({ message, bot, args: [commandName] }) => {
         const embed = new MessageEmbed().setColor(0x45ff83);
 
         if (!commandName) {
@@ -82,4 +81,4 @@ export const helpCommand = new Command(
 
         await message.reply({ embed });
     }
-);
+});

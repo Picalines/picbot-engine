@@ -1,5 +1,6 @@
-import { GuildMessage, ValueParser } from "../../utils";
+import { ValueParser } from "../../utils";
 import { ArgumentReader } from "../../command/Argument/Reader";
+import { CommandContext } from "../../command/Context";
 
 /**
  * Читает аргумент по регулярному выражению
@@ -12,7 +13,7 @@ export const regexReader = (regex: RegExp): ArgumentReader<string> => {
     return userInput => {
         const firstMatch = userInput.match(regex)?.[0];
         if (firstMatch === undefined) {
-            return { isError: true, error: 'notFound' };
+            return { isError: true, error: 'not found' };
         }
         return {
             isError: false,
@@ -26,14 +27,14 @@ export const regexReader = (regex: RegExp): ArgumentReader<string> => {
  * @param regex регулярное выражение
  * @param parser функция парсер
  */
-export const parsedRegexReader = <T>(regex: RegExp, parser: ValueParser<string, T, GuildMessage, { message: string }>): ArgumentReader<T> => {
+export const parsedRegexReader = <T>(regex: RegExp, parser: ValueParser<string, T, CommandContext<unknown[]>, string>): ArgumentReader<T> => {
     const reader = regexReader(regex);
-    return (userInput, message) => {
-        const result = reader(userInput, message);
+    return (userInput, context) => {
+        const result = reader(userInput, context);
         if (result.isError) {
             return result;
         }
-        const parsed = parser(result.value.parsedValue, message);
+        const parsed = parser(result.value.parsedValue, context);
         if (parsed.isError) {
             return parsed;
         }

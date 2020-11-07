@@ -1,35 +1,34 @@
 import { Command } from "../../command/Definition";
+import { CommandArguments } from "../../command/Argument/Definition";
 import { keywordReader, optionalReader, wordReader } from "../reader";
 
-export const prefixCommand = new Command(
-    {
-        name: 'prefix',
+export const prefixCommand = new Command({
+    name: 'prefix',
 
-        description: 'Команда управления префиксами на сервере',
-        group: 'Настройки',
-        permissions: ['MANAGE_GUILD'],
+    description: 'Команда управления префиксами на сервере',
+    group: 'Настройки',
+    permissions: ['MANAGE_GUILD'],
 
-        arguments: [
-            {
-                name: 'operation',
-                description: 'Операция с префиксами (list | add | rm)',
-                reader: optionalReader(keywordReader('list', 'add', 'rm'), 'list'),
-            },
-            {
-                name: 'prefix',
-                description: 'Префикс для добавления (add) / удаления (rm)',
-                reader: optionalReader(wordReader, null),
-            },
-        ],
+    arguments: new CommandArguments(
+        {
+            name: 'operation',
+            description: 'Операция с префиксами (list | add | rm)',
+            reader: optionalReader(keywordReader('list', 'add', 'rm'), 'list'),
+        },
+        {
+            name: 'prefix',
+            description: 'Префикс для добавления (add) / удаления (rm)',
+            reader: optionalReader(wordReader, null),
+        },
+    ),
 
-        examples: [
-            '`!prefix` даст список префиксов бота на сервере',
-            '`!prefix add ~` добавит `~` в список префиксов бота',
-            '`!prefix rm ~` удалит `~` из списка префиксов бота',
-        ],
-    },
+    examples: [
+        '`!prefix` даст список префиксов бота на сервере',
+        '`!prefix add ~` добавит `~` в список префиксов бота',
+        '`!prefix rm ~` удалит `~` из списка префиксов бота',
+    ],
 
-    async ({ message, bot, args: [operation, prefix] }) => {
+    execute: async ({ message, bot, args: [operation, prefix] }) => {
         const prefixes = bot.database.accessProperty(message.guild, bot.prefixesProperty);
 
         if (operation == 'list') {
@@ -63,4 +62,4 @@ export const prefixCommand = new Command(
                 break;
         }
     }
-);
+});

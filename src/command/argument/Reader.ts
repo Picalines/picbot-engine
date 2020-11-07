@@ -1,5 +1,5 @@
-import { GuildMessage, ValueParser } from "../../utils";
-import { regexReader } from "../../builtIn/reader/regex";
+import { ValueParser } from "../../utils";
+import { CommandContext } from "../Context";
 
 /**
  * Информация прочитанного аргумента
@@ -16,16 +16,6 @@ export interface ArgumentString<T> {
 }
 
 /**
- * Ошибка чтения аргумента
- */
-export type ArgumentReaderError = 'notFound' | { message: string };
-
-/**
  * Интерфейс функции, читающей аргумент
  */
-export interface ArgumentReader<T> extends ValueParser<string, ArgumentString<T>, GuildMessage, ArgumentReaderError> { }
-
-/**
- * Читает пробелы между аргументами
- */
-export const spaceReader: ArgumentReader<string> = regexReader(/\s+/);
+export type ArgumentReader<T> = ValueParser<string, ArgumentString<T>, CommandContext<unknown[]>, string>;

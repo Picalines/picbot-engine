@@ -19,10 +19,10 @@ export const numberReader = (type: 'int' | 'float', range?: [min: number, max: n
     return parsedRegexReader(/[+-]?\d+(\.\d*)?/, numberInput => {
         const number = parseNumber(numberInput);
         if (isNaN(number)) {
-            return { isError: true, error: { message: `'${numberInput}' is not a number (${type})` } };
+            return { isError: true, error: `'${numberInput}' is not a number (${type})` };
         }
         if (!inRange(number)) {
-            return { isError: true, error: { message: `${numberInput} is not in range [${range!.slice(0, 2)}]` } }
+            return { isError: true, error: `${numberInput} is not in range [${range!.slice(0, 2)}]` }
         }
         return { isError: false, value: number };
     });

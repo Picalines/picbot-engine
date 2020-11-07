@@ -1,45 +1,45 @@
 import { keywordReader, remainingTextReader, wordReader } from "../String";
-import { GuildMessage } from "../../../utils";
+import { CommandContext } from "../../../command/Context";
 
-const nullMessage = null as unknown as GuildMessage;
+const context = null as unknown as CommandContext<unknown[]>;
 
 describe('word', () => {
     test('normal usage', () => {
-        expect(wordReader('abc lol', nullMessage)).toEqual({ isError: false, value: { length: 3, parsedValue: 'abc' } });
+        expect(wordReader('abc lol', context)).toEqual({ isError: false, value: { length: 3, parsedValue: 'abc' } });
     });
 
     test('space at begin', () => {
-        expect(wordReader(' abc', nullMessage)).toEqual({ isError: true, error: 'notFound' });
+        expect(wordReader(' abc', context)).toEqual({ isError: true, error: 'not found' });
     });
 
     test('space at end', () => {
-        expect(wordReader('abc ', nullMessage)).toEqual({ isError: false, value: { length: 3, parsedValue: 'abc' } });
+        expect(wordReader('abc ', context)).toEqual({ isError: false, value: { length: 3, parsedValue: 'abc' } });
     });
 
     test('empty string', () => {
-        expect(wordReader('', nullMessage)).toEqual({ isError: true, error: 'notFound' });
+        expect(wordReader('', context)).toEqual({ isError: true, error: 'not found' });
     });
 });
 
 describe('remainingText', () => {
     test('normal usage', () => {
-        expect(remainingTextReader('test abc', nullMessage)).toEqual({ isError: false, value: { length: 8, parsedValue: 'test abc' } });
+        expect(remainingTextReader('test abc', context)).toEqual({ isError: false, value: { length: 8, parsedValue: 'test abc' } });
     });
 
     test('empty string', () => {
-        expect(remainingTextReader('', nullMessage)).toEqual({ isError: true, error: 'notFound' });
+        expect(remainingTextReader('', context)).toEqual({ isError: true, error: 'not found' });
     });
 
     test('spaces', () => {
-        expect(remainingTextReader('     ', nullMessage)).toEqual({ isError: true, error: 'notFound' });
+        expect(remainingTextReader('     ', context)).toEqual({ isError: true, error: 'not found' });
     });
 
     test('spaces at end', () => {
-        expect(remainingTextReader('test abc   ', nullMessage)).toEqual({ isError: false, value: { length: 8, parsedValue: 'test abc' } });
+        expect(remainingTextReader('test abc   ', context)).toEqual({ isError: false, value: { length: 8, parsedValue: 'test abc' } });
     });
 
     test('spaces at begin', () => {
-        expect(remainingTextReader('    test abc', nullMessage)).toEqual({ isError: false, value: { length: 8, parsedValue: 'test abc' } });
+        expect(remainingTextReader('    test abc', context)).toEqual({ isError: false, value: { length: 8, parsedValue: 'test abc' } });
     });
 });
 
@@ -48,17 +48,17 @@ describe('keyword', () => {
         const words = ['a', 'b', 'c'] as const;
         const reader = keywordReader(...words);
         for (const w of words) {
-            expect(reader(w + '  ', nullMessage)).toEqual({ isError: false, value: { length: 1, parsedValue: w } });
+            expect(reader(w + '  ', context)).toEqual({ isError: false, value: { length: 1, parsedValue: w } });
         }
     });
 
     const reader = keywordReader('add', 'rm');
 
     test('wrong word', () => {
-        expect(reader('test', nullMessage)).toEqual({ isError: true, error: { message: 'one of keywords expected: add, rm' } });
+        expect(reader('test', context)).toEqual({ isError: true, error: { message: 'one of keywords expected: add, rm' } });
     });
 
     test('empty string', () => {
-        expect(reader('', nullMessage)).toEqual({ isError: true, error: { message: 'one of keywords expected: add, rm' } });
+        expect(reader('', context)).toEqual({ isError: true, error: { message: 'one of keywords expected: add, rm' } });
     });
 });
