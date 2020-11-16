@@ -22,7 +22,7 @@ const makeCommandsList = (bot: Bot, embed: MessageEmbed, requester: GuildMember)
     }
 }
 
-const makeCommandInfo = <Args extends any[]>(embed: MessageEmbed, command: Command<Args>) => {
+const makeCommandInfo = <Args extends unknown[]>(embed: MessageEmbed, command: Command<Args>) => {
     embed.setTitle(`Информация о команде \`${command.name}\``);
 
     if (command.aliases) {

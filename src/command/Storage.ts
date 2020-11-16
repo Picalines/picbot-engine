@@ -4,8 +4,15 @@ import { AnyCommand, Command } from "./Definition";
  * Хранилище команд
  */
 export class CommandStorage implements Iterable<AnyCommand> {
-    readonly #nameMap = new Map<string, AnyCommand>();
-    readonly #aliasMap = new Map<string, AnyCommand>();
+    /**
+     * Map команд по их именам
+     */
+    private readonly nameMap = new Map<string, AnyCommand>();
+
+    /**
+     * Map команд по алиасам
+     */
+    private readonly aliasMap = new Map<string, AnyCommand>();
 
     /**
      * Добавляет команду в память бота
@@ -19,11 +26,11 @@ export class CommandStorage implements Iterable<AnyCommand> {
         }
 
         assertNameCollision(command.name);
-        this.#nameMap.set(command.name, command);
+        this.nameMap.set(command.name, command);
 
         command.aliases?.forEach(alias => {
             assertNameCollision(alias);
-            this.#aliasMap.set(alias, command);
+            this.aliasMap.set(alias, command);
         });
     }
 
@@ -31,8 +38,8 @@ export class CommandStorage implements Iterable<AnyCommand> {
      * Возвращает данные команды по её имени или алиасу
      * @param name имя или алиас команды
      */
-    public get<Args extends any[]>(name: string): Command<Args> | undefined {
-        return this.#nameMap.get(name) as Command<Args> | undefined;
+    public get<Args extends unknown[]>(name: string): Command<Args> | undefined {
+        return this.nameMap.get(name) as Command<Args> | undefined;
     }
 
     /**
@@ -42,25 +49,25 @@ export class CommandStorage implements Iterable<AnyCommand> {
      */
     public has(name: string, nameOnly = false): boolean {
         name = name.toLowerCase();
-        return this.#nameMap.has(name) || (!nameOnly && this.#aliasMap.has(name));
+        return this.nameMap.has(name) || (!nameOnly && this.aliasMap.has(name));
     }
 
     /**
      * Количество команд в хранилище
      */
     get size(): number {
-        return this.#nameMap.size;
+        return this.nameMap.size;
     }
 
     /**
      * @returns список всех команд в хранилище
      */
     array(): AnyCommand[] {
-        return [...this.#nameMap.values()];
+        return [...this.nameMap.values()];
     }
 
     public [Symbol.iterator]() {
-        return new Set(this.#nameMap.values()).values();
+        return new Set(this.nameMap.values()).values();
     }
 
     /**

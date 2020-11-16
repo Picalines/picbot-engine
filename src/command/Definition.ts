@@ -7,7 +7,7 @@ import { CommandContext } from "./Context";
 /**
  * Информация о команде
  */
-export interface CommandInfo<Args extends any[]> {
+export interface CommandInfo<Args extends unknown[]> {
     /**
      * Имя команды. Оно не должно содержать пробелов. Все буквы должны быть строчными.
      */
@@ -48,14 +48,14 @@ export interface CommandInfo<Args extends any[]> {
 /**
  * Функция, выполняющая основную логику команды
  */
-interface CommandExecuteable<Args extends any[]> {
+interface CommandExecuteable<Args extends unknown[]> {
     (context: CommandContext<Args>): PromiseVoid;
 }
 
 /**
  * Аргумент конструктора команды
  */
-interface CommandInfoArgument<Args extends any[]> {
+interface CommandInfoArgument<Args extends unknown[]> {
     /**
      * Права участника сервера (библиотека вызывает [[Permissions.freeze]]!)
      */
@@ -67,12 +67,12 @@ interface CommandInfoArgument<Args extends any[]> {
     readonly execute: CommandExecuteable<Args>;
 }
 
-export interface Command<Args extends any[]> extends CommandInfo<Args> { }
+export interface Command<Args extends unknown[]> extends CommandInfo<Args> { }
 
 /**
  * Объект, хранящий информацию команды и её логику
  */
-export class Command<Args extends any[]> {
+export class Command<Args extends unknown[]> {
     /**
      * Функция, выполняющая основную логику команды
      */

@@ -24,9 +24,9 @@ export type ArgumentReader<T> = ValueParser<string, ArgumentString<T>, CommandCo
 /**
  * Список объявлений аргументов
  */
-export type ArgsDefinitions<Args extends any[]> = readonly [...{ [K in keyof Args]: CommandArgument<Args[K]> }];
+export type ArgsDefinitions<Args extends unknown[]> = readonly [...{ [K in keyof Args]: CommandArgument<Args[K]> }];
 
-export interface CommandArgumentsReader<Args extends any[]> {
+export interface CommandArgumentsReader<Args extends unknown[]> {
     /**
      * Список объявлений аргументов
      */

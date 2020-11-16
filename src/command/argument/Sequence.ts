@@ -6,7 +6,7 @@ import { ArgsDefinitions, CommandArgumentsReader } from "./Reader";
 /**
  * Класс, хранящий объявления аргументов команды
  */
-export class ArgumentSequence<Args extends any[]> implements CommandArgumentsReader<Args> {
+export class ArgumentSequence<Args extends unknown[]> implements CommandArgumentsReader<Args> {
     /**
      * Список объявленных аргументов
      */

@@ -1,14 +1,12 @@
 import { GuildMember } from "discord.js";
-import { Bot } from "../Bot";
-import { spaceReader } from "../builtIn/reader/String";
 import { GuildMessage } from "../utils";
-import { CommandArgument } from "./Argument/Definition";
 import { Command } from "./Definition";
+import { Bot } from "../Bot";
 
 /**
  * Контекст выполнения запущенной
  */
-export class CommandContext<Args extends any[]> {
+export class CommandContext<Args extends unknown[]> {
     /**
      * Участник сервера, который запустил команду
      */
