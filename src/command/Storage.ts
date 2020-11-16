@@ -1,3 +1,5 @@
+import { PathLike, readdirSync } from "fs";
+import { join } from "path";
 import { AnyCommand, Command } from "./Definition";
 
 /**
@@ -37,9 +39,10 @@ export class CommandStorage implements Iterable<AnyCommand> {
     /**
      * Возвращает данные команды по её имени или алиасу
      * @param name имя или алиас команды
+     * @param nameOnly нужно ли ингорировать алиасы
      */
-    public get<Args extends unknown[]>(name: string): Command<Args> | undefined {
-        return this.nameMap.get(name) as Command<Args> | undefined;
+    public get<Args extends unknown[]>(name: string, nameOnly = false): Command<Args> | undefined {
+        return (this.nameMap.get(name) ?? (!nameOnly ? this.aliasMap.get(name) : undefined)) as Command<Args> | undefined;
     }
 
     /**
@@ -84,5 +87,22 @@ export class CommandStorage implements Iterable<AnyCommand> {
         }
 
         return map;
+    }
+
+    /**
+     * Вызывает require на все .js файлы из папки, и добавляет все экпортированные команды в хранилище.
+     * Команда должна быть экспортирована как `module.exports = new Command({ ... });`
+     * @param path путь до папки с командами
+     */
+    public requireFolder(path: PathLike) {
+        const jsFiles = readdirSync(path).filter(file => file.endsWith('.js'));
+
+        const _require = require.main?.require ?? require;
+        path = String(path);
+
+        const modules = jsFiles.map(file => _require('./' + join(path as string, file)));
+        const commands = modules.filter(exports => exports instanceof Command) as AnyCommand[];
+
+        commands.forEach(command => this.add(command));
     }
 }
