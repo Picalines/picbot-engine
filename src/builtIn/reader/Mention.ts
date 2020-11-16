@@ -32,13 +32,9 @@ export const memberReader = mentionReader(/<@!?\d+>/, ({ message }, id) => messa
 /**
  * Читает упоминание роли
  */
-export const roleReader = mentionReader(/<@&\d+>/, ({ message: { guild: { roles } }}, id) => {
-    return roles.cache.find(r => r.id == id);
-});
+export const roleReader = mentionReader(/<@&\d+>/, ({ message: { guild: { roles } } }, id) => roles.cache.find(r => r.id == id));
 
 /**
  * Читает упоминание текстового канала
  */
-export const textChannelReader = mentionReader(/<#(?<id>\d+)>/, ({ message: { guild: { channels } } }, id) => {
-    return channels.cache.find(ch => ch.type == 'text' && ch.id == id);
-});
+export const textChannelReader = mentionReader(/<#(?<id>\d+)>/, ({ message: { guild: { channels } } }, id) => channels.cache.find(ch => ch.type == 'text' && ch.id == id));

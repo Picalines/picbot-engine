@@ -17,8 +17,9 @@ export { Command } from "./command/Definition";
 export { CommandStorage } from "./command/Storage";
 export { CommandContext as CommandContext } from "./command/Context";
 
-export { ArgumentReader, ArgumentString } from "./command/Argument/Reader";
-export { CommandArgument, CommandArguments } from "./command/Argument/Definition";
+export { ArgumentReader, ArgumentString, CommandArgumentsReader, ArgsDefinitions } from "./command/Argument/Reader";
+export { CommandArgument } from "./command/Argument/Definition";
+export { ArgumentSequence } from "./command/Argument/Sequence";
 
 export { EntityType, Entity } from "./database/Entity";
 export { Property } from "./database/Property/Definition";

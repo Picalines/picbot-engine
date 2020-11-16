@@ -1,5 +1,5 @@
 import { Command } from "../../command/Definition";
-import { CommandArguments } from "../../command/Argument/Definition";
+import { ArgumentSequence } from "../../command/Argument/Sequence";
 import { optionalReader, wordReader } from "../reader";
 import { GuildMember, MessageEmbed } from "discord.js";
 import { Bot } from "../../Bot";
@@ -32,7 +32,7 @@ const makeCommandInfo = <Args extends any[]>(embed: MessageEmbed, command: Comma
     embed.addField('Описание', command.description);
 
     if (command.arguments) {
-        const argumentInfos = command.arguments.definitons.map(arg => `• ${arg.name} - ${arg.description}`);
+        const argumentInfos = command.arguments.definitions.map(arg => `• ${arg.name} - ${arg.description}`);
         embed.addField('Аргументы', argumentInfos.join('\n'));
     }
 
@@ -52,7 +52,7 @@ export const helpCommand = new Command({
     description: 'Помощь по командам бота',
     group: 'Информация',
 
-    arguments: new CommandArguments(
+    arguments: new ArgumentSequence(
         {
             name: 'commandName',
             description: 'Имя команды',

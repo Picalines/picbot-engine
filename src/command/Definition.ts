@@ -1,7 +1,7 @@
 import { BitFieldResolvable, Permissions, PermissionString } from "discord.js";
 import { Bot } from "../Bot";
-import { GuildMessage, NonEmptyReadonly, PromiseVoid } from "../utils";
-import { CommandArguments } from "./Argument/Definition";
+import { GuildMessage, NonEmptyReadonly, Overwrite, PromiseVoid } from "../utils";
+import { CommandArgumentsReader } from "./Argument/Reader";
 import { CommandContext } from "./Context";
 
 /**
@@ -22,7 +22,7 @@ export interface CommandInfo<Args extends any[]> {
     /**
      * Аргументы команды
      */
-    readonly arguments?: CommandArguments<Args>;
+    readonly arguments?: CommandArgumentsReader<Args>;
 
     /**
      * Описание команды
@@ -55,7 +55,7 @@ interface CommandExecuteable<Args extends any[]> {
 /**
  * Аргумент конструктора команды
  */
-interface CommandConstructorArgument<Args extends any[]> extends Omit<CommandInfo<Args>, 'permissions'> {
+interface CommandInfoArgument<Args extends any[]> {
     /**
      * Права участника сервера (библиотека вызывает [[Permissions.freeze]]!)
      */
@@ -81,7 +81,7 @@ export class Command<Args extends any[]> {
     /**
      * @param info информация о команде
      */
-    constructor(info: CommandConstructorArgument<Args>) {
+    constructor(info: Overwrite<CommandInfo<Args>, CommandInfoArgument<Args>>) {
         const { execute, permissions, ...docInfo } = info;
 
         const frozenPermissions = new Permissions(permissions);

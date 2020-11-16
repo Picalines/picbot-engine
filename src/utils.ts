@@ -38,6 +38,11 @@ export type NonEmpty<T> = T extends Array<infer U> ? U[] & { '0': U } : never;
 export type NonEmptyReadonly<T> = T extends ReadonlyArray<infer U> ? ReadonlyArray<U> & { '0': U } : never;
 
 /**
+ * @example Overwrite<{ a: number, b: number }, { a: 'test' }> -> { a: 'test', b: number }
+ */
+export type Overwrite<T, U> = Pick<T, Exclude<keyof T, keyof U>> & U;
+
+/**
  * Вспомогательный тип для функций. Если какая-то операция прошла успешно,
  * функция возвращает объект этого типа со значениями `isError: false, value: R`.
  * Иначе `isError: true, error: E`

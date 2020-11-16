@@ -1,4 +1,4 @@
-import { CommandArguments } from "../../command/Argument/Definition";
+import { ArgumentSequence } from "../../command/Argument/Sequence";
 import { Command } from "../../command/Definition";
 import { numberReader } from "../reader";
 
@@ -10,7 +10,7 @@ export const clearCommand = new Command({
     description: 'Удаляет N сообщений',
     group: 'Администрирование',
 
-    arguments: new CommandArguments(
+    arguments: new ArgumentSequence(
         {
             name: 'count',
             description: 'Количество сообщений для очистки',

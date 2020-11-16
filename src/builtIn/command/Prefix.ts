@@ -1,5 +1,5 @@
 import { Command } from "../../command/Definition";
-import { CommandArguments } from "../../command/Argument/Definition";
+import { ArgumentSequence } from "../../command/Argument/Sequence";
 import { keywordReader, optionalReader, wordReader } from "../reader";
 
 export const prefixCommand = new Command({
@@ -9,7 +9,7 @@ export const prefixCommand = new Command({
     group: 'Настройки',
     permissions: ['MANAGE_GUILD'],
 
-    arguments: new CommandArguments(
+    arguments: new ArgumentSequence(
         {
             name: 'operation',
             description: 'Операция с префиксами (list | add | rm)',

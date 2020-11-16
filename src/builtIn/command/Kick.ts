@@ -1,4 +1,4 @@
-import { CommandArguments } from "../../command/Argument/Definition";
+import { ArgumentSequence } from "../../command/Argument/Sequence";
 import { Command } from "../../command/Definition";
 import { memberReader, optionalReader, remainingTextReader } from "../reader";
 
@@ -10,7 +10,7 @@ export const kickCommand = new Command({
     description: 'Кикает участника сервера',
     group: 'Администрирование',
 
-    arguments: new CommandArguments(
+    arguments: new ArgumentSequence(
         {
             name: 'target',
             description: 'Участник сервера, которого нужно кикнуть',

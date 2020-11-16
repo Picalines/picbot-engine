@@ -1,4 +1,4 @@
-import { CommandArguments } from "../../command/Argument/Definition";
+import { ArgumentSequence } from "../../command/Argument/Sequence";
 import { Command } from "../../command/Definition";
 import { optionalReader, memberReader } from "../reader";
 
@@ -8,7 +8,7 @@ export const avatarCommand = new Command({
     description: 'Бот пишет ссылку на аватар участника сервера',
     group: 'Информация',
 
-    arguments: new CommandArguments(
+    arguments: new ArgumentSequence(
         {
             name: 'target',
             description: 'Участник сервера, у которого нужно взять аватар',

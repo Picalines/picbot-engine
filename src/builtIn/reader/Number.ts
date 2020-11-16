@@ -12,7 +12,7 @@ export const numberReader = (type: 'int' | 'float', range?: [min: number, max: n
         inRange = n => n >= range![0] && n <= range![1];
     }
     else {
-        inRange = _ => true;
+        inRange = () => true;
         range = [-Infinity, Infinity];
     }
 

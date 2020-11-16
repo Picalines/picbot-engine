@@ -1,6 +1,8 @@
 import { GuildMember } from "discord.js";
 import { Bot } from "../Bot";
+import { spaceReader } from "../builtIn/reader/String";
 import { GuildMessage } from "../utils";
+import { CommandArgument } from "./Argument/Definition";
 import { Command } from "./Definition";
 
 /**
@@ -31,7 +33,7 @@ export class CommandContext<Args extends any[]> {
 
         if (command.arguments) {
             const userInput = message.content.replace(/^\S+\s*/, '');
-            this.args = command.arguments.readValues(userInput, this);
+            this.args = command.arguments.readArguments(userInput, this as unknown as CommandContext<unknown[]>);
         }
         else {
             this.args = [] as any;
