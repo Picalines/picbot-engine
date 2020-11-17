@@ -1,5 +1,5 @@
 import { ArgumentReader } from "../../command/argument/Reader";
-import { parsedRegexReader } from "./regex";
+import { parsedRegexReader } from "./Regex";
 
 /**
  * Читает число (целое / дробное, положительное / отрицательное)

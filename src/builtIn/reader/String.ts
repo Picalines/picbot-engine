@@ -1,6 +1,6 @@
 import { ArgumentReader, ArgumentString } from "../../command/argument/Reader";
 import { Failable } from "../../utils";
-import { parsedRegexReader, regexReader } from "./regex";
+import { parsedRegexReader, regexReader } from "./Regex";
 
 /**
  * Читает пробелы между аргументами
