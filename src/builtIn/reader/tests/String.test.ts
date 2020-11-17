@@ -55,10 +55,10 @@ describe('keyword', () => {
     const reader = keywordReader('add', 'rm');
 
     test('wrong word', () => {
-        expect(reader('test', context)).toEqual({ isError: true, error: { message: 'one of keywords expected: add, rm' } });
+        expect(reader('test', context)).toEqual({ isError: true, error: 'one of keywords expected: add, rm' });
     });
 
     test('empty string', () => {
-        expect(reader('', context)).toEqual({ isError: true, error: { message: 'one of keywords expected: add, rm' } });
+        expect(reader('', context)).toEqual({ isError: true, error: 'one of keywords expected: add, rm' });
     });
 });
