@@ -1,6 +1,6 @@
 import { PropertyAccess } from "../../database/Property/Access";
 
-export const validatePrefix = (prefix: string) => prefix && !prefix.includes(' ');
+export const validatePrefix = (prefix: string) => prefix.length > 0 && !prefix.includes(' ');
 
 export class PrefixesPropertyAccess extends PropertyAccess<string[]> {
     /**

@@ -8,7 +8,6 @@ import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
 import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
 import { Property } from "./database/Property/Definition";
-import { CommandContext } from "./command/Context";
 import { AnyCommand } from "./command/Definition";
 
 export declare interface Bot {
