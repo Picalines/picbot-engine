@@ -1,4 +1,4 @@
-import { ArgumentReader } from "../../command/Argument/Reader";
+import { ArgumentReader } from "../../command/argument/Reader";
 import { spaceReader } from "./String";
 
 /**

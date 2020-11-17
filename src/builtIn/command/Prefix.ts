@@ -1,5 +1,5 @@
 import { Command } from "../../command/Definition";
-import { ArgumentSequence } from "../../command/Argument/Sequence";
+import { ArgumentSequence } from "../../command/argument/Sequence";
 import { keywordReader, optionalReader, wordReader } from "../reader";
 
 export const prefixCommand = new Command({
