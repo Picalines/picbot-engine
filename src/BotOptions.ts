@@ -1,21 +1,12 @@
-import { DeepPartial, ReadOnlyNonEmptyArray } from "./utils";
-import { BotDatabaseHandler } from "./database/Bot";
-import { DebugBotDatabaseHandler } from "./builtIn/database";
+import { deepMerge, DeepPartial, NonEmptyReadonly } from "./utils";
+import { BotDatabaseHandler } from "./database/Handler";
+import { JsonDatabaseHandler } from "./builtIn/database";
+import { AnyProperty } from "./database/Property/Definition";
 
 /**
  * Объект с настройками бота
  */
 export type BotOptions = {
-    /**
-     * Настройки проверки прав
-     */
-    permissions: {
-        /**
-         * Аргумент [checkAdmin](https://discord.js.org/#/docs/main/stable/class/Permissions?scrollTo=has) из discord.js
-         * @default true
-         */
-        checkAdmin: boolean;
-    };
     /**
      * Игнорировать ли сообщения других ботов
      * @default true
@@ -51,7 +42,7 @@ export type BotOptions = {
          * Стандартные префиксы бота
          * @default ['!']
          */
-        defaultPrefixes: ReadOnlyNonEmptyArray<string>;
+        defaultPrefixes: NonEmptyReadonly<string[]>;
     };
     /**
      * Настройки базы данных
@@ -59,19 +50,19 @@ export type BotOptions = {
     database: {
         /**
          * Обработчик базы данных (объект, хранящий функции для загрузки / сохранения данных серверов)
-         * @default DebugBotDatabaseHandler
+         * @default new JsonDatabaseHandler({ rootFolderPath: '/database/', guildsPath: '/guilds/' })
          */
         handler: BotDatabaseHandler;
-        /**
-         * Запретить ли хранить данные по ботам на сервере
-         * @default true
-         */
-        ignoreBots: boolean;
         /**
          * Сохранять ли базу данных на событии `process.SIGINT`.
          * @default true
          */
         saveOnSigint: boolean;
+        /**
+         * Список свойств, о существовании которых библиотека должна знать до загрузки базы данных
+         * @default []
+         */
+        definedProperties: ReadonlyArray<AnyProperty>;
     };
     utils: {
         /**
@@ -80,6 +71,39 @@ export type BotOptions = {
          */
         autoStopTyping: boolean;
     };
+};
+
+/**
+ * Стандартные настройки бота
+ */
+export const DefaultBotOptions: BotOptions = {
+    ignoreBots: true,
+    commands: {
+        builtIn: {
+            help: true,
+            ban: true,
+            kick: true,
+            clear: true,
+            prefix: true,
+            avatar: true,
+        },
+        sendNotFoundError: false,
+    },
+    guild: {
+        defaultPrefixes: ['!'],
+    },
+    database: {
+        handler: new JsonDatabaseHandler({
+            rootFolderPath: '/database/',
+            guildsPath: '/guilds/',
+            jsonIndent: 0,
+        }),
+        saveOnSigint: true,
+        definedProperties: [],
+    },
+    utils: {
+        autoStopTyping: true,
+    },
 };
 
 /**
@@ -95,32 +119,5 @@ export type BotOptionsArgument = DeepPartial<Omit<BotOptions, 'database'>> & {
  * @ignore
  */
 export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOptions {
-    return {
-        permissions: {
-            checkAdmin: optionsArg.permissions?.checkAdmin ?? true
-        },
-        ignoreBots: optionsArg.ignoreBots ?? true,
-        commands: {
-            builtIn: {
-                help: optionsArg.commands?.builtIn?.help ?? true,
-                ban: optionsArg.commands?.builtIn?.ban ?? true,
-                kick: optionsArg.commands?.builtIn?.kick ?? true,
-                clear: optionsArg.commands?.builtIn?.clear ?? true,
-                prefix: optionsArg.commands?.builtIn?.prefix ?? true,
-                avatar: optionsArg.commands?.builtIn?.avatar ?? true,
-            },
-            sendNotFoundError: optionsArg.commands?.sendNotFoundError ?? false,
-        },
-        guild: {
-            defaultPrefixes: (optionsArg.guild?.defaultPrefixes as ReadOnlyNonEmptyArray<string> | undefined) ?? ['!'],
-        },
-        database: {
-            handler: optionsArg.database?.handler ?? DebugBotDatabaseHandler,
-            ignoreBots: optionsArg.database?.ignoreBots ?? true,
-            saveOnSigint: optionsArg.database?.saveOnSigint ?? true,
-        },
-        utils: {
-            autoStopTyping: optionsArg.utils?.autoStopTyping ?? true,
-        },
-    };
+    return deepMerge(DefaultBotOptions, optionsArg as any);
 }

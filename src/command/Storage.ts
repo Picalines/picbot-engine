@@ -1,109 +1,108 @@
-import { Command, CommandExecuteable } from "./Command";
-import { CommandInfo } from "./Info";
-
-type CommandRegisterParameter = Omit<CommandInfo, 'name'> & { execute: CommandExecuteable };
+import { PathLike, readdirSync } from "fs";
+import { join } from "path";
+import { AnyCommand, Command } from "./Definition";
 
 /**
  * Хранилище команд
  */
-export class CommandStorage implements Iterable<Command> {
-    readonly #commands = new Map<string, Command>();
-    #size = 0;
+export class CommandStorage implements Iterable<AnyCommand> {
+    /**
+     * Map команд по их именам
+     */
+    private readonly nameMap = new Map<string, AnyCommand>();
+
+    /**
+     * Map команд по алиасам
+     */
+    private readonly aliasMap = new Map<string, AnyCommand>();
 
     /**
      * Добавляет команду в память бота
-     * @param name имя команды
-     * @param info информация о команде
+     * @param command команда
      */
-    public register(name: string, info: CommandRegisterParameter): void
-
-    /**
-     * Добавляет команду в память бота
-     * @param name имя команды
-     * @param executeable функция, обрабатывающая логику команды
-     */
-    public register(name: string, executeable: CommandExecuteable): void
-
-    /**
-     * Добавляет команду в память бота
-     * @param command существующая команда
-     */
-    public register(command: Command): void
-
-    public register(command: Command | string, info?: CommandRegisterParameter | CommandExecuteable): void {
-        if (typeof command == 'string') {
-            if (!info) throw new TypeError('command info or executeable is undefined');
-
-            const _info: CommandRegisterParameter = typeof info == 'function' ? { execute: info } : info;
-            command = new Command({ name: command, ..._info });
-        }
-
-        if (this.#commands.has(command.info.name)) {
-            throw new Error(`command name '${command.info.name}' overlaps with another command`);
-        }
-
-        command.info.aliases?.forEach(alias => {
-            if (this.#commands.has(alias)) {
-                throw new Error(`command alias '${alias}' overlaps with another command`);
+    public add(command: AnyCommand): void {
+        const assertNameCollision = (name: string) => {
+            if (this.has(name)) {
+                throw new Error(`command name or alias '${name}' overlaps with another command`);
             }
-            this.#commands.set(alias, command as Command);
-        });
+        }
 
-        this.#commands.set(command.info.name, command);
-        
-        this.#size += 1;
+        assertNameCollision(command.name);
+        this.nameMap.set(command.name, command);
+
+        command.aliases?.forEach(alias => {
+            assertNameCollision(alias);
+            this.aliasMap.set(alias, command);
+        });
     }
 
     /**
      * Возвращает данные команды по её имени или алиасу
      * @param name имя или алиас команды
+     * @param nameOnly нужно ли ингорировать алиасы
      */
-    public getByName(name: string): Command | never {
-        name = name.toLowerCase();
-        const command = this.#commands.get(name);
-        if (!command) {
-            throw new Error(`command '${name}' not found`);
-        }
-        return command;
+    public get<Args extends unknown[]>(name: string, nameOnly = false): Command<Args> | undefined {
+        return (this.nameMap.get(name) ?? (!nameOnly ? this.aliasMap.get(name) : undefined)) as Command<Args> | undefined;
     }
 
     /**
-     * Возвращает словарь с командами, сгруппированными по свойству [[CommandInfo.group]]
-     * @param defaultGroup группа команд, у которой не прописано свойство [[CommandInfo.group]]
+     * @returns true, если в хранилище есть команда с таким именем или алиасом
+     * @param name имя или алиас команды
+     * @param nameOnly нужно ли игнорировать алиасы
      */
-    public getGrouped(defaultGroup: string): Map<string, Command[]> {
-        const map = new Map<string, Command[]>();
-
-        for (const command of this) {
-            const group = command.info.group || defaultGroup;
-            const list = map.get(group);
-
-            if (list) {
-                list.push(command);
-            }
-            else {
-                map.set(group, [command]);
-            }
-        }
-
-        return map;
+    public has(name: string, nameOnly = false): boolean {
+        name = name.toLowerCase();
+        return this.nameMap.has(name) || (!nameOnly && this.aliasMap.has(name));
     }
 
     /**
      * Количество команд в хранилище
      */
     get size(): number {
-        return this.#size;
+        return this.nameMap.size;
     }
 
     /**
-     * Свойство, возвращающее список всех команд в хранилище
+     * @returns список всех команд в хранилище
      */
-    get list(): readonly Command[] {
-        return [...new Set(this.#commands.values())];
+    array(): AnyCommand[] {
+        return [...this.nameMap.values()];
     }
 
     public [Symbol.iterator]() {
-        return new Set(this.#commands.values()).values();
+        return new Set(this.nameMap.values()).values();
+    }
+
+    /**
+     * Возвращает словарь с командами, сгруппированными по свойству [[CommandInfo.group]]
+     * @param defaultGroup группа команд, у которой не прописано свойство [[CommandInfo.group]]
+     */
+    public grouped(defaultGroup: string): Map<string, AnyCommand[]> {
+        const map = new Map<string, AnyCommand[]>();
+
+        for (const command of this) {
+            const group = command.group || defaultGroup;
+            const array = map.get(group);
+            array ? array.push(command) : map.set(group, [command]);
+        }
+
+        return map;
+    }
+
+    /**
+     * Вызывает require на все .js файлы из папки, и добавляет все экпортированные команды в хранилище.
+     * Команда должна быть экспортирована как `module.exports = new Command({ ... });`
+     * @param path путь до папки с командами
+     */
+    public requireFolder(path: PathLike) {
+        const jsFiles = readdirSync(path).filter(file => file.endsWith('.js'));
+
+        const _require = require.main?.require ?? require;
+        path = String(path);
+
+        const modules = jsFiles.map(file => _require('./' + join(path as string, file)));
+        const commands = modules.filter(exports => exports instanceof Command) as AnyCommand[];
+
+        commands.forEach(command => this.add(command));
     }
 }

@@ -1,6 +1,8 @@
-import { Command } from "../../command/Command";
+import { ArgumentSequence } from "../../command/Argument/Sequence";
+import { Command } from "../../command/Definition";
+import { memberReader, optionalReader, remainingTextReader } from "../reader";
 
-export default new Command({
+export const banCommand = new Command({
     name: 'ban',
 
     permissions: ['BAN_MEMBERS'],
@@ -8,13 +10,25 @@ export default new Command({
     description: 'Банит участника сервера',
     group: 'Администрирование',
 
-    syntax: '<member:target> <remainingText:reason=Злобные админы :/>',
+    arguments: new ArgumentSequence(
+        {
+            name: 'target',
+            description: 'Участник сервера, которого нужно забанить',
+            reader: memberReader,
+        },
+        {
+            name: 'reason',
+            description: 'Причина бана',
+            reader: optionalReader(remainingTextReader, 'Злобные админы :/'),
+        },
+    ),
+
     examples: [
-        '`ban @Test` забанит участника @Test по причине "Злобные админы :/"',
+        '`ban @Test` забанит @Test по причине "Злобные админы :/"',
         '`ban @Test спам` забанит @Test по причине "спам"',
     ],
 
-    execute: async ({ message, executor, args: { target, reason } }) => {
+    execute: async ({ message, executor, args: [target, reason] }) => {
         if (executor.id == target.id) {
             throw new Error('Нельзя забанить самого себя!');
         }
@@ -24,5 +38,5 @@ export default new Command({
 
         await target.ban({ reason });
         await message.reply(`**${target.displayName}** успешно забанен`);
-    }
+    },
 });

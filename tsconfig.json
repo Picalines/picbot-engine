@@ -2,6 +2,7 @@
     "compilerOptions": {
         "strict": true,
         "noImplicitAny": true,
+        "strictBindCallApply": true,
         "target": "ES6",
         "module": "commonjs",
         "outDir": "dist",
@@ -15,10 +16,10 @@
         ],
     },
     "include": [
-        "src",
+        "./src/",
     ],
     "exclude": [
-        "node_modules",
+        "./node_modules/",
         "**/*.spec.ts",
         "**/*.test.ts",
     ],

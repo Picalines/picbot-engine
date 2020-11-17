@@ -1,20 +1,28 @@
-import { Command } from "../../command/Command";
+import { ArgumentSequence } from "../../command/Argument/Sequence";
+import { Command } from "../../command/Definition";
+import { optionalReader, memberReader } from "../reader";
 
-export default new Command({
+export const avatarCommand = new Command({
     name: 'avatar',
 
     description: 'Бот пишет ссылку на аватар участника сервера',
     group: 'Информация',
 
-    syntax: '<member:target=>',
+    arguments: new ArgumentSequence(
+        {
+            name: 'target',
+            description: 'Участник сервера, у которого нужно взять аватар',
+            reader: optionalReader(memberReader, null),
+        },
+    ),
 
     examples: [
         '`!avatar` напишет ссылку на ваш аватар',
         '`!avatar @Test` напишет ссылку на аватар участника сервера @Test',
     ],
 
-    execute: async ({ message, args: { target } }) => {
-        const url = target ? target.user.avatarURL() : message.author.avatarURL();
-        await message.reply(url);
+    execute: async ({ message, args: [target] }) => {
+        const user = target?.user ?? message.author;
+        await message.reply(user.avatarURL());
     },
 });

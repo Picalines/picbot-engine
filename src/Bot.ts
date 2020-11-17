@@ -2,12 +2,13 @@ import { Client, Message, MessageEmbed } from "discord.js";
 import { EventEmitter } from "events";
 import { PathLike, readFileSync } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
-import { ArgumentReaderStorage } from "./command/argument/Storage";
 import { CommandStorage } from "./command/Storage";
-import { Command } from "./command/Command";
-import { BotDatabase } from "./database/Bot";
+import { BotDatabase } from "./database/BotDatabase";
 import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
+import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
+import { Property } from "./database/Property/Definition";
+import { AnyCommand } from "./command/Definition";
 
 export declare interface Bot {
     on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
@@ -30,14 +31,14 @@ export class Bot extends EventEmitter {
     public readonly options: BotOptions;
 
     /**
-     * Хранилище типов аргументов команд бота
-     */
-    public readonly commandArguments = new ArgumentReaderStorage();
-
-    /**
      * Хранилище команд бота
      */
     public readonly commands = new CommandStorage();
+
+    /**
+     * Свойство префиксов в базе данных
+     */
+    public readonly prefixesProperty: Property<'guild', string[], PrefixesPropertyAccess>;
 
     /**
      * База данных бота
@@ -48,18 +49,15 @@ export class Bot extends EventEmitter {
      * @param client Клиент API discord.js
      * @param options настройки бота
      */
-    constructor(
-        public readonly client: Client,
-        options: BotOptionsArgument = {}
-    ) {
+    constructor(readonly client: Client, options: BotOptionsArgument = {}) {
         super();
 
         this.options = ParseBotOptionsArgument(options);
 
         const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
         for (const builtInCommand of Object.values(BuiltInCommands)) {
-            if (builtInCommandsSetting[builtInCommand.info.name]) {
-                this.commands.register(builtInCommand);
+            if (builtInCommandsSetting[builtInCommand.name]) {
+                this.commands.add(builtInCommand as unknown as AnyCommand);
             }
         }
 
@@ -68,9 +66,6 @@ export class Bot extends EventEmitter {
         });
 
         this.database = new BotDatabase(this, this.options.database.handler);
-        this.client.once('ready', () => {
-            this.database.load();
-        });
 
         if (this.options.database.saveOnSigint) {
             process.once('SIGINT', async () => {
@@ -78,6 +73,23 @@ export class Bot extends EventEmitter {
                 console.log('Press Ctrl+C again to exit the program');
             });
         }
+
+        this.prefixesProperty = new Property({
+            key: 'prefixes',
+            entityType: 'guild',
+            defaultValue: this.options.guild.defaultPrefixes as any,
+            validate: prefixes => prefixes.length > 0 && prefixes.every(validatePrefix),
+            accessorClass: PrefixesPropertyAccess,
+        });
+
+        this.database.definedProperties.add(this.prefixesProperty);
+        for (const property of this.options.database.definedProperties) {
+            this.database.definedProperties.add(property);
+        }
+
+        this.client.once('ready', () => {
+            this.database.load();
+        });
 
         this.client.on('message', message => {
             if (!(message.guild && message.channel.type == 'text')) return;
@@ -115,9 +127,22 @@ export class Bot extends EventEmitter {
      * @returns true, если была запущена команда
      */
     public async handleCommands(message: GuildMessage): Promise<boolean> {
-        const { prefixes } = await this.database.getGuildData(message.guild);
+        const prefixesProp = this.database.accessProperty(message.guild, this.prefixesProperty);
 
-        const prefixLength = prefixes.getMessagePrefixLength(message);
+        let prefixes = await prefixesProp.value();
+        if (!prefixes.length) {
+            prefixes = this.options.guild.defaultPrefixes as any;
+            await prefixesProp.set(prefixes);
+        }
+
+        let prefixLength = 0;
+        for (const prefix of prefixes) {
+            if (message.cleanContent.startsWith(prefix)) {
+                prefixLength = prefix.length;
+                break;
+            }
+        }
+
         if (!prefixLength) {
             return false;
         }
@@ -127,13 +152,11 @@ export class Bot extends EventEmitter {
             return false;
         }
 
-        await Bot.catchErrorEmbedReply(message, async () => {
-            let command: Command;
-            try {
-                command = this.commands.getByName(commandName);
-            } catch (err) {
-                if (err instanceof Error && this.options.commands.sendNotFoundError) {
-                    throw err;
+        await this.catchErrorReply(message, async () => {
+            const command = this.commands.get(commandName);
+            if (command === undefined) {
+                if (this.options.commands.sendNotFoundError) {
+                    throw new Error(`command '${commandName}' not found`);
                 }
                 return;
             }
@@ -152,35 +175,25 @@ export class Bot extends EventEmitter {
      * Возвращает эмбед с описанием ошибки
      * @param error ошибка
      */
-    public static makeErrorEmbed(error: { message: string }) {
+    public errorEmbed(error: string) {
         return new MessageEmbed()
             .setTitle('Произошла ошибка')
             .setColor(0xd61111)
-            .setDescription(error.message);
+            .setDescription(error);
     }
 
     /**
      * Запускает функцию `tryBlock`. В блоке `catch` бот отвечает
-     * на сообщение `message` эмбедом из `makeErrorEmbed`
+     * на сообщение `message` эмбедом из `errorEmbed`
      * @param message сообщение, на которое бот ответит информацией об ошибке
      * @param tryBlock функция в блоке try...catch
      */
-    public static async catchErrorEmbedReply(message: Message, tryBlock: () => PromiseVoid): Promise<void> {
+    public async catchErrorReply(message: Message, tryBlock: () => PromiseVoid): Promise<void> {
         try {
             await tryBlock();
         }
-        catch (error) {
-            if (!(error instanceof Error)) return;
-
-            let embed: MessageEmbed;
-            try {
-                embed = Bot.makeErrorEmbed(error);
-            }
-            catch {
-                await message.reply(`Произошла ошибка: ${error.message}`);
-                return;
-            }
-
+        catch (error: unknown) {
+            const embed = this.errorEmbed(error instanceof Error ? error.message : String(error));
             await message.reply({ embed });
         }
     }
@@ -198,7 +211,7 @@ export class Bot extends EventEmitter {
      * Сначала читает токен из файла, а потом использует его в методе login
      * @param path путь до файла с токеном
      */
-    public async loginFromFile(path: PathLike) {
-        return await this.login(readFileSync(path).toString());
+    public loginFromFile(path: PathLike) {
+        return this.login(readFileSync(path).toString());
     }
 }

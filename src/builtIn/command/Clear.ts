@@ -1,6 +1,8 @@
-import { Command } from "../../command/Command";
+import { ArgumentSequence } from "../../command/Argument/Sequence";
+import { Command } from "../../command/Definition";
+import { numberReader } from "../reader";
 
-export default new Command({
+export const clearCommand = new Command({
     name: 'clear',
 
     permissions: ['MANAGE_MESSAGES'],
@@ -8,14 +10,19 @@ export default new Command({
     description: 'Удаляет N сообщений',
     group: 'Администрирование',
 
-    syntax: '<number:count>',
+    arguments: new ArgumentSequence(
+        {
+            name: 'count',
+            description: 'Количество сообщений для очистки',
+            reader: numberReader('int', [1, Infinity]),
+        },
+    ),
+
     examples: [
         '`clear 10` удалит 10 сообщений"',
     ],
 
-    execute: async ({ message: { channel }, args: { count } }) => {
-        if (count > 0) {
-            await channel.bulkDelete(count + 1);
-        }
-    }
+    execute: async ({ message: { channel }, args: [count] }) => {
+        await channel.bulkDelete(count + 1);
+    },
 });
