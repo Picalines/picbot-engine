@@ -26,6 +26,9 @@ export type ArgumentReader<T> = ValueParser<string, ArgumentString<T>, CommandCo
  */
 export type ArgsDefinitions<Args extends unknown[]> = readonly [...{ [K in keyof Args]: CommandArgument<Args[K]> }];
 
+/**
+ * Интерфейс объекта, который читает и хранит информацию об аргументах команды
+ */
 export interface CommandArgumentsReader<Args extends unknown[]> {
     /**
      * Список объявлений аргументов
