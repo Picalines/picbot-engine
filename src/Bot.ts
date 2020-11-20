@@ -83,9 +83,16 @@ export class Bot extends EventEmitter {
         });
 
         this.database.definedProperties.add(this.prefixesProperty);
+
         for (const property of this.options.database.definedProperties) {
             this.database.definedProperties.add(property);
         }
+
+        this.commands.on('added', command => {
+            command.requiredProperties?.forEach(property => {
+                this.database.definedProperties.add(property);
+            });
+        });
 
         this.client.once('ready', () => {
             this.database.load();

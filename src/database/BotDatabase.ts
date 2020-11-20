@@ -66,7 +66,9 @@ export class BotDatabase extends EventEmitter {
      * @param property свойство сущности
      */
     public accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
-        this.definedProperties.add(property);
+        if (!this.definedProperties.has(property.key)) {
+            throw new Error(`can't acces undefined ${property.entityType} property with key '${property.key}'`);
+        }
 
         type ValueStorage = DatabaseValueStorage<E>;
         let storage: ValueStorage | undefined = undefined;

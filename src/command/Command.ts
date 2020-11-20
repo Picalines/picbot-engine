@@ -1,5 +1,6 @@
 import { BitFieldResolvable, Permissions, PermissionString } from "discord.js";
 import { Bot } from "../Bot";
+import { AnyProperty } from "../database/property/Property";
 import { GuildMessage, NonEmptyReadonly, Overwrite, PromiseVoid } from "../utils";
 import { CommandArgumentsReader } from "./argument/Reader";
 import { CommandContext } from "./Context";
@@ -43,6 +44,11 @@ export interface CommandInfo<Args extends unknown[]> {
      * Примеры использования
      */
     readonly examples?: NonEmptyReadonly<string[]>;
+
+    /**
+     * Свойства сущностей в базе данных, с которыми работает команда
+     */
+    readonly requiredProperties?: NonEmptyReadonly<AnyProperty[]>;
 }
 
 /**

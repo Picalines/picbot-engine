@@ -1,6 +1,9 @@
 import { EntityType } from "../Entity";
 import { AnyProperty } from "./Property";
 
+/**
+ * Хранилище свойств сущностей в базе данных
+ */
 export class PropertyDefinitionStorage {
     #properties = new Map<string, AnyProperty>();
 
@@ -16,6 +19,14 @@ export class PropertyDefinitionStorage {
 
         this.#properties.set(property.key, property);
         return true;
+    }
+
+    /**
+     * @returns true, если в хранилище есть свойство с ключом key
+     * @param key ключ свойства
+     */
+    has(key: string): boolean {
+        return this.#properties.has(key);
     }
 
     /**
