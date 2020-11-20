@@ -1,5 +1,5 @@
 import { ArgumentSequence } from "../../command/argument/Sequence";
-import { Command } from "../../command/Definition";
+import { Command } from "../../command/Command";
 import { numberReader } from "../reader";
 
 export const clearCommand = new Command({

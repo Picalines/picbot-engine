@@ -1,4 +1,4 @@
-import { Command } from "../../command/Definition";
+import { Command } from "../../command/Command";
 import { ArgumentSequence } from "../../command/argument/Sequence";
 import { keywordReader, optionalReader, wordReader } from "../reader";
 

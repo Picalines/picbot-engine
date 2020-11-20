@@ -1,5 +1,5 @@
 import { EntityType } from "../Entity";
-import { AnyProperty } from "./Definition";
+import { AnyProperty } from "./Property";
 
 export class PropertyDefinitionStorage {
     #properties = new Map<string, AnyProperty>();

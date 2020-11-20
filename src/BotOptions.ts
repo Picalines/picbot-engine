@@ -1,7 +1,7 @@
 import { deepMerge, DeepPartial, NonEmptyReadonly } from "./utils";
 import { BotDatabaseHandler } from "./database/Handler";
 import { JsonDatabaseHandler } from "./builtIn/database";
-import { AnyProperty } from "./database/Property/Definition";
+import { AnyProperty } from "./database/property/Property";
 
 /**
  * Объект с настройками бота

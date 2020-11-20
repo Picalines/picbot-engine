@@ -1,6 +1,6 @@
 import { GuildMember } from "discord.js";
 import { GuildMessage } from "../utils";
-import { Command } from "./Definition";
+import { Command } from "./Command";
 import { Bot } from "../Bot";
 
 /**

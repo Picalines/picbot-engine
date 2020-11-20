@@ -1,5 +1,5 @@
 import { ArgumentSequence } from "../../command/argument/Sequence";
-import { Command } from "../../command/Definition";
+import { Command } from "../../command/Command";
 import { optionalReader, memberReader } from "../reader";
 
 export const avatarCommand = new Command({

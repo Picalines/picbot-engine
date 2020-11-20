@@ -1,6 +1,6 @@
 import { ValueParser } from "../../utils";
 import { CommandContext } from "../Context";
-import { CommandArgument } from "./Definition";
+import { CommandArgument } from "./Argument";
 
 /**
  * Информация прочитанного аргумента

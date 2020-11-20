@@ -7,8 +7,8 @@ import { BotDatabase } from "./database/BotDatabase";
 import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
 import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
-import { Property } from "./database/Property/Definition";
-import { AnyCommand } from "./command/Definition";
+import { Property } from "./database/property/Property";
+import { AnyCommand } from "./command/Command";
 
 export declare interface Bot {
     on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;

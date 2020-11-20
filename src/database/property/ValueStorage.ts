@@ -1,7 +1,7 @@
 import { PromiseOrSync } from "../../utils";
 import { BotDatabase } from "../BotDatabase";
 import { EntityType, Entity } from "../Entity";
-import { AnyExpression } from "../Selector/Expression";
+import { AnyExpression } from "../selector/Expression";
 
 /**
  * Абстрактный класс, хранящий значения свойств сущностей (серверов / участников)
@@ -60,5 +60,5 @@ export abstract class DatabaseValueStorage<E extends EntityType> {
 }
 
 export interface DatabaseValueStorageConstructor<E extends EntityType> {
-    new (database: BotDatabase, entityType: E): DatabaseValueStorage<E>;
+    new(database: BotDatabase, entityType: E): DatabaseValueStorage<E>;
 }

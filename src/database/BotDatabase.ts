@@ -1,14 +1,14 @@
-import { Property } from "./Property/Definition";
-import { EntitySelector, EntitySelectorOptions } from "./Selector/Definition";
+import { Property } from "./property/Property";
+import { EntitySelector, EntitySelectorOptions } from "./selector/Selector";
 import { EntityType, Entity } from "./Entity";
-import { PropertyAccess, PropertyAccessConstructor } from "./Property/Access";
-import { DatabaseValueStorage } from "./Property/ValueStorage";
+import { PropertyAccess, PropertyAccessConstructor } from "./property/Access";
+import { DatabaseValueStorage } from "./property/ValueStorage";
 import { BotDatabaseHandler } from "./Handler";
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
 import { EventEmitter } from "events";
 import { Bot } from "../Bot";
-import { PropertyDefinitionStorage } from "./Property/DefinitionStorage";
-import { OperatorExpressions, QueryOperators } from "./Selector/Operator";
+import { PropertyDefinitionStorage } from "./property/DefinitionStorage";
+import { OperatorExpressions, QueryOperators } from "./selector/Operator";
 import { filterIterable } from "../utils";
 
 export interface BotDatabase {

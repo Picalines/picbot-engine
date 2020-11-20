@@ -1,7 +1,7 @@
 import { Guild } from "discord.js";
 import { PromiseVoid } from "../utils";
 import { BotDatabase } from "./BotDatabase";
-import { DatabaseValueStorageConstructor } from "./Property/ValueStorage";
+import { DatabaseValueStorageConstructor } from "./property/ValueStorage";
 
 /**
  * Пользовательский интерфейс базы данных

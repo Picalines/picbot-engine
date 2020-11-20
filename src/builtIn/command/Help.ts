@@ -1,4 +1,4 @@
-import { Command } from "../../command/Definition";
+import { Command } from "../../command/Command";
 import { ArgumentSequence } from "../../command/argument/Sequence";
 import { optionalReader, wordReader } from "../reader";
 import { GuildMember, MessageEmbed } from "discord.js";
