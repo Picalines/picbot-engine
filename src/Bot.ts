@@ -4,27 +4,27 @@ import { PathLike, readFileSync } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/BotDatabase";
-import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
+import { GuildBotMessage, GuildMessage, PromiseVoid, TypedEventEmitter } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
 import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
 import { Property } from "./database/property/Property";
 import { AnyCommand } from "./command/Command";
 
-export declare interface Bot {
-    on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
-    on(event: 'memberPlainMessage', listener: (message: GuildMessage) => void): this;
-    on(event: 'memberCommandMessage', listener: (message: GuildMessage) => void): this;
+interface BotEvents {
+    memberMessage(message: GuildMessage): void;
+    memberPlainMessage(message: GuildMessage): void;
+    memberCommandMessage(message: GuildMessage): void;
 
-    on(event: 'botMessage', listener: (message: GuildBotMessage) => void): this;
-    on(event: 'myMessage', listener: (message: GuildBotMessage) => void): this;
+    botMessage(message: GuildBotMessage): void;
+    myMessage(message: GuildBotMessage): void;
 
-    on(event: string, listener: Function): this;
+    commandError(commandMessage: GuildMessage, error: Error, command?: AnyCommand): void;
 }
 
 /**
  * Обёртка клиента API из discord.js
  */
-export class Bot extends EventEmitter {
+export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>) {
     /**
      * Настройки бота
      */
@@ -104,25 +104,29 @@ export class Bot extends EventEmitter {
             const guildMessage = message as GuildMessage;
 
             if (guildMessage.member.id == guildMessage.guild.me.id) {
-                this.emit('myMessage', message);
+                this.emit('myMessage', message as GuildBotMessage);
                 return;
             }
 
             if (guildMessage.author.bot) {
-                this.emit('botMessage', message);
+                this.emit('botMessage', message as GuildBotMessage);
                 if (this.options.ignoreBots) return;
             }
 
-            this.handleCommands(guildMessage).then(wasCommand => {
-                this.emit('memberMessage', message);
-                if (wasCommand) this.emit('memberCommandMessage', message);
-                else this.emit('memberPlainMessage', message);
+            this.handleCommand(guildMessage).then(wasCommand => {
+                this.emit('memberMessage', guildMessage);
+                if (wasCommand) this.emit('memberCommandMessage', guildMessage);
+                else this.emit('memberPlainMessage', guildMessage);
             });
+        });
+
+        this.on('commandError', (message, error) => {
+            message.reply({ embed: this.options.errorEmbed(error, message, this) });
         });
     }
 
     /**
-     * @returns юзернейм бота. Если [[Client.user]] равно `undefined`, вернёт `"bot"`
+     * @returns юзернейм бота. Если [[Client.user]] равно `undefined`, вернёт `bot`
      */
     public get username(): string {
         return this.client.user?.username ?? 'bot';
@@ -131,9 +135,9 @@ export class Bot extends EventEmitter {
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
      * @param message сообщение пользователя
-     * @returns true, если была запущена команда
+     * @returns true, если команда успешно выполнена
      */
-    public async handleCommands(message: GuildMessage): Promise<boolean> {
+    public async handleCommand(message: GuildMessage): Promise<boolean> {
         const prefixesProp = this.database.accessProperty(message.guild, this.prefixesProperty);
 
         let prefixes = await prefixesProp.value();
@@ -159,50 +163,32 @@ export class Bot extends EventEmitter {
             return false;
         }
 
-        await this.catchErrorReply(message, async () => {
-            const command = this.commands.get(commandName);
+        let command: AnyCommand | undefined;
+
+        try {
+            command = this.commands.get(commandName);
             if (command === undefined) {
                 if (this.options.commands.sendNotFoundError) {
                     throw new Error(`command '${commandName}' not found`);
                 }
-                return;
+                return false;
             }
 
             await command.execute(this, message);
-        });
+        }
+        catch (error: unknown) {
+            this.emit('commandError', message, error instanceof Error ? error : new Error(String(error)), command);
+
+            message.channel.stopTyping(true);
+
+            return false;
+        }
 
         if (this.options.utils.autoStopTyping) {
             message.channel.stopTyping(true);
         }
 
         return true;
-    }
-
-    /**
-     * Возвращает эмбед с описанием ошибки
-     * @param error ошибка
-     */
-    public errorEmbed(error: string) {
-        return new MessageEmbed()
-            .setTitle('Произошла ошибка')
-            .setColor(0xd61111)
-            .setDescription(error);
-    }
-
-    /**
-     * Запускает функцию `tryBlock`. В блоке `catch` бот отвечает
-     * на сообщение `message` эмбедом из `errorEmbed`
-     * @param message сообщение, на которое бот ответит информацией об ошибке
-     * @param tryBlock функция в блоке try...catch
-     */
-    public async catchErrorReply(message: Message, tryBlock: () => PromiseVoid): Promise<void> {
-        try {
-            await tryBlock();
-        }
-        catch (error: unknown) {
-            const embed = this.errorEmbed(error instanceof Error ? error.message : String(error));
-            await message.reply({ embed });
-        }
     }
 
     /**
