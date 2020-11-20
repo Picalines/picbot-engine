@@ -1,5 +1,4 @@
 import type { Guild, GuildMember, Message, TextChannel } from "discord.js";
-import { EventEmitter } from "events";
 
 /**
  * Сообщение в текстовом канале на сервере
