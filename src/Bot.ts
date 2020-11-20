@@ -1,10 +1,10 @@
-import { Client, Message, MessageEmbed } from "discord.js";
+import { Client } from "discord.js";
 import { EventEmitter } from "events";
 import { PathLike, readFileSync } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/BotDatabase";
-import { GuildBotMessage, GuildMessage, PromiseVoid, TypedEventEmitter } from "./utils";
+import { GuildBotMessage, GuildMessage, TypedEventEmitter } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
 import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
 import { Property } from "./database/property/Property";
@@ -13,16 +13,16 @@ import { AnyCommand } from "./command/Command";
 interface BotEvents {
     memberMessage(message: GuildMessage): void;
     memberPlainMessage(message: GuildMessage): void;
-    memberCommandMessage(message: GuildMessage): void;
 
     botMessage(message: GuildBotMessage): void;
     myMessage(message: GuildBotMessage): void;
 
-    commandError(commandMessage: GuildMessage, error: Error, command?: AnyCommand): void;
+    commandError(message: GuildMessage, error: Error, command?: AnyCommand): void;
+    commandExecuted(message: GuildMessage): void;
 }
 
 /**
- * Обёртка клиента API из discord.js
+ * Класс бота
  */
 export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>) {
     /**
@@ -70,7 +70,7 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
         if (this.options.database.saveOnSigint) {
             process.once('SIGINT', async () => {
                 await this.database.save();
-                console.log('Press Ctrl+C again to exit the program');
+                console.log('press ctrl+c again to exit');
             });
         }
 
@@ -115,12 +115,12 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
 
             this.handleCommand(guildMessage).then(wasCommand => {
                 this.emit('memberMessage', guildMessage);
-                if (wasCommand) this.emit('memberCommandMessage', guildMessage);
-                else this.emit('memberPlainMessage', guildMessage);
+                this.emit(wasCommand ? 'commandExecuted' : 'memberPlainMessage', guildMessage);
             });
         });
 
         this.on('commandError', (message, error) => {
+            message.channel.stopTyping(true);
             message.reply({ embed: this.options.errorEmbed(error, message, this) });
         });
     }
@@ -178,9 +178,6 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
         }
         catch (error: unknown) {
             this.emit('commandError', message, error instanceof Error ? error : new Error(String(error)), command);
-
-            message.channel.stopTyping(true);
-
             return false;
         }
 
