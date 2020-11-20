@@ -1,6 +1,6 @@
 import { Client } from "discord.js";
 import { EventEmitter } from "events";
-import { PathLike, readFileSync } from "fs";
+import { promises } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/BotDatabase";
@@ -192,16 +192,21 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
      * Аналог стандартной функции client.login
      * @param token токен discord api
      */
-    public async login(token: string): Promise<this> {
-        await this.client.login(token);
-        return this;
-    }
+    public async login(token: string, tokenType: 'string' | 'safeString' | 'file' | 'env' = 'string') {
+        if (tokenType == 'env') {
+            if (process.env[token] === undefined) {
+                throw new Error(`env variable '${token}' not found`);
+            }
+            token = process.env[token]!;
+        }
+        else if (tokenType == 'file') {
+            token = (await promises.readFile(token)).toString();
+        }
 
-    /**
-     * Сначала читает токен из файла, а потом использует его в методе login
-     * @param path путь до файла с токеном
-     */
-    public loginFromFile(path: PathLike) {
-        return this.login(readFileSync(path).toString());
+        await this.client.login(token);
+
+        if (tokenType == 'string') {
+            console.warn("WARNING: a possible hardcoded token is used. Be careful before saving code to the source control! (use 'safeString' if intended)");
+        }
     }
 }
