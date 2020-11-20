@@ -1,6 +1,6 @@
-import { Property } from "../../database/Property/Definition";
+import { Property } from "../../database/property/Property";
 import { EntityType } from "../../database/Entity";
-import { PropertyAccess } from "../../database/Property/Access";
+import { PropertyAccess } from "../../database/property/Access";
 
 export class NumberPropertyAccess extends PropertyAccess<number> {
     constructor(property: Property<EntityType, number, PropertyAccess<number>>, methods: any) {

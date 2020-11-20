@@ -1,6 +1,6 @@
 import { PathLike, readdirSync } from "fs";
 import { join } from "path";
-import { AnyCommand, Command } from "./Definition";
+import { AnyCommand, Command } from "./Command";
 
 /**
  * Хранилище команд

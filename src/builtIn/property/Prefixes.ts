@@ -1,4 +1,4 @@
-import { PropertyAccess } from "../../database/Property/Access";
+import { PropertyAccess } from "../../database/property/Access";
 
 export const validatePrefix = (prefix: string) => prefix.length > 0 && !prefix.includes(' ');
 

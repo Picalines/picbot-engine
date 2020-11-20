@@ -1,5 +1,5 @@
 import { EntityType } from "../Entity";
-import { Property } from "../Property/Definition";
+import { Property } from "../property/Property";
 import { ComparisonExpression, BooleanExpression, UnaryExpression, AnyExpression, Constant } from "./Expression";
 
 export type UnaryOperator = 'not'
