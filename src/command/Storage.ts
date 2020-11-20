@@ -1,11 +1,17 @@
+import { EventEmitter } from "events";
 import { PathLike, readdirSync } from "fs";
 import { join } from "path";
+import { TypedEventEmitter } from "../utils";
 import { AnyCommand, Command } from "./Command";
+
+interface CommandStorageEvents {
+    added(command: AnyCommand): void;
+}
 
 /**
  * Хранилище команд
  */
-export class CommandStorage implements Iterable<AnyCommand> {
+export class CommandStorage extends (EventEmitter as new () => TypedEventEmitter<CommandStorageEvents>) implements Iterable<AnyCommand> {
     /**
      * Map команд по их именам
      */
@@ -34,6 +40,8 @@ export class CommandStorage implements Iterable<AnyCommand> {
             assertNameCollision(alias);
             this.aliasMap.set(alias, command);
         });
+
+        this.emit('added', command);
     }
 
     /**
