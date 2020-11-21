@@ -15,7 +15,6 @@ export type GuildMessage = Message & {
  */
 export function isGuildMessage(message: Message): message is GuildMessage {
     return message.channel.type == 'text'
-        && message.channel instanceof TextChannel
         && message.member != undefined
         && message.guild != undefined
         && message.guild.me != undefined
