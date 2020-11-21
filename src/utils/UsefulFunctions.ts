@@ -2,7 +2,7 @@
  * Является ли объект литералом (скорее всего)
  * @param obj объект
  */
-export function isPlainObject(obj: any): boolean {
+function isPlainObject(obj: any): boolean {
     return typeof obj === 'object' && obj !== null
         && obj.constructor === Object
         && Object.prototype.toString.call(obj) === '[object Object]';
