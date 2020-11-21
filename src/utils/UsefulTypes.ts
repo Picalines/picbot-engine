@@ -12,12 +12,12 @@ export type DeepPartial<T> = T extends Function ? T
 /**
  * Массив, который содержит хотя бы 1 элемент
  */
-export type NonEmpty<T> = T extends Array<infer U> ? U[] & { '0': U } : never;
+export type NonEmpty<T> = T extends (infer U)[] ? U[] & { [0]: U } : never;
 
 /**
  * Массив, который содержит хотя бы 1 элемент. Элементы доступны только для чтения
  */
-export type NonEmptyReadonly<T> = T extends ReadonlyArray<infer U> ? ReadonlyArray<U> & { '0': U } : never;
+export type NonEmptyReadonly<T> = T extends readonly (infer U)[] ? readonly U[] & { [0]: U } : never;
 
 /**
  * @example Overwrite<{ a: number, b: number }, { a: 'test' }> -> { a: 'test', b: number }

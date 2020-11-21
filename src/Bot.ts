@@ -4,7 +4,7 @@ import { promises } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/BotDatabase";
-import { GuildMessage, isGuildMessage, TypedEventEmitter } from "./utils";
+import { GuildMessage, isGuildMessage, NonEmptyReadonly, TypedEventEmitter } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
 import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
 import { Property } from "./database/property/Property";
@@ -38,7 +38,7 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     /**
      * Свойство префиксов в базе данных
      */
-    public readonly prefixesProperty: Property<'guild', string[], PrefixesPropertyAccess>;
+    public readonly prefixesProperty: Property<'guild', NonEmptyReadonly<string[]>, PrefixesPropertyAccess>;
 
     /**
      * База данных бота
@@ -82,7 +82,7 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
         this.prefixesProperty = new Property({
             key: 'prefixes',
             entityType: 'guild',
-            defaultValue: this.options.guild.defaultPrefixes as any,
+            defaultValue: this.options.guild.defaultPrefixes,
             validate: prefixes => prefixes.length > 0 && prefixes.every(validatePrefix),
             accessorClass: PrefixesPropertyAccess,
         });
@@ -143,23 +143,10 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
      * @returns true, если команда успешно выполнена
      */
     public async handleCommand(message: GuildMessage): Promise<boolean> {
-        const prefixesProp = this.database.accessProperty(message.guild, this.prefixesProperty);
+        const guildPrefixes = await this.database.accessProperty(message.guild, this.prefixesProperty).value();
 
-        let prefixes = await prefixesProp.value();
-        if (!prefixes.length) {
-            prefixes = this.options.guild.defaultPrefixes as any;
-            await prefixesProp.set(prefixes);
-        }
-
-        let prefixLength = 0;
-        for (const prefix of prefixes) {
-            if (message.cleanContent.startsWith(prefix)) {
-                prefixLength = prefix.length;
-                break;
-            }
-        }
-
-        if (!prefixLength) {
+        const prefixLength = guildPrefixes.find(p => message.cleanContent.startsWith(p))?.length ?? 0;
+        if (prefixLength <= 0) {
             return false;
         }
 
