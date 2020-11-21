@@ -1,8 +1,9 @@
 import { PropertyAccess } from "../../database/property/Access";
+import { NonEmptyReadonly } from "../../utils";
 
 export const validatePrefix = (prefix: string) => prefix.length > 0 && !prefix.includes(' ');
 
-export class PrefixesPropertyAccess extends PropertyAccess<string[]> {
+export class PrefixesPropertyAccess extends PropertyAccess<NonEmptyReadonly<string[]>> {
     /**
      * Добавляет префикс
      * @param prefix новый префикс
@@ -17,7 +18,9 @@ export class PrefixesPropertyAccess extends PropertyAccess<string[]> {
             return false;
         }
 
-        await this.set([...oldPrefixes, prefix]);
+        const newPrefixes: NonEmptyReadonly<string[]> = [...oldPrefixes, prefix] as any;
+
+        await this.set(newPrefixes);
 
         return true;
     }
@@ -30,17 +33,19 @@ export class PrefixesPropertyAccess extends PropertyAccess<string[]> {
     async remove(prefix: string): Promise<boolean> {
         prefix = prefix.toLowerCase();
 
-        const oldPrefixes = await this.value();
+        const oldPrefixes = [...await this.value()];
         if (oldPrefixes.length <= 1) {
             return false;
         }
 
-        const filtered = oldPrefixes.filter(p => p != prefix);
-        if (filtered.length == oldPrefixes.length) {
+        const removedIndex = oldPrefixes.indexOf(prefix);
+        if (removedIndex < 0) {
             return false;
         }
 
-        await this.set(filtered)
+        oldPrefixes.splice(removedIndex, 1);
+
+        await this.set(oldPrefixes as any);
         return true;
     }
 

@@ -1,30 +1,30 @@
-import { Client, Message, MessageEmbed } from "discord.js";
+import { Client } from "discord.js";
 import { EventEmitter } from "events";
-import { PathLike, readFileSync } from "fs";
+import { promises } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/BotDatabase";
-import { GuildBotMessage, GuildMessage, PromiseVoid } from "./utils";
+import { GuildMessage, isGuildMessage, NonEmptyReadonly, TypedEventEmitter } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
 import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
 import { Property } from "./database/property/Property";
 import { AnyCommand } from "./command/Command";
 
-export declare interface Bot {
-    on(event: 'memberMessage', listener: (message: GuildMessage) => void): this;
-    on(event: 'memberPlainMessage', listener: (message: GuildMessage) => void): this;
-    on(event: 'memberCommandMessage', listener: (message: GuildMessage) => void): this;
+interface BotEvents {
+    memberMessage(message: GuildMessage): void;
+    memberPlainMessage(message: GuildMessage): void;
 
-    on(event: 'botMessage', listener: (message: GuildBotMessage) => void): this;
-    on(event: 'myMessage', listener: (message: GuildBotMessage) => void): this;
+    botMessage(message: GuildMessage): void;
+    myMessage(message: GuildMessage): void;
 
-    on(event: string, listener: Function): this;
+    commandError(message: GuildMessage, error: Error, command?: AnyCommand): void;
+    commandExecuted(message: GuildMessage): void;
 }
 
 /**
- * Обёртка клиента API из discord.js
+ * Класс бота
  */
-export class Bot extends EventEmitter {
+export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>) {
     /**
      * Настройки бота
      */
@@ -38,7 +38,7 @@ export class Bot extends EventEmitter {
     /**
      * Свойство префиксов в базе данных
      */
-    public readonly prefixesProperty: Property<'guild', string[], PrefixesPropertyAccess>;
+    public readonly prefixesProperty: Property<'guild', NonEmptyReadonly<string[]>, PrefixesPropertyAccess>;
 
     /**
      * База данных бота
@@ -52,6 +52,10 @@ export class Bot extends EventEmitter {
     constructor(readonly client: Client, options: BotOptionsArgument = {}) {
         super();
 
+        this.client.on('ready', () => {
+            console.log("logged in as " + this.username);
+        });
+
         this.options = ParseBotOptionsArgument(options);
 
         const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
@@ -61,23 +65,24 @@ export class Bot extends EventEmitter {
             }
         }
 
-        this.client.on('ready', () => {
-            console.log("logged in as " + this.username);
-        });
-
         this.database = new BotDatabase(this, this.options.database.handler);
 
-        if (this.options.database.saveOnSigint) {
-            process.once('SIGINT', async () => {
+        process.once('SIGINT', async () => {
+            if (this.options.destroyClientOnSigint) {
+                this.client.destroy();
+            }
+
+            if (this.options.database.saveOnSigint) {
                 await this.database.save();
-                console.log('Press Ctrl+C again to exit the program');
-            });
-        }
+            }
+
+            process.exit(0);
+        });
 
         this.prefixesProperty = new Property({
             key: 'prefixes',
             entityType: 'guild',
-            defaultValue: this.options.guild.defaultPrefixes as any,
+            defaultValue: this.options.guild.defaultPrefixes,
             validate: prefixes => prefixes.length > 0 && prefixes.every(validatePrefix),
             accessorClass: PrefixesPropertyAccess,
         });
@@ -99,30 +104,34 @@ export class Bot extends EventEmitter {
         });
 
         this.client.on('message', message => {
-            if (!(message.guild && message.channel.type == 'text')) return;
+            if (!isGuildMessage(message)) {
+                return;
+            }
 
-            const guildMessage = message as GuildMessage;
-
-            if (guildMessage.member.id == guildMessage.guild.me.id) {
+            if (message.member.id == message.guild.me.id) {
                 this.emit('myMessage', message);
                 return;
             }
 
-            if (guildMessage.author.bot) {
+            if (message.author.bot) {
                 this.emit('botMessage', message);
                 if (this.options.ignoreBots) return;
             }
 
-            this.handleCommands(guildMessage).then(wasCommand => {
+            this.handleCommand(message).then(wasCommand => {
                 this.emit('memberMessage', message);
-                if (wasCommand) this.emit('memberCommandMessage', message);
-                else this.emit('memberPlainMessage', message);
+                this.emit(wasCommand ? 'commandExecuted' : 'memberPlainMessage', message);
             });
+        });
+
+        this.on('commandError', (message, error) => {
+            message.channel.stopTyping(true);
+            message.reply({ embed: this.options.errorEmbed(error, message, this) });
         });
     }
 
     /**
-     * @returns юзернейм бота. Если [[Client.user]] равно `undefined`, вернёт `"bot"`
+     * @returns юзернейм бота. Если [[Client.user]] равно `undefined`, вернёт `bot`
      */
     public get username(): string {
         return this.client.user?.username ?? 'bot';
@@ -131,26 +140,13 @@ export class Bot extends EventEmitter {
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
      * @param message сообщение пользователя
-     * @returns true, если была запущена команда
+     * @returns true, если команда успешно выполнена
      */
-    public async handleCommands(message: GuildMessage): Promise<boolean> {
-        const prefixesProp = this.database.accessProperty(message.guild, this.prefixesProperty);
+    public async handleCommand(message: GuildMessage): Promise<boolean> {
+        const guildPrefixes = await this.database.accessProperty(message.guild, this.prefixesProperty).value();
 
-        let prefixes = await prefixesProp.value();
-        if (!prefixes.length) {
-            prefixes = this.options.guild.defaultPrefixes as any;
-            await prefixesProp.set(prefixes);
-        }
-
-        let prefixLength = 0;
-        for (const prefix of prefixes) {
-            if (message.cleanContent.startsWith(prefix)) {
-                prefixLength = prefix.length;
-                break;
-            }
-        }
-
-        if (!prefixLength) {
+        const prefixLength = guildPrefixes.find(p => message.cleanContent.startsWith(p))?.length ?? 0;
+        if (prefixLength <= 0) {
             return false;
         }
 
@@ -159,17 +155,23 @@ export class Bot extends EventEmitter {
             return false;
         }
 
-        await this.catchErrorReply(message, async () => {
-            const command = this.commands.get(commandName);
+        let command: AnyCommand | undefined;
+
+        try {
+            command = this.commands.get(commandName);
             if (command === undefined) {
                 if (this.options.commands.sendNotFoundError) {
                     throw new Error(`command '${commandName}' not found`);
                 }
-                return;
+                return false;
             }
 
             await command.execute(this, message);
-        });
+        }
+        catch (error: unknown) {
+            this.emit('commandError', message, error instanceof Error ? error : new Error(String(error)), command);
+            return false;
+        }
 
         if (this.options.utils.autoStopTyping) {
             message.channel.stopTyping(true);
@@ -179,46 +181,21 @@ export class Bot extends EventEmitter {
     }
 
     /**
-     * Возвращает эмбед с описанием ошибки
-     * @param error ошибка
-     */
-    public errorEmbed(error: string) {
-        return new MessageEmbed()
-            .setTitle('Произошла ошибка')
-            .setColor(0xd61111)
-            .setDescription(error);
-    }
-
-    /**
-     * Запускает функцию `tryBlock`. В блоке `catch` бот отвечает
-     * на сообщение `message` эмбедом из `errorEmbed`
-     * @param message сообщение, на которое бот ответит информацией об ошибке
-     * @param tryBlock функция в блоке try...catch
-     */
-    public async catchErrorReply(message: Message, tryBlock: () => PromiseVoid): Promise<void> {
-        try {
-            await tryBlock();
-        }
-        catch (error: unknown) {
-            const embed = this.errorEmbed(error instanceof Error ? error.message : String(error));
-            await message.reply({ embed });
-        }
-    }
-
-    /**
-     * Аналог стандартной функции client.login
+     * Аналог функции client.login c поддержкой чтения файла и переменных окружения
      * @param token токен discord api
+     * @param tokenType тип токена. `file` прочитает файл с токеном. `env` подставит значение из `process.env`
      */
-    public async login(token: string): Promise<this> {
-        await this.client.login(token);
-        return this;
-    }
+    public async login(token: string, tokenType: 'string' | 'file' | 'env' = 'string') {
+        if (tokenType == 'env') {
+            if (process.env[token] === undefined) {
+                throw new Error(`env variable '${token}' not found`);
+            }
+            token = process.env[token]!;
+        }
+        else if (tokenType == 'file') {
+            token = (await promises.readFile(token)).toString();
+        }
 
-    /**
-     * Сначала читает токен из файла, а потом использует его в методе login
-     * @param path путь до файла с токеном
-     */
-    public loginFromFile(path: PathLike) {
-        return this.login(readFileSync(path).toString());
+        await this.client.login(token);
     }
 }

@@ -1,17 +1,4 @@
-export {
-    GuildMessage,
-    GuildBotMessage,
-    Failable,
-    DeepPartial,
-    NonEmpty,
-    NonEmptyReadonly,
-    PromiseOrSync,
-    PromiseVoid,
-    InferPrimitive,
-    Primitive,
-    ValueParser,
-    WidenLiteral,
-} from "./utils";
+export * from "./utils";
 
 export { Command } from "./command/Command";
 export { CommandStorage } from "./command/Storage";
