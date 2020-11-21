@@ -1,21 +1,17 @@
 import { Guild } from "discord.js";
 import { PromiseVoid } from "../utils";
 import { BotDatabase } from "./BotDatabase";
+import { EntityType } from "./Entity";
 import { DatabaseValueStorageConstructor } from "./property/ValueStorage";
 
 /**
  * Пользовательский интерфейс базы данных
  */
-export interface BotDatabaseHandler {
+export abstract class BotDatabaseHandler {
     /**
-     * Класс хранилища значений свойств серверов
+     * @param propertyStorageClass класс хранилища значений свойств
      */
-    guildPropertyStorageClass: DatabaseValueStorageConstructor<'guild'>;
-
-    /**
-     * Класс хранилища значений свойств участников серверов
-     */
-    memberPropertyStorageClass: DatabaseValueStorageConstructor<'member'>;
+    constructor(readonly propertyStorageClass: DatabaseValueStorageConstructor<EntityType>) { }
 
     /**
      * Обработчик события `guildCreate`
@@ -64,7 +60,7 @@ export interface BotDatabaseHandler {
     saveGuild?(database: BotDatabase, guild: Guild): PromiseVoid;
 
     /**
-     * Обработчик события базы данных `loaded`
+     * Обработчик события базы данных `saved`
      * @param database база данных
      */
     onSaved?(database: BotDatabase): PromiseVoid;

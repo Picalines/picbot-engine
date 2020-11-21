@@ -107,8 +107,7 @@ export const DefaultBotOptions: BotOptions = {
     },
     database: {
         handler: new JsonDatabaseHandler({
-            rootFolderPath: '/database/',
-            guildsPath: '/guilds/',
+            databasePath: '/database/',
             jsonIndent: 0,
         }),
         saveOnSigint: true,
