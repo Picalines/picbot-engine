@@ -87,15 +87,15 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
             accessorClass: PrefixesPropertyAccess,
         });
 
-        this.database.definedProperties.add(this.prefixesProperty);
+        this.database.properties.add(this.prefixesProperty);
 
-        for (const property of this.options.database.definedProperties) {
-            this.database.definedProperties.add(property);
+        for (const property of this.options.database.properties) {
+            this.database.properties.add(property);
         }
 
         this.commands.on('added', command => {
             command.requiredProperties?.forEach(property => {
-                this.database.definedProperties.add(property);
+                this.database.properties.add(property);
             });
         });
 

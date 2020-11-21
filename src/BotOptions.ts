@@ -70,10 +70,10 @@ export type BotOptions = {
          */
         saveOnSigint: boolean;
         /**
-         * Список свойств, о существовании которых библиотека должна знать до загрузки базы данных
+         * Свойства сущностей, с которыми работает база данных
          * @default []
          */
-        definedProperties: ReadonlyArray<AnyProperty>;
+        properties: readonly AnyProperty[];
     };
     utils: {
         /**
@@ -112,7 +112,7 @@ export const DefaultBotOptions: BotOptions = {
             jsonIndent: 0,
         }),
         saveOnSigint: true,
-        definedProperties: [],
+        properties: [],
     },
     utils: {
         autoStopTyping: true,
