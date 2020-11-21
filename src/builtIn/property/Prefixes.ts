@@ -43,7 +43,7 @@ export class PrefixesPropertyAccess extends PropertyAccess<NonEmptyReadonly<stri
             return false;
         }
 
-        oldPrefixes.splice(removedIndex);
+        oldPrefixes.splice(removedIndex, 1);
 
         await this.set(oldPrefixes as any);
         return true;
