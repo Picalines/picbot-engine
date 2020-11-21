@@ -182,7 +182,7 @@ bot.client.on('событие discord.js', () => {
 
 Вот список встроенных функций для чтения аргументов (их документация раписана в `src/builtIn/reader/...`):
 
-* remainingText - читает весь оставшийся текст в сообщении (использует String.trim)
+* remainingTextReader - читает весь оставшийся текст в сообщении (использует String.trim)
 
 * memberReader - читает упоминание участника сервера
 
@@ -192,11 +192,11 @@ bot.client.on('событие discord.js', () => {
 
 * numberReader('int' | 'float', [min, max]) - возвращает функцию чтения числа
     - 'int' - строго целое число, 'float' - дробное
-    - [min, max] - интервал, в котором находится число. По стандарту он равен [-Infinity, Infinity]
+    - [min, max] - интервал, в котором находится число. По стандарту он равен `[-Infinity, Infinity]`
 
 * wordReader - читает слово (последовательность символов до пробела)
 
-* stringReader - читает строку в кавычках или опострофах
+* stringReader - читает строку в кавычках или апострофах
 
 * keywordReader(...) - читает ключевые слова.
     - keywordReader('add', 'rm') - прочитает либо `add`, либо 'rm', либо кинет ошибку
@@ -270,7 +270,7 @@ module.exports = {
 module.exports = new Command({
     name: 'vectorsum',
 
-    /* ... */
+    description: 'Пишет сумму введённых векторов',
 
     arguments: new ArgumentSequence(
         {
