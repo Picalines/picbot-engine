@@ -9,20 +9,19 @@ import { EventEmitter } from "events";
 import { Bot } from "../Bot";
 import { PropertyDefinitionStorage } from "./property/DefinitionStorage";
 import { OperatorExpressions, QueryOperators } from "./selector/Operator";
-import { filterIterable } from "../utils";
+import { filterIterable, TypedEventEmitter } from "../utils";
 
-export interface BotDatabase {
-    on(event: 'beforeSaving', listener: () => void): this;
-    on(event: 'saved', listener: () => void): this;
-    on(event: 'beforeLoading', listener: () => void): this;
-    on(event: 'loaded', listener: () => void): this;
-    on(event: string, listener: () => void): this;
+interface BotDatabaseEvents {
+    beforeSaving(): void;
+    saved(): void;
+    beforeLoading(): void;
+    loaded(): void;
 }
 
 /**
  * Класс базы данных бота
  */
-export class BotDatabase extends EventEmitter {
+export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<BotDatabaseEvents>) {
     /**
      * Хранит свойства, которые использовала база данных
      */
