@@ -4,7 +4,7 @@ import { promises } from "fs";
 import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/BotDatabase";
-import { GuildBotMessage, GuildMessage, TypedEventEmitter } from "./utils";
+import { GuildMessage, isGuildMessage, TypedEventEmitter } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
 import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
 import { Property } from "./database/property/Property";
@@ -14,8 +14,8 @@ interface BotEvents {
     memberMessage(message: GuildMessage): void;
     memberPlainMessage(message: GuildMessage): void;
 
-    botMessage(message: GuildBotMessage): void;
-    myMessage(message: GuildBotMessage): void;
+    botMessage(message: GuildMessage): void;
+    myMessage(message: GuildMessage): void;
 
     commandError(message: GuildMessage, error: Error, command?: AnyCommand): void;
     commandExecuted(message: GuildMessage): void;
@@ -104,23 +104,23 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
         });
 
         this.client.on('message', message => {
-            if (!(message.guild && message.channel.type == 'text')) return;
-
-            const guildMessage = message as GuildMessage;
-
-            if (guildMessage.member.id == guildMessage.guild.me.id) {
-                this.emit('myMessage', message as GuildBotMessage);
+            if (!isGuildMessage(message)) {
                 return;
             }
 
-            if (guildMessage.author.bot) {
-                this.emit('botMessage', message as GuildBotMessage);
+            if (message.member.id == message.guild.me.id) {
+                this.emit('myMessage', message);
+                return;
+            }
+
+            if (message.author.bot) {
+                this.emit('botMessage', message);
                 if (this.options.ignoreBots) return;
             }
 
-            this.handleCommand(guildMessage).then(wasCommand => {
-                this.emit('memberMessage', guildMessage);
-                this.emit(wasCommand ? 'commandExecuted' : 'memberPlainMessage', guildMessage);
+            this.handleCommand(message).then(wasCommand => {
+                this.emit('memberMessage', message);
+                this.emit(wasCommand ? 'commandExecuted' : 'memberPlainMessage', message);
             });
         });
 
