@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
 import { BotDatabaseHandler } from "../../../database/Handler";
-import { join, resolve } from "path";
+import { join } from "path";
 import { Guild } from "discord.js";
 import { JsonDatabaseValueStorage } from "./ValueStorage";
 import { BotDatabase } from "../../../database/BotDatabase";
