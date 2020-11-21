@@ -52,6 +52,10 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     constructor(readonly client: Client, options: BotOptionsArgument = {}) {
         super();
 
+        this.client.on('ready', () => {
+            console.log("logged in as " + this.username);
+        });
+
         this.options = ParseBotOptionsArgument(options);
 
         const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
@@ -61,18 +65,19 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
             }
         }
 
-        this.client.on('ready', () => {
-            console.log("logged in as " + this.username);
-        });
-
         this.database = new BotDatabase(this, this.options.database.handler);
 
-        if (this.options.database.saveOnSigint) {
-            process.once('SIGINT', async () => {
+        process.once('SIGINT', async () => {
+            if (this.options.destroyClientOnSigint) {
+                this.client.destroy();
+            }
+
+            if (this.options.database.saveOnSigint) {
                 await this.database.save();
-                console.log('press ctrl+c again to exit');
-            });
-        }
+            }
+
+            process.exit(0);
+        });
 
         this.prefixesProperty = new Property({
             key: 'prefixes',

@@ -19,6 +19,11 @@ export type BotOptions = {
      */
     errorEmbed: (error: Error, message: GuildMessage, bot: Bot) => MessageEmbed;
     /**
+     * Вызывать ли `client.destroy` при событии `process.SIGINT`
+     * @default true
+     */
+    destroyClientOnSigint: boolean;
+    /**
      * Настройки команд бота
      */
     commands: {
@@ -85,6 +90,7 @@ export type BotOptions = {
 export const DefaultBotOptions: BotOptions = {
     ignoreBots: true,
     errorEmbed: error => new MessageEmbed({ color: 0xd61111, description: `:anger: ${error.message}` }),
+    destroyClientOnSigint: true,
     commands: {
         builtIn: {
             help: true,
