@@ -189,10 +189,11 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     }
 
     /**
-     * Аналог стандартной функции client.login
+     * Аналог функции client.login c поддержкой чтения файла и переменных окружения
      * @param token токен discord api
+     * @param tokenType тип токена. `file` прочитает файл с токеном. `env` подставит значение из `process.env`
      */
-    public async login(token: string, tokenType: 'string' | 'safeString' | 'file' | 'env' = 'string') {
+    public async login(token: string, tokenType: 'string' | 'file' | 'env' = 'string') {
         if (tokenType == 'env') {
             if (process.env[token] === undefined) {
                 throw new Error(`env variable '${token}' not found`);
@@ -204,9 +205,5 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
         }
 
         await this.client.login(token);
-
-        if (tokenType == 'string') {
-            console.warn("WARNING: a possible hardcoded token is used. Be careful before saving code to the source control! (use 'safeString' if intended)");
-        }
     }
 }
