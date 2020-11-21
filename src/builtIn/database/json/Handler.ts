@@ -63,7 +63,7 @@ export class JsonDatabaseHandler implements BotDatabaseHandler {
         }
 
         const setPropsObject = async <E extends EntityType>(entityType: E, entity: Entity<E>, obj: any) => {
-            const properties = database.definedProperties.list(entityType).filter(p => p.key in obj);
+            const properties = database.properties.list(entityType).filter(p => p.key in obj);
             await Promise.all(properties.map(p => database.accessProperty(entity, p).set(obj[p.key])));
         }
 
@@ -102,10 +102,10 @@ export class JsonDatabaseHandler implements BotDatabaseHandler {
             }
         }
 
-        const guildDefinedProps = database.definedProperties.list('guild');
+        const guildDefinedProps = database.properties.list('guild');
         await saveValues('guild', guildDefinedProps, guild);
 
-        const memberDefinedProps = database.definedProperties.list('member');
+        const memberDefinedProps = database.properties.list('member');
         const { cache: members } = guild.members;
         await Promise.all(members.map(member => saveValues('member', memberDefinedProps, member)));
 

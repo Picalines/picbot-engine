@@ -26,7 +26,7 @@ export class BotDatabase extends EventEmitter {
     /**
      * Хранит свойства, которые использовала база данных
      */
-    public readonly definedProperties = new PropertyDefinitionStorage();
+    public readonly properties = new PropertyDefinitionStorage();
 
     #guildsStorage: DatabaseValueStorage<'guild'>;
     #memberStorages: Map<string, DatabaseValueStorage<'member'>>;
@@ -66,7 +66,7 @@ export class BotDatabase extends EventEmitter {
      * @param property свойство сущности
      */
     public accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
-        if (!this.definedProperties.has(property.key)) {
+        if (!this.properties.has(property.key)) {
             throw new Error(`can't acces undefined ${property.entityType} property with key '${property.key}'`);
         }
 
