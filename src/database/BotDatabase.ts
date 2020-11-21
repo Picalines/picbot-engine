@@ -36,7 +36,7 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
     ) {
         super();
 
-        this.#guildsStorage = new this.handler.guildPropertyStorageClass(this, 'guild');
+        this.#guildsStorage = new this.handler.propertyStorageClass(this, 'guild') as any;
         this.#memberStorages = new Map();
 
         this.on('loaded', async () => await this.handler.onLoaded?.(this));
@@ -88,7 +88,7 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
                 }
 
                 if (!storage) {
-                    storage = new this.handler.memberPropertyStorageClass(this, 'member') as ValueStorage;
+                    storage = new this.handler.propertyStorageClass(this, 'member') as ValueStorage;
                     this.#memberStorages.set((entity as GuildMember).guild.id, storage as DatabaseValueStorage<'member'>);
                 }
 
@@ -128,7 +128,7 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
             const { guild } = options.manager as GuildMemberManager;
             storage = this.#memberStorages.get(guild.id) as DatabaseValueStorage<E>;
             if (!storage) {
-                storage = new this.handler.memberPropertyStorageClass(this, 'member') as DatabaseValueStorage<E>;
+                storage = new this.handler.propertyStorageClass(this, 'member') as DatabaseValueStorage<E>;
                 this.#memberStorages.set(guild.id, storage as DatabaseValueStorage<'member'>);
             }
         }

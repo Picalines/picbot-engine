@@ -12,11 +12,7 @@ interface JsonHandlerOptions {
     /**
      * Путь до папки базы данных бота
      */
-    rootFolderPath: string,
-    /**
-     * Путь до папки с данными серверов в папке базы данных бота
-     */
-    guildsPath: string,
+    databasePath: string,
     /**
      * Количество отступов в json файлах
      * @default 0
@@ -27,22 +23,18 @@ interface JsonHandlerOptions {
 /**
  * Обработчик json базы данных
  */
-export class JsonDatabaseHandler implements BotDatabaseHandler {
+export class JsonDatabaseHandler extends BotDatabaseHandler {
     /**
      * Путь до папки с данными серверов в папке базы данных бота
      */
-    readonly guildsPath: string;
-
-    readonly guildPropertyStorageClass = JsonDatabaseValueStorage as any;
-    readonly memberPropertyStorageClass = JsonDatabaseValueStorage as any;
+    private readonly guildsPath: string;
 
     /**
      * @param options настройки базы данных
      */
-    constructor(
-        public readonly options: JsonHandlerOptions
-    ) {
-        this.guildsPath = resolve(join('.', options.rootFolderPath, options.guildsPath));
+    constructor(readonly options: JsonHandlerOptions) {
+        super(JsonDatabaseValueStorage);
+        this.guildsPath = './' + join(options.databasePath, 'guilds/');
     }
 
     prepareForLoading() { mkdirSync(this.guildsPath, { recursive: true }); }
