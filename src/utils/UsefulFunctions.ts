@@ -1,4 +1,12 @@
 /**
+ * @returns true, если строка не пустая и не содержит пробелов
+ * @param string строка
+ */
+export function validateIdentifier(string: string): boolean {
+    return string.length > 0 && !string.includes(' ');
+}
+
+/**
  * Является ли объект литералом (скорее всего)
  * @param obj объект
  */
