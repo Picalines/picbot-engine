@@ -1,5 +1,7 @@
 export * from "./utils";
 
+export * from "./Logger";
+
 export { Command } from "./command/Command";
 export { CommandStorage } from "./command/Storage";
 export { CommandContext } from "./command/Context";
