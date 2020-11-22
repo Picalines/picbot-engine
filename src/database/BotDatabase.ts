@@ -152,18 +152,18 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
      * @emits loaded
      */
     public async load(): Promise<void> {
-        console.log(`loading ${this.bot.username}'s database...`);
+        this.bot.logger.task(`loading ${this.bot.username}'s database...`);
 
         this.emit('beforeLoading');
 
         if (this.handler.prepareForLoading) {
-            console.log('* preparing...');
+            this.bot.logger.task('preparing...');
             await this.handler.prepareForLoading(this);
-            console.log('- prepared successfully');
+            this.bot.logger.endTask('success', 'prepared successfully');
         }
 
         if (this.handler.loadGuild) {
-            console.log('* loading guilds...');
+            this.bot.logger.task('loading guilds...');
 
             const guildsToLoad = this.bot.client.guilds.cache.map(g => g.id);
 
@@ -174,13 +174,13 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
             };
 
             for await (const guild of guildsToLoad.map(getLoadingPromise)) {
-                console.log(`- guild '${guild.name}' successfully loaded`);
+                this.bot.logger.log(guild.name);
             }
 
-            console.log('- guilds successfully loaded')
+            this.bot.logger.endTask('success', 'guilds successfully loaded')
         }
 
-        console.log(`${this.bot.username}'s database successfully loaded`);
+        this.bot.logger.endTask('success', `${this.bot.username}'s database successfully loaded`);
 
         this.emit('loaded');
     }
@@ -191,18 +191,18 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
      * @emits saved
      */
     public async save(): Promise<void> {
-        console.log(`saving ${this.bot.username}'s database...`);
+        this.bot.logger.task(`saving ${this.bot.username}'s database...`);
 
         this.emit('beforeSaving');
 
         if (this.handler.prepareForSaving) {
-            console.log('* preparing...');
+            this.bot.logger.task('preparing...');
             await this.handler.prepareForSaving(this);
-            console.log('- prepared successfully');
+            this.bot.logger.endTask('success', 'prepared successfully');
         }
 
         if (this.handler.saveGuild) {
-            console.log('* saving guilds...');
+            this.bot.logger.task('saving guilds...');
 
             const { cache: guildsToSave } = this.bot.client.guilds;
 
@@ -212,13 +212,13 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
             }
 
             for await (const guild of guildsToSave.map(getSavingPromise)) {
-                console.log(`- guild '${guild.name}' successfully saved`);
+                this.bot.logger.log(guild.name);
             }
 
-            console.log('- guilds successfully saved');
+            this.bot.logger.endTask('success', 'guilds successfully saved');
         }
 
-        console.log(`${this.bot.username}'s database successfully saved`);
+        this.bot.logger.endTask('success', `${this.bot.username}'s database successfully saved`);
 
         this.emit('saved');
     }

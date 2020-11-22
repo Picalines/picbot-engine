@@ -25,3 +25,4 @@ export * from "./builtIn/reader";
 export * from "./builtIn/command";
 export * from "./builtIn/database";
 export * from "./builtIn/property";
+export * from "./builtIn/loggerTheme";

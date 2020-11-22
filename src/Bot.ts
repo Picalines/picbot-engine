@@ -9,6 +9,7 @@ import * as BuiltInCommands from "./builtIn/command";
 import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
 import { Property } from "./database/property/Property";
 import { AnyCommand } from "./command/Command";
+import { Logger } from "./Logger";
 
 interface BotEvents {
     memberMessage(message: GuildMessage): void;
@@ -33,7 +34,7 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     /**
      * Хранилище команд бота
      */
-    public readonly commands = new CommandStorage();
+    public readonly commands: CommandStorage;
 
     /**
      * Свойство префиксов в базе данных
@@ -46,17 +47,26 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     public readonly database: BotDatabase;
 
     /**
+     * Логгер
+     */
+    public readonly logger: Logger;
+
+    /**
      * @param client Клиент API discord.js
      * @param options настройки бота
      */
     constructor(readonly client: Client, options: BotOptionsArgument = {}) {
         super();
 
+        this.options = ParseBotOptionsArgument(options);
+
+        this.logger = new Logger(this.options.loggerOptions);
+
         this.client.on('ready', () => {
-            console.log("logged in as " + this.username);
+            this.logger.endTask('success', 'logged in as ' + this.username);
         });
 
-        this.options = ParseBotOptionsArgument(options);
+        this.commands = new CommandStorage(this);
 
         const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
         for (const builtInCommand of Object.values(BuiltInCommands)) {
@@ -186,6 +196,8 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
      * @param tokenType тип токена. `file` прочитает файл с токеном. `env` подставит значение из `process.env`
      */
     public async login(token: string, tokenType: 'string' | 'file' | 'env' = 'string') {
+        this.logger.task('logging in Discord...');
+
         if (tokenType == 'env') {
             if (process.env[token] === undefined) {
                 throw new Error(`env variable '${token}' not found`);
@@ -196,6 +208,11 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
             token = (await promises.readFile(token)).toString();
         }
 
-        await this.client.login(token);
+        try {
+            await this.client.login(token);
+        }
+        catch (error: unknown) {
+            this.logger.endTask('error', `could not log in: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
 }

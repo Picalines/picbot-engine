@@ -4,6 +4,8 @@ import { JsonDatabaseHandler } from "./builtIn/database";
 import { AnyProperty } from "./database/property/Property";
 import { MessageEmbed } from "discord.js";
 import { Bot } from "./Bot";
+import { LoggerOptions } from "./Logger";
+import { pipeLoggerTheme } from "./builtIn/loggerTheme/Pipe";
 
 /**
  * Объект с настройками бота
@@ -82,6 +84,10 @@ export type BotOptions = {
          */
         autoStopTyping: boolean;
     };
+    /**
+     * Настройки логгера
+     */
+    loggerOptions: Partial<LoggerOptions>;
 };
 
 /**
@@ -115,6 +121,11 @@ export const DefaultBotOptions: BotOptions = {
     },
     utils: {
         autoStopTyping: true,
+    },
+    loggerOptions: {
+        hideInConsole: false,
+        ignoreWarnings: false,
+        consoleTheme: pipeLoggerTheme,
     },
 };
 
