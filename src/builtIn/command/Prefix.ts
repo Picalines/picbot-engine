@@ -29,37 +29,41 @@ export const prefixCommand = new Command({
     ],
 
     execute: async ({ message, bot, args: [operation, prefix] }) => {
-        const prefixes = bot.database.accessProperty(message.guild, bot.prefixesProperty);
+        /**
+         * Will be removed in the near future
+         */
 
-        if (operation == 'list') {
-            const strList = (await prefixes.value()).map(p => `\`${p}\``).join(', ');
-            await message.reply(`список моих префиксов на этом сервере: ${strList}`);
-            return;
-        }
+        // const prefixes = bot.database.accessProperty(message.guild, bot.prefixesProperty);
 
-        if (!prefix) {
-            throw new Error(`для операции ${operation} необходимо указать префикс`);
-        }
+        // if (operation == 'list') {
+        //     const strList = (await prefixes.value()).map(p => `\`${p}\``).join(', ');
+        //     await message.reply(`список моих префиксов на этом сервере: ${strList}`);
+        //     return;
+        // }
 
-        switch (operation) {
-            default:
-                throw new Error(`unsupported prefix operation '${operation}'`);
-            case 'add':
-                if (await prefixes.add(prefix)) {
-                    await message.reply(`новый префикс команд: \`${prefix}\``);
-                }
-                else {
-                    await message.reply(`невозможно добавить такой префикс`);
-                }
-                break;
-            case 'rm':
-                if (await prefixes.remove(prefix)) {
-                    await message.reply(`префикс \`${prefix}\` успешно удалён из списка`);
-                }
-                else {
-                    await message.reply(`невозможно удалить такой префикс`);
-                }
-                break;
-        }
+        // if (!prefix) {
+        //     throw new Error(`для операции ${operation} необходимо указать префикс`);
+        // }
+
+        // switch (operation) {
+        //     default:
+        //         throw new Error(`unsupported prefix operation '${operation}'`);
+        //     case 'add':
+        //         if (await prefixes.add(prefix)) {
+        //             await message.reply(`новый префикс команд: \`${prefix}\``);
+        //         }
+        //         else {
+        //             await message.reply(`невозможно добавить такой префикс`);
+        //         }
+        //         break;
+        //     case 'rm':
+        //         if (await prefixes.remove(prefix)) {
+        //             await message.reply(`префикс \`${prefix}\` успешно удалён из списка`);
+        //         }
+        //         else {
+        //             await message.reply(`невозможно удалить такой префикс`);
+        //         }
+        //         break;
+        // }
     }
 });

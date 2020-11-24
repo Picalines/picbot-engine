@@ -4,13 +4,12 @@ import { promises } from "fs";
 import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/BotDatabase";
-import { deepMerge, GuildMessage, isGuildMessage, NonEmptyReadonly, TypedEventEmitter } from "./utils";
+import { deepMerge, GuildMessage, isGuildMessage, TypedEventEmitter } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
-import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
-import { Property } from "./database/property/Property";
 import { AnyCommand } from "./command/Command";
 import { Logger } from "./Logger";
 import { CommandContext } from "./command/Context";
+import { AnyProperty, Property } from "./database/property/Property";
 
 interface BotEvents {
     guildMemberMessage(message: GuildMessage): void;
@@ -36,11 +35,6 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     public readonly commands: CommandStorage;
 
     /**
-     * Свойство префиксов в базе данных
-     */
-    public readonly prefixesProperty: Property<'guild', NonEmptyReadonly<string[]>, PrefixesPropertyAccess>;
-
-    /**
      * База данных бота
      */
     public readonly database: BotDatabase;
@@ -57,7 +51,7 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     constructor(readonly client: Client, options: BotOptionsArgument = {}) {
         super();
 
-        this.options = deepMerge(DefaultBotOptions, options as any);
+        this.options = this.parseOptionsArgument(options);
 
         this.logger = new Logger(this.options.loggerOptions);
 
@@ -87,16 +81,6 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
 
             process.exit(0);
         });
-
-        this.prefixesProperty = new Property({
-            key: 'prefixes',
-            entityType: 'guild',
-            defaultValue: this.options.guild.defaultPrefixes,
-            validate: prefixes => prefixes.length > 0 && prefixes.every(validatePrefix),
-            accessorClass: PrefixesPropertyAccess,
-        });
-
-        this.database.properties.add(this.prefixesProperty);
 
         for (const property of this.options.database.properties) {
             this.database.properties.add(property);
@@ -141,15 +125,21 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
             }
         }
 
-        const guildPrefixes = await this.database.accessProperty(message.guild, this.prefixesProperty).value();
+        const guildPrefixes = await this.options.fetchPrefixes(this, message.guild);
+        if (!guildPrefixes.length) {
+            this.logger.warning(`empty guild prefixes array ('${message.guild.name}', ${message.guild.id})`);
+            return;
+        }
 
-        const prefixLength = guildPrefixes.find(p => message.cleanContent.startsWith(p))?.length ?? 0;
+        const lowerCaseContent = message.content.toLowerCase();
+
+        const prefixLength = guildPrefixes.find(p => lowerCaseContent.startsWith(p))?.length ?? 0;
         if (prefixLength <= 0) {
             this.emit('guildMemberMessage', message);
             return;
         }
 
-        const commandName = message.cleanContent.slice(prefixLength).toLowerCase().replace(/\s.*$/, '');
+        const commandName = lowerCaseContent.slice(prefixLength).replace(/\s.*$/, '');
         if (!commandName) {
             this.emit('guildMemberMessage', message);
             return;
@@ -202,5 +192,39 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
         catch (error: unknown) {
             this.logger.endTask('error', `could not log in: ${error instanceof Error ? error.message : String(error)}`);
         }
+    }
+
+    /**
+     * Выносит логику превращения настроек бота
+     * @param options аргумент настроек
+     */
+    private parseOptionsArgument(options: BotOptionsArgument): BotOptions {
+        let { fetchPrefixes } = options;
+
+        if (fetchPrefixes instanceof Array) {
+            const prefixes = fetchPrefixes as string[];
+
+            fetchPrefixes = () => prefixes;
+        }
+        else if (fetchPrefixes instanceof Property) {
+            const prefixes = fetchPrefixes;
+
+            fetchPrefixes = (bot, guild) => bot.database.accessProperty(guild, prefixes).value();
+
+            if (!options.database) {
+                options.database = {};
+            }
+            if (options.database.properties) {
+                (options.database.properties as AnyProperty[]).push(prefixes)
+            }
+            else {
+                options.database.properties = [prefixes];
+            }
+        }
+
+        return deepMerge(DefaultBotOptions, {
+            ...options as any,
+            fetchPrefixes,
+        });
     }
 }

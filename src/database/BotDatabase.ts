@@ -66,7 +66,7 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
      */
     public accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
         if (!this.properties.has(property.key)) {
-            throw new Error(`can't acces undefined ${property.entityType} property with key '${property.key}'`);
+            throw new Error(`${property.entityType} property with key '${property.key}' is not defined`);
         }
 
         type ValueStorage = DatabaseValueStorage<E>;

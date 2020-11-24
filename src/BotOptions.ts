@@ -1,9 +1,11 @@
-import { DeepPartial, NonEmptyReadonly } from "./utils";
+import { DeepPartial, NonEmptyReadonly, Overwrite, PromiseOrSync } from "./utils";
 import { BotDatabaseHandler } from "./database/Handler";
 import { JsonDatabaseHandler } from "./builtIn/database";
-import { AnyProperty } from "./database/property/Property";
+import { AnyProperty, Property } from "./database/property/Property";
 import { LoggerOptions } from "./Logger";
 import { pipeLoggerTheme } from "./builtIn/loggerTheme/Pipe";
+import { Bot } from "./Bot";
+import { Guild } from "discord.js";
 
 /**
  * Объект с настройками бота
@@ -14,6 +16,11 @@ export type BotOptions = {
      * @default false
      */
     canBotsRunCommands: boolean;
+    /**
+     * Функция, возвращающая список префиксов бота на сервере
+     * @default () => ['!']
+     */
+    fetchPrefixes: (bot: Bot, guild: Guild) => PromiseOrSync<string[]>;
     /**
      * Вызывать ли `client.destroy` при событии `process.SIGINT`
      * @default true
@@ -35,16 +42,6 @@ export type BotOptions = {
             prefix: boolean;
             avatar: boolean;
         };
-    };
-    /**
-     * Настройки серверов
-     */
-    guild: {
-        /**
-         * Стандартные префиксы бота
-         * @default ['!']
-         */
-        defaultPrefixes: NonEmptyReadonly<string[]>;
     };
     /**
      * Настройки базы данных
@@ -78,6 +75,7 @@ export type BotOptions = {
 export const DefaultBotOptions: BotOptions = {
     canBotsRunCommands: false,
     destroyClientOnSigint: true,
+    fetchPrefixes: () => ['!'],
     commands: {
         builtIn: {
             help: true,
@@ -87,9 +85,6 @@ export const DefaultBotOptions: BotOptions = {
             prefix: true,
             avatar: true,
         },
-    },
-    guild: {
-        defaultPrefixes: ['!'],
     },
     database: {
         handler: new JsonDatabaseHandler({
@@ -110,6 +105,13 @@ export const DefaultBotOptions: BotOptions = {
  * Аргумент настроек бота в его конструкторе
  * @ignore
  */
-export type BotOptionsArgument = DeepPartial<Omit<BotOptions, 'database'>> & {
-    database?: Partial<BotOptions['database']>
-};
+export type BotOptionsArgument = Overwrite<DeepPartial<Omit<BotOptions, 'database'>>, Partial<{
+    /**
+     * Список стандартных префиксов / свойство префиксов в базе данных / функция, возвращающая список префиксов на сервере
+     */
+    fetchPrefixes: NonEmptyReadonly<string[]> | Property<'guild', string[]> | BotOptions['fetchPrefixes'];
+    /**
+     * Настройки базы данных бота
+     */
+    database: Partial<BotOptions['database']>;
+}>>;
