@@ -1,8 +1,7 @@
-import { deepMerge, DeepPartial, NonEmptyReadonly } from "./utils";
+import { DeepPartial, NonEmptyReadonly } from "./utils";
 import { BotDatabaseHandler } from "./database/Handler";
 import { JsonDatabaseHandler } from "./builtIn/database";
 import { AnyProperty } from "./database/property/Property";
-import { MessageEmbed } from "discord.js";
 import { LoggerOptions } from "./Logger";
 import { pipeLoggerTheme } from "./builtIn/loggerTheme/Pipe";
 
@@ -11,10 +10,10 @@ import { pipeLoggerTheme } from "./builtIn/loggerTheme/Pipe";
  */
 export type BotOptions = {
     /**
-     * Игнорировать ли сообщения других ботов
-     * @default true
+     * Могут ли другие боты использовать команды
+     * @default false
      */
-    ignoreBots: boolean;
+    canBotsRunCommands: boolean;
     /**
      * Вызывать ли `client.destroy` при событии `process.SIGINT`
      * @default true
@@ -36,11 +35,6 @@ export type BotOptions = {
             prefix: boolean;
             avatar: boolean;
         };
-        /**
-         * Отсылать ли сообщение о ненайденной команде
-         * @default false
-         */
-        sendNotFoundError: boolean;
     };
     /**
      * Настройки серверов
@@ -72,13 +66,6 @@ export type BotOptions = {
          */
         properties: readonly AnyProperty[];
     };
-    utils: {
-        /**
-         * Если true, бот автоматически перестаёт печатать после завершения работы команды
-         * @default true
-         */
-        autoStopTyping: boolean;
-    };
     /**
      * Настройки логгера
      */
@@ -89,7 +76,7 @@ export type BotOptions = {
  * Стандартные настройки бота
  */
 export const DefaultBotOptions: BotOptions = {
-    ignoreBots: true,
+    canBotsRunCommands: false,
     destroyClientOnSigint: true,
     commands: {
         builtIn: {
@@ -100,7 +87,6 @@ export const DefaultBotOptions: BotOptions = {
             prefix: true,
             avatar: true,
         },
-        sendNotFoundError: false,
     },
     guild: {
         defaultPrefixes: ['!'],
@@ -112,9 +98,6 @@ export const DefaultBotOptions: BotOptions = {
         }),
         saveOnSigint: true,
         properties: [],
-    },
-    utils: {
-        autoStopTyping: true,
     },
     loggerOptions: {
         hideInConsole: false,
@@ -130,11 +113,3 @@ export const DefaultBotOptions: BotOptions = {
 export type BotOptionsArgument = DeepPartial<Omit<BotOptions, 'database'>> & {
     database?: Partial<BotOptions['database']>
 };
-
-/**
- * Вспомогательная функция для перевода [[BotOptionsArgument]] в [[BotOptions]]
- * @ignore
- */
-export function ParseBotOptionsArgument(optionsArg: BotOptionsArgument): BotOptions {
-    return deepMerge(DefaultBotOptions, optionsArg as any);
-}

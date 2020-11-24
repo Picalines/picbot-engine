@@ -1,25 +1,24 @@
 import { Client } from "discord.js";
 import { EventEmitter } from "events";
 import { promises } from "fs";
-import { BotOptions, BotOptionsArgument, ParseBotOptionsArgument } from "./BotOptions";
+import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/BotDatabase";
-import { GuildMessage, isGuildMessage, NonEmptyReadonly, TypedEventEmitter } from "./utils";
+import { deepMerge, GuildMessage, isGuildMessage, NonEmptyReadonly, TypedEventEmitter } from "./utils";
 import * as BuiltInCommands from "./builtIn/command";
 import { PrefixesPropertyAccess, validatePrefix } from "./builtIn/property/Prefixes";
 import { Property } from "./database/property/Property";
 import { AnyCommand } from "./command/Command";
 import { Logger } from "./Logger";
+import { CommandContext } from "./command/Context";
 
 interface BotEvents {
-    memberMessage(message: GuildMessage): void;
-    memberPlainMessage(message: GuildMessage): void;
+    guildMemberMessage(message: GuildMessage): void;
+    guildMyMessage(message: GuildMessage): void;
 
-    botMessage(message: GuildMessage): void;
-    myMessage(message: GuildMessage): void;
-
-    commandError(message: GuildMessage, error: Error, command?: AnyCommand): void;
-    commandExecuted(message: GuildMessage): void;
+    commandNotFound(message: GuildMessage, wrongName: string): void;
+    commandError(message: GuildMessage, error: Error): void;
+    commandExecuted<Args extends unknown[]>(context: CommandContext<Args>): void;
 }
 
 /**
@@ -58,7 +57,7 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     constructor(readonly client: Client, options: BotOptionsArgument = {}) {
         super();
 
-        this.options = ParseBotOptionsArgument(options);
+        this.options = deepMerge(DefaultBotOptions, options as any);
 
         this.logger = new Logger(this.options.loggerOptions);
 
@@ -114,28 +113,9 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
         });
 
         this.client.on('message', message => {
-            if (!isGuildMessage(message)) {
-                return;
+            if (isGuildMessage(message)) {
+                this.handleGuildMessage(message);
             }
-
-            if (message.member.id == message.guild.me.id) {
-                this.emit('myMessage', message);
-                return;
-            }
-
-            if (message.author.bot) {
-                this.emit('botMessage', message);
-                if (this.options.ignoreBots) return;
-            }
-
-            this.handleCommand(message).then(wasCommand => {
-                this.emit('memberMessage', message);
-                this.emit(wasCommand ? 'commandExecuted' : 'memberPlainMessage', message);
-            });
-        });
-
-        this.on('commandError', message => {
-            message.channel.stopTyping(true);
         });
     }
 
@@ -149,44 +129,53 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     /**
      * Обрабатывает команду в сообщении, если оно начинается с префикса команд
      * @param message сообщение пользователя
-     * @returns true, если команда успешно выполнена
      */
-    public async handleCommand(message: GuildMessage): Promise<boolean> {
+    private async handleGuildMessage(message: GuildMessage): Promise<void> {
+        if (message.author.bot) {
+            if (message.member.id == message.guild.me.id) {
+                this.emit('guildMyMessage', message);
+                return;
+            }
+            if (!this.options.canBotsRunCommands) {
+                return;
+            }
+        }
+
         const guildPrefixes = await this.database.accessProperty(message.guild, this.prefixesProperty).value();
 
         const prefixLength = guildPrefixes.find(p => message.cleanContent.startsWith(p))?.length ?? 0;
         if (prefixLength <= 0) {
-            return false;
+            this.emit('guildMemberMessage', message);
+            return;
         }
 
         const commandName = message.cleanContent.slice(prefixLength).toLowerCase().replace(/\s.*$/, '');
         if (!commandName) {
-            return false;
+            this.emit('guildMemberMessage', message);
+            return;
         }
 
-        let command: AnyCommand | undefined;
+        const command = this.commands.get(commandName);
+        if (!command) {
+            this.emit('commandNotFound', message, commandName);
+            return;
+        }
+
+        let context: CommandContext<unknown[]>;
 
         try {
-            command = this.commands.get(commandName);
-            if (command === undefined) {
-                if (this.options.commands.sendNotFoundError) {
-                    throw new Error(`command '${commandName}' not found`);
-                }
-                return false;
-            }
-
-            await command.execute(this, message);
+            context = await command.execute(this, message);
         }
         catch (error: unknown) {
-            this.emit('commandError', message, error instanceof Error ? error : new Error(String(error)), command);
-            return false;
+            this.emit('commandError', message, error instanceof Error ? error : new Error(String(error)));
+            return;
         }
-
-        if (this.options.utils.autoStopTyping) {
+        finally {
             message.channel.stopTyping(true);
         }
 
-        return true;
+        this.emit('commandExecuted', context);
+        return;
     }
 
     /**

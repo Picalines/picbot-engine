@@ -4,7 +4,7 @@ import { Command } from "./Command";
 import { Bot } from "../Bot";
 
 /**
- * Контекст выполнения запущенной
+ * Контекст выполнения запущенной команды
  */
 export class CommandContext<Args extends unknown[]> {
     /**

@@ -110,9 +110,10 @@ export class Command<Args extends unknown[]> {
 
     /**
      * Запускает команду
-     * @param context контекст команды
+     * @param bot ссылка на бота
+     * @param message сообщение, которое запускает команду
      */
-    async execute(bot: Bot, message: GuildMessage): Promise<void> {
+    async execute(bot: Bot, message: GuildMessage): Promise<CommandContext<Args>> {
         const missingPermissions = message.member.permissions.missing(this.permissions.bitfield);
         if (missingPermissions.length) {
             throw new Error(`not enough permissions`);
@@ -120,6 +121,8 @@ export class Command<Args extends unknown[]> {
 
         const context = new CommandContext(this, bot, message);
         await this.executeable.call(this, context);
+
+        return context;
     }
 
     /**
