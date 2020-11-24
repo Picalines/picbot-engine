@@ -10,7 +10,7 @@
     "scripts": {
         "test": "jest --verbose",
         "build": "tsc",
-        "dev": "rm ./dist/ -r && npm run build && npm link",
+        "dev": "rm ./dist/ -r && npm link",
         "docs": "typedoc --options typedoc.json",
         "prepublishOnly": "npm run test",
         "prepare": "npm run build"
