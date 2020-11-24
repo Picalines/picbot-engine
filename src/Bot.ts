@@ -134,9 +134,8 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
             });
         });
 
-        this.on('commandError', (message, error) => {
+        this.on('commandError', message => {
             message.channel.stopTyping(true);
-            message.reply({ embed: this.options.errorEmbed(error, message, this) });
         });
     }
 

@@ -1,9 +1,8 @@
-import { deepMerge, DeepPartial, GuildMessage, NonEmptyReadonly } from "./utils";
+import { deepMerge, DeepPartial, NonEmptyReadonly } from "./utils";
 import { BotDatabaseHandler } from "./database/Handler";
 import { JsonDatabaseHandler } from "./builtIn/database";
 import { AnyProperty } from "./database/property/Property";
 import { MessageEmbed } from "discord.js";
-import { Bot } from "./Bot";
 import { LoggerOptions } from "./Logger";
 import { pipeLoggerTheme } from "./builtIn/loggerTheme/Pipe";
 
@@ -16,10 +15,6 @@ export type BotOptions = {
      * @default true
      */
     ignoreBots: boolean;
-    /**
-     * Функция, создающая эмбед с ошибкой
-     */
-    errorEmbed: (error: Error, message: GuildMessage, bot: Bot) => MessageEmbed;
     /**
      * Вызывать ли `client.destroy` при событии `process.SIGINT`
      * @default true
@@ -95,7 +90,6 @@ export type BotOptions = {
  */
 export const DefaultBotOptions: BotOptions = {
     ignoreBots: true,
-    errorEmbed: error => new MessageEmbed({ color: 0xd61111, description: `:anger: ${error.message}` }),
     destroyClientOnSigint: true,
     commands: {
         builtIn: {
