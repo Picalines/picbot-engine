@@ -5,8 +5,6 @@ import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./BotOptions"
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/BotDatabase";
 import { deepMerge, GuildMessage, isGuildMessage, TypedEventEmitter } from "./utils";
-import * as BuiltInCommands from "./builtIn/command";
-import { AnyCommand } from "./command/Command";
 import { Logger } from "./Logger";
 import { CommandContext } from "./command/Context";
 import { AnyProperty, Property } from "./database/property/Property";
@@ -55,18 +53,7 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
 
         this.logger = new Logger(this.options.loggerOptions);
 
-        this.client.on('ready', () => {
-            this.logger.endTask('success', 'logged in as ' + this.username);
-        });
-
         this.commands = new CommandStorage(this);
-
-        const builtInCommandsSetting = this.options.commands.builtIn as Record<string, boolean>;
-        for (const builtInCommand of Object.values(BuiltInCommands)) {
-            if (builtInCommandsSetting[builtInCommand.name]) {
-                this.commands.add(builtInCommand as unknown as AnyCommand);
-            }
-        }
 
         this.database = new BotDatabase(this, this.options.database.handler);
 
@@ -191,7 +178,10 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
         }
         catch (error: unknown) {
             this.logger.endTask('error', `could not log in: ${error instanceof Error ? error.message : String(error)}`);
+            return;
         }
+
+        this.logger.endTask('success', 'logged in as ' + this.username);
     }
 
     /**

@@ -27,22 +27,9 @@ export type BotOptions = {
      */
     destroyClientOnSigint: boolean;
     /**
-     * Настройки команд бота
+     * Настройки логгера
      */
-    commands: {
-        /**
-         * Включение встроенных команд
-         * @default true (для всех)
-         */
-        builtIn: {
-            help: boolean;
-            ban: boolean;
-            kick: boolean;
-            clear: boolean;
-            prefix: boolean;
-            avatar: boolean;
-        };
-    };
+    loggerOptions: Partial<LoggerOptions>;
     /**
      * Настройки базы данных
      */
@@ -63,10 +50,6 @@ export type BotOptions = {
          */
         properties: readonly AnyProperty[];
     };
-    /**
-     * Настройки логгера
-     */
-    loggerOptions: Partial<LoggerOptions>;
 };
 
 /**
@@ -76,15 +59,10 @@ export const DefaultBotOptions: BotOptions = {
     canBotsRunCommands: false,
     destroyClientOnSigint: true,
     fetchPrefixes: () => ['!'],
-    commands: {
-        builtIn: {
-            help: true,
-            ban: true,
-            kick: true,
-            clear: true,
-            prefix: true,
-            avatar: true,
-        },
+    loggerOptions: {
+        hideInConsole: false,
+        ignoreWarnings: false,
+        consoleTheme: pipeLoggerTheme,
     },
     database: {
         handler: new JsonDatabaseHandler({
@@ -93,11 +71,6 @@ export const DefaultBotOptions: BotOptions = {
         }),
         saveOnSigint: true,
         properties: [],
-    },
-    loggerOptions: {
-        hideInConsole: false,
-        ignoreWarnings: false,
-        consoleTheme: pipeLoggerTheme,
     },
 };
 
