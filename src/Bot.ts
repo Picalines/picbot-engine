@@ -8,6 +8,8 @@ import { deepMerge, GuildMessage, isGuildMessage, TypedEventEmitter } from "./ut
 import { Logger } from "./Logger";
 import { CommandContext } from "./command/Context";
 import { AnyProperty, Property } from "./database/property/Property";
+import { helpCommand } from "./builtIn/command";
+import { AnyCommand } from "./command/Command";
 
 interface BotEvents {
     guildMemberMessage(message: GuildMessage): void;
@@ -54,6 +56,10 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
         this.logger = new Logger(this.options.loggerOptions);
 
         this.commands = new CommandStorage(this);
+
+        if (this.options.useBuiltInHelpCommand) {
+            this.commands.add(helpCommand as unknown as AnyCommand);
+        }
 
         this.database = new BotDatabase(this, this.options.database.handler);
 

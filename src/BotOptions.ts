@@ -22,6 +22,11 @@ export type BotOptions = {
      */
     fetchPrefixes: (bot: Bot, guild: Guild) => PromiseOrSync<string[]>;
     /**
+     * Использовать ли встроенную команду help
+     * @default true
+     */
+    useBuiltInHelpCommand: boolean;
+    /**
      * Вызывать ли `client.destroy` при событии `process.SIGINT`
      * @default true
      */
@@ -59,6 +64,7 @@ export const DefaultBotOptions: BotOptions = {
     canBotsRunCommands: false,
     destroyClientOnSigint: true,
     fetchPrefixes: () => ['!'],
+    useBuiltInHelpCommand: true,
     loggerOptions: {
         hideInConsole: false,
         ignoreWarnings: false,
