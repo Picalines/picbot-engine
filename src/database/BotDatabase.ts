@@ -5,23 +5,16 @@ import { PropertyAccess, PropertyAccessConstructor } from "./property/Access";
 import { DatabaseValueStorage } from "./property/ValueStorage";
 import { BotDatabaseHandler } from "./Handler";
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
-import { EventEmitter } from "events";
 import { Bot } from "../Bot";
 import { PropertyDefinitionStorage } from "./property/DefinitionStorage";
 import { OperatorExpressions, QueryOperators } from "./selector/Operator";
-import { filterIterable, TypedEventEmitter } from "../utils";
-
-interface BotDatabaseEvents {
-    beforeSaving(): void;
-    saved(): void;
-    beforeLoading(): void;
-    loaded(): void;
-}
+import { filterIterable } from "../utils";
+import { createEventStorage, EmitOf } from "../event";
 
 /**
  * Класс базы данных бота
  */
-export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<BotDatabaseEvents>) {
+export class BotDatabase {
     /**
      * Хранит свойства, которые использовала база данных
      */
@@ -30,17 +23,35 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
     #guildsStorage: DatabaseValueStorage<'guild'>;
     #memberStorages: Map<string, DatabaseValueStorage<'member'>>;
 
+    /**
+     * События базы данных
+     */
+    public readonly events;
+
+    /**
+     * Приватная функция вызова события
+     */
+    readonly #emit: EmitOf<BotDatabase['events']>;
+
     constructor(
         public readonly bot: Bot,
         public readonly handler: BotDatabaseHandler,
     ) {
-        super();
+        const [events, emit] = createEventStorage({
+            beforeSaving() { },
+            saved() { },
+            beforeLoading() { },
+            loaded() { },
+        });
+
+        this.events = events;
+        this.#emit = emit;
 
         this.#guildsStorage = new this.handler.propertyStorageClass(this, 'guild') as any;
         this.#memberStorages = new Map();
 
-        this.on('loaded', async () => await this.handler.onLoaded?.(this));
-        this.on('saved', async () => await this.handler.onSaved?.(this));
+        this.events.on('loaded', async () => await this.handler.onLoaded?.(this));
+        this.events.on('saved', async () => await this.handler.onSaved?.(this));
 
         bot.client.on('guildDelete', async guild => {
             const memberStorage = this.#memberStorages.get(guild.id);
@@ -154,7 +165,7 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
     public async load(): Promise<void> {
         this.bot.logger.task(`loading ${this.bot.username}'s database...`);
 
-        this.emit('beforeLoading');
+        this.#emit('beforeLoading');
 
         if (this.handler.prepareForLoading) {
             this.bot.logger.task('preparing...');
@@ -182,7 +193,7 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
 
         this.bot.logger.endTask('success', `${this.bot.username}'s database successfully loaded`);
 
-        this.emit('loaded');
+        this.#emit('loaded');
     }
 
     /**
@@ -193,7 +204,7 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
     public async save(): Promise<void> {
         this.bot.logger.task(`saving ${this.bot.username}'s database...`);
 
-        this.emit('beforeSaving');
+        this.#emit('beforeSaving');
 
         if (this.handler.prepareForSaving) {
             this.bot.logger.task('preparing...');
@@ -220,6 +231,6 @@ export class BotDatabase extends (EventEmitter as new () => TypedEventEmitter<Bo
 
         this.bot.logger.endTask('success', `${this.bot.username}'s database successfully saved`);
 
-        this.emit('saved');
+        this.#emit('saved');
     }
 }
