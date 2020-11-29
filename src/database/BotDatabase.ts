@@ -33,6 +33,10 @@ export class BotDatabase {
      */
     readonly #emit: EmitOf<BotDatabase['events']>;
 
+    /**
+     * @param bot ссылка на бота
+     * @param handler обработчик базы данных
+     */
     constructor(
         public readonly bot: Bot,
         public readonly handler: BotDatabaseHandler,
