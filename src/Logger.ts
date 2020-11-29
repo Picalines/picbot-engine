@@ -1,5 +1,4 @@
-import { EventEmitter } from "events";
-import { TypedEventEmitter } from "./utils";
+import { createEventStorage, EmitOf } from "./event";
 
 /**
  * Тип лога
@@ -32,20 +31,37 @@ export interface LoggerOptions {
     consoleTheme?(logType: LogType, log: string, taskLevel: number, taskCompleted: boolean): string;
 }
 
-interface LoggerEvents {
-    log(logType: LogType, log: string): void;
-}
-
 export interface Logger extends LoggerOptions { }
 
 /**
  * Класс логгера
  */
-export class Logger extends (EventEmitter as new () => TypedEventEmitter<LoggerEvents>) {
+export class Logger {
+    /**
+     * Уровень вложенности логов
+     */
     private taskLevel: number;
 
+    /**
+     * События логгера
+     */
+    public readonly events;
+
+    /**
+     * Приватная функция вызова событий
+     */
+    readonly #emit: EmitOf<Logger['events']>;
+
+    /**
+     * @param options настройки логгера
+     */
     constructor(options?: Partial<LoggerOptions>) {
-        super();
+        const [events, emit] = createEventStorage(this, {
+            log(logType: LogType, log: string) { },
+        });
+
+        this.events = events;
+        this.#emit = emit;
 
         Object.assign(this, {
             ...options,
@@ -62,7 +78,7 @@ export class Logger extends (EventEmitter as new () => TypedEventEmitter<LoggerE
         }
 
         let strLog = String(log);
-        this.emit('log', logType, strLog);
+        this.#emit('log', logType, strLog);
 
         if (!this.hideInConsole) {
             strLog = this.consoleTheme?.(logType, strLog, this.taskLevel, taskCompleted) ?? log;

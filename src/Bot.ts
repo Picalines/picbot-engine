@@ -1,29 +1,20 @@
 import { Client } from "discord.js";
-import { EventEmitter } from "events";
 import { promises } from "fs";
 import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
 import { BotDatabase } from "./database/BotDatabase";
-import { deepMerge, GuildMessage, isGuildMessage, TypedEventEmitter } from "./utils";
+import { deepMerge, GuildMessage, isGuildMessage } from "./utils";
 import { Logger } from "./Logger";
 import { CommandContext } from "./command/Context";
 import { AnyProperty, Property } from "./database/property/Property";
 import { helpCommand } from "./builtIn/command";
 import { AnyCommand } from "./command/Command";
-
-interface BotEvents {
-    guildMemberMessage(message: GuildMessage): void;
-    guildMyMessage(message: GuildMessage): void;
-
-    commandNotFound(message: GuildMessage, wrongName: string): void;
-    commandError(message: GuildMessage, error: Error): void;
-    commandExecuted<Args extends unknown[]>(context: CommandContext<Args>): void;
-}
+import { createEventStorage, EmitOf } from "./event";
 
 /**
  * Класс бота
  */
-export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>) {
+export class Bot {
     /**
      * Настройки бота
      */
@@ -45,11 +36,31 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     public readonly logger: Logger;
 
     /**
+     * События бота
+     */
+    public readonly events;
+
+    /**
+     * Приватная функция вызова событий
+     */
+    readonly #emit: EmitOf<Bot['events']>;
+
+    /**
      * @param client Клиент API discord.js
      * @param options настройки бота
      */
     constructor(readonly client: Client, options: BotOptionsArgument = {}) {
-        super();
+        const [events, emitEvent] = createEventStorage(this as Bot, {
+            guildMemberMessage(message: GuildMessage) { },
+            guildMyMessage(message: GuildMessage) { },
+
+            commandNotFound(message: GuildMessage, wrongName: string) { },
+            commandError(message: GuildMessage, error: Error) { },
+            commandExecuted<Args extends unknown[]>(context: CommandContext<Args>) { },
+        });
+
+        this.events = events;
+        this.#emit = emitEvent;
 
         this.options = this.parseOptionsArgument(options);
 
@@ -79,7 +90,7 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
             this.database.properties.add(property);
         }
 
-        this.commands.on('added', command => {
+        this.commands.events.on('added', command => {
             command.requiredProperties?.forEach(property => {
                 this.database.properties.add(property);
             });
@@ -110,7 +121,7 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
     private async handleGuildMessage(message: GuildMessage): Promise<void> {
         if (message.author.bot) {
             if (message.member.id == message.guild.me.id) {
-                this.emit('guildMyMessage', message);
+                this.#emit('guildMyMessage', message);
                 return;
             }
             if (!this.options.canBotsRunCommands) {
@@ -128,19 +139,19 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
 
         const prefixLength = guildPrefixes.find(p => lowerCaseContent.startsWith(p))?.length ?? 0;
         if (prefixLength <= 0) {
-            this.emit('guildMemberMessage', message);
+            this.#emit('guildMemberMessage', message);
             return;
         }
 
         const commandName = lowerCaseContent.slice(prefixLength).replace(/\s.*$/, '');
         if (!commandName) {
-            this.emit('guildMemberMessage', message);
+            this.#emit('guildMemberMessage', message);
             return;
         }
 
         const command = this.commands.get(commandName);
         if (!command) {
-            this.emit('commandNotFound', message, commandName);
+            this.#emit('commandNotFound', message, commandName);
             return;
         }
 
@@ -150,14 +161,14 @@ export class Bot extends (EventEmitter as new () => TypedEventEmitter<BotEvents>
             context = await command.execute(this, message);
         }
         catch (error: unknown) {
-            this.emit('commandError', message, error instanceof Error ? error : new Error(String(error)));
+            this.#emit('commandError', message, error instanceof Error ? error : new Error(String(error)));
             return;
         }
         finally {
             message.channel.stopTyping(true);
         }
 
-        this.emit('commandExecuted', context);
+        this.#emit('commandExecuted', context);
         return;
     }
 

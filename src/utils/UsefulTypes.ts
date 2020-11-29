@@ -3,6 +3,16 @@ export type PromiseOrSync<T> = Promise<T> | T;
 export type PromiseVoid = PromiseOrSync<void>;
 
 /**
+ * Объект, который можно освободить из памяти
+ */
+export interface Disposable {
+    /**
+     * Освобождает объект из памяти
+     */
+    dispose(): void;
+}
+
+/**
  * Расширение стандартного Partial<T> из TypeScript
  * https://gist.github.com/navix/6c25c15e0a2d3cd0e5bce999e0086fc9
  */

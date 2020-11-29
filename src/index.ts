@@ -2,6 +2,8 @@ export * from "./utils";
 
 export * from "./Logger";
 
+export * from "./event";
+
 export { Command } from "./command/Command";
 export { CommandStorage } from "./command/Storage";
 export { CommandContext } from "./command/Context";

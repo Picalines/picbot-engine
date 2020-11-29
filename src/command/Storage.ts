@@ -1,18 +1,13 @@
-import { EventEmitter } from "events";
 import { PathLike, readdirSync } from "fs";
 import { join } from "path";
 import { Bot } from "../Bot";
-import { TypedEventEmitter } from "../utils";
+import { createEventStorage, EmitOf } from "../event";
 import { AnyCommand, Command } from "./Command";
-
-interface CommandStorageEvents {
-    added(command: AnyCommand): void;
-}
 
 /**
  * Хранилище команд
  */
-export class CommandStorage extends (EventEmitter as new () => TypedEventEmitter<CommandStorageEvents>) implements Iterable<AnyCommand> {
+export class CommandStorage implements Iterable<AnyCommand> {
     /**
      * Map команд по их именам
      */
@@ -24,10 +19,25 @@ export class CommandStorage extends (EventEmitter as new () => TypedEventEmitter
     private readonly aliasMap = new Map<string, AnyCommand>();
 
     /**
+     * События хранилища команд
+     */
+    public readonly events;
+
+    /**
+     * Приватная функция вызова события
+     */
+    readonly #emit: EmitOf<CommandStorage['events']>;
+
+    /**
      * @param bot ссылка на бота
      */
     constructor(readonly bot: Bot) {
-        super();
+        const [events, emit] = createEventStorage(this as CommandStorage, {
+            added(command: AnyCommand) { },
+        });
+
+        this.events = events;
+        this.#emit = emit;
     }
 
     /**
@@ -49,7 +59,7 @@ export class CommandStorage extends (EventEmitter as new () => TypedEventEmitter
             this.aliasMap.set(alias, command);
         });
 
-        this.emit('added', command);
+        this.#emit('added', command);
     }
 
     /**
