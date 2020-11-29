@@ -37,7 +37,7 @@ export class BotDatabase {
         public readonly bot: Bot,
         public readonly handler: BotDatabaseHandler,
     ) {
-        const [events, emit] = createEventStorage({
+        const [events, emit] = createEventStorage(this as BotDatabase, {
             beforeSaving() { },
             saved() { },
             beforeLoading() { },

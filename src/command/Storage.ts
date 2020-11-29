@@ -32,7 +32,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
      * @param bot ссылка на бота
      */
     constructor(readonly bot: Bot) {
-        const [events, emit] = createEventStorage({
+        const [events, emit] = createEventStorage(this as CommandStorage, {
             added(command: AnyCommand) { },
         });
 

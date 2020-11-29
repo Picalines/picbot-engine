@@ -4,11 +4,11 @@ import { EmitEvent, EventListener, EventStorage, PublicEventStorage } from "./Ev
  * Создаёт хранилище событий
  * @param events объявление событий
  */
-export function createEventStorage<Events>(events: Events): [storage: EventStorage<Events>, emit: EmitEvent<Events>] {
+export function createEventStorage<Emitter, Events>(emitter: Emitter, events: Events): [storage: EventStorage<Emitter, Events>, emit: EmitEvent<Emitter, Events>] {
     const eventNames = Object.keys(events) as (keyof Events)[];
 
-    const listeners = new Map<keyof Events, EventListener<any>[]>();
-    let onceListeners = new Map<keyof Events, EventListener<any>[]>();
+    const listeners = new Map<keyof Events, EventListener<Emitter, any>[]>();
+    let onceListeners = new Map<keyof Events, EventListener<Emitter, any>[]>();
 
     eventNames.forEach(event => {
         listeners.set(event, []);
@@ -21,7 +21,7 @@ export function createEventStorage<Events>(events: Events): [storage: EventStora
         }
     }
 
-    const storage: EventStorage<Events> = {
+    const storage: EventStorage<Emitter, Events> = {
         names: eventNames,
 
         on(name, listener) {
@@ -51,14 +51,14 @@ export function createEventStorage<Events>(events: Events): [storage: EventStora
         },
     };
 
-    const emit: EmitEvent<Events> = (name, ...args) => {
+    const emit: EmitEvent<Emitter, Events> = (name, ...args) => {
         assertEventName(name);
-        listeners.get(name)!.forEach(listener => listener(...args));
+        listeners.get(name)!.forEach(listener => listener.call(emitter, ...args));
 
         const oncers = onceListeners.get(name)!;
         if (oncers.length > 0) {
             onceListeners.set(name, []);
-            oncers.forEach(listener => listener(...args));
+            oncers.forEach(listener => listener.call(emitter, ...args));
         }
     };
 
@@ -70,7 +70,7 @@ export function createEventStorage<Events>(events: Events): [storage: EventStora
  * @param events объявление событий
  */
 export function createPublicEventStorage<Events>(events: Events): PublicEventStorage<Events> {
-    const [storage, emit] = createEventStorage(events);
+    const [storage, emit] = createEventStorage(globalThis as any, events);
     return {
         ...storage,
         emit,

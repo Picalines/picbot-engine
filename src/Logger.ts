@@ -56,7 +56,7 @@ export class Logger {
      * @param options настройки логгера
      */
     constructor(options?: Partial<LoggerOptions>) {
-        const [events, emit] = createEventStorage({
+        const [events, emit] = createEventStorage(this, {
             log(logType: LogType, log: string) { },
         });
 

@@ -50,7 +50,7 @@ export class Bot {
      * @param options настройки бота
      */
     constructor(readonly client: Client, options: BotOptionsArgument = {}) {
-        const [events, emitEvent] = createEventStorage({
+        const [events, emitEvent] = createEventStorage(this as Bot, {
             guildMemberMessage(message: GuildMessage) { },
             guildMyMessage(message: GuildMessage) { },
 
