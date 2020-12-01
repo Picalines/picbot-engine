@@ -1,9 +1,8 @@
-import { GuildManager, GuildMemberManager } from "discord.js";
-import { EntityType, Entity } from "../Entity";
+import { EntityType } from "../Entity";
 import { AnyExpression } from "./Expression";
 import { QueryOperators } from "./Operator";
 
-export interface EntitySelectorDefinition<E extends EntityType> {
+interface EntitySelectorDefinition<E extends EntityType> {
     /**
      * Тип сущностей, которые ищет селектор
      */
@@ -22,7 +21,14 @@ export interface EntitySelector<E extends EntityType> extends EntitySelectorDefi
  * методе [[BotDatabase.selectEntities]]
  */
 export class EntitySelector<E extends EntityType> {
+    /**
+     * @param definition объявление селектора
+     */
     constructor(definition: EntitySelectorDefinition<E>) {
         Object.assign(this, definition);
+
+        if (this.entityType != 'guild' && this.entityType != 'member') {
+            throw new Error(`invalid entity selector type '${this.entityType}'`);
+        }
     }
 }
