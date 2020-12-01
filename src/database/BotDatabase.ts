@@ -1,5 +1,5 @@
 import { Property } from "./property/Property";
-import { EntitySelector, EntitySelectorOptions } from "./selector/Selector";
+import { EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators } from "./selector";
 import { EntityType, Entity } from "./Entity";
 import { PropertyAccess, PropertyAccessConstructor } from "./property/Access";
 import { DatabaseValueStorage } from "./property/ValueStorage";
@@ -7,7 +7,6 @@ import { BotDatabaseHandler } from "./Handler";
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
 import { Bot } from "../Bot";
 import { PropertyDefinitionStorage } from "./property/DefinitionStorage";
-import { OperatorExpressions, QueryOperators } from "./selector/Operator";
 import { filterIterable } from "../utils";
 import { createEventStorage, EmitOf } from "../event";
 
