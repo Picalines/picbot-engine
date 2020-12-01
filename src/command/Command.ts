@@ -1,6 +1,6 @@
 import { BitFieldResolvable, Permissions, PermissionString } from "discord.js";
 import { Bot } from "../Bot";
-import { AnyProperty } from "../database/property/Property";
+import { AnyProperty } from "../database";
 import { GuildMessage, NonEmptyReadonly, Overwrite, PromiseVoid } from "../utils";
 import { CommandArgumentsReader } from "./argument/Reader";
 import { CommandContext } from "./Context";

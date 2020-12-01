@@ -2,14 +2,13 @@ import { Client } from "discord.js";
 import { promises } from "fs";
 import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
-import { BotDatabase } from "./database/BotDatabase";
 import { deepMerge, GuildMessage, isGuildMessage } from "./utils";
 import { Logger } from "./Logger";
 import { CommandContext } from "./command/Context";
-import { AnyProperty, Property } from "./database/property/Property";
 import { helpCommand } from "./builtIn/command";
 import { AnyCommand } from "./command/Command";
 import { createEventStorage, EmitOf } from "./event";
+import { BotDatabase, Property, AnyProperty } from "./database";
 
 /**
  * Класс бота

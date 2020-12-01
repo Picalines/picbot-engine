@@ -1,6 +1,4 @@
-import { Property } from "../../..";
-import { EntityType } from "../../../database/Entity";
-import { AnyExpression, BooleanExpression, UnaryExpression } from "../../../database/selector/Expression";
+import { AnyExpression, BooleanExpression, EntityType, Property, UnaryExpression } from "../../../database";
 
 /**
  * Выражение селектора в виде функции

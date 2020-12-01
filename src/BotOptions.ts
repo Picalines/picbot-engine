@@ -1,11 +1,10 @@
+import { Guild } from "discord.js";
 import { DeepPartial, NonEmptyReadonly, Overwrite, PromiseOrSync } from "./utils";
-import { BotDatabaseHandler } from "./database/Handler";
+import { BotDatabaseHandler, AnyProperty, Property } from "./database";
 import { JsonDatabaseHandler } from "./builtIn/database";
-import { AnyProperty, Property } from "./database/property/Property";
 import { LoggerOptions } from "./Logger";
 import { pipeLoggerTheme } from "./builtIn/loggerTheme/Pipe";
 import { Bot } from "./Bot";
-import { Guild } from "discord.js";
 
 /**
  * Объект с настройками бота

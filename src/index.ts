@@ -12,11 +12,7 @@ export { ArgumentReader, ArgumentString, CommandArgumentsReader, ArgsDefinitions
 export { CommandArgument } from "./command/argument/Argument";
 export { ArgumentSequence } from "./command/argument/Sequence";
 
-export { EntityType, Entity } from "./database/Entity";
-export * from './database/property';
-export * from './database/selector';
-export { BotDatabaseHandler } from "./database/Handler";
-export { BotDatabase } from "./database/BotDatabase";
+export * from './database';
 
 export { BotOptions, DefaultBotOptions } from "./BotOptions";
 export { Bot } from "./Bot";
