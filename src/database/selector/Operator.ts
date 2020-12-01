@@ -2,12 +2,21 @@ import { EntityType } from "../Entity";
 import { Property } from "../property/Property";
 import { ComparisonExpression, BooleanExpression, UnaryExpression, AnyExpression, Constant } from "./Expression";
 
+/**
+ * Унарный оператор
+ */
 export type UnaryOperator = 'not'
 
+/**
+ * Бинарный оператор булевой логики
+ */
 export type BinaryLogicOperator =
     | 'and'
     | 'or'
 
+/**
+ * Бинарный оператор сравнения
+ */
 export type BinaryCompareOperator =
     | 'gt'
     | 'gte'
@@ -15,10 +24,16 @@ export type BinaryCompareOperator =
     | 'lte'
     | 'eq'
 
+/**
+ * Бинарный оператор
+ */
 export type BinaryOperator =
     | BinaryCompareOperator
     | BinaryLogicOperator
 
+/**
+ * Операторы выражения для поиска по базе данных
+ */
 export interface QueryOperators<E extends EntityType> {
     /**
      * @example xpProperty > 0
@@ -61,15 +76,15 @@ export interface QueryOperators<E extends EntityType> {
 }
 
 export const OperatorExpressions: QueryOperators<EntityType> = {
-    'gt': (l, r) => new ComparisonExpression('gt', l, r),
-    'gte': (l, r) => new ComparisonExpression('gte', l, r),
-    'lt': (l, r) => new ComparisonExpression('lt', l, r),
-    'lte': (l, r) => new ComparisonExpression('lte', l, r),
+    gt: (l, r) => new ComparisonExpression('gt', l, r),
+    gte: (l, r) => new ComparisonExpression('gte', l, r),
+    lt: (l, r) => new ComparisonExpression('lt', l, r),
+    lte: (l, r) => new ComparisonExpression('lte', l, r),
 
-    'eq': (l, r) => new ComparisonExpression('eq', l, r),
+    eq: (l, r) => new ComparisonExpression('eq', l, r),
 
-    'and': (l, r) => new BooleanExpression('and', l, r),
-    'or': (l, r) => new BooleanExpression('or', l, r),
+    and: (l, r) => new BooleanExpression('and', l, r),
+    or: (l, r) => new BooleanExpression('or', l, r),
 
-    'not': r => new UnaryExpression('not', r),
+    not: r => new UnaryExpression('not', r),
 };

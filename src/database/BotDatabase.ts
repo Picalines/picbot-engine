@@ -130,8 +130,8 @@ export class BotDatabase {
      * @param options настройки селектора
      */
     public async selectEntities<E extends EntityType>(selector: EntitySelector<E>, options: EntitySelectorOptions<E>): Promise<Entity<E>[]> {
-        options.maxCount ??= Infinity;
-        if (options.maxCount <= 0) return [];
+        const { maxCount = Infinity } = options;
+        if (maxCount <= 0) return [];
 
         const expression = selector.expression(OperatorExpressions as QueryOperators<E>);
         let storage: DatabaseValueStorage<E>;
@@ -153,12 +153,12 @@ export class BotDatabase {
             entities = filterIterable(entities, options.filter);
         }
 
-        const selected = await storage.selectEntities(entities, expression, options.maxCount);
+        const selected = await storage.selectEntities(entities, expression, maxCount);
         if (!selected.length && options.throwOnNotFound) {
             throw options.throwOnNotFound;
         }
 
-        return selected.slice(0, options.maxCount);
+        return selected.slice(0, maxCount);
     }
 
     /**

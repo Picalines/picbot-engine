@@ -8,6 +8,7 @@ export interface EntitySelectorDefinition<E extends EntityType> {
      * Тип сущностей, которые ищет селектор
      */
     readonly entityType: E;
+
     /**
      * Выражение, по которому селектор ищет сущностей
      */
@@ -33,19 +34,22 @@ export interface EntitySelectorOptions<E extends EntityType> {
     /**
      * Менеджер сущностей, по которому библиотека должна сделать выборку
      */
-    manager: E extends 'member' ? GuildMemberManager : GuildManager;
+    readonly manager: E extends 'member' ? GuildMemberManager : GuildManager;
+
     /**
      * Функция фильтрации сущностей, которых библиотека получила из менеджера
      */
-    filter?: (entity: Entity<E>) => boolean;
+    readonly filter?: (entity: Entity<E>) => boolean;
+
     /**
      * Максимальное количество сущностей, которое может найти селектор
      * @default Infinity
      */
-    maxCount?: number;
+    readonly maxCount?: number;
+
     /**
      * Ошибка, которую выбросит селектор, если он ничего не найдёт
      * @default undefined
      */
-    throwOnNotFound?: Error;
+    readonly throwOnNotFound?: Error;
 }
