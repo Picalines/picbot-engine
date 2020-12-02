@@ -1,9 +1,9 @@
-import { AnyExpression, BooleanExpression, EntityType, Property, UnaryExpression } from "../../../database";
+import { AnyExpression, BooleanExpression, EntityType, ExpressionVariable, Property, UnaryExpression } from "../../../database";
 
 /**
  * Выражение селектора в виде функции
  */
-export type CompiledExpression = (props: Record<string, any>) => boolean;
+export type CompiledExpression = (props: Record<string, any>, vars: Record<string, any>) => boolean;
 
 /**
  * 'Компилирует' выражение селектора к виду функции
@@ -12,7 +12,7 @@ export function compileExpression<E extends EntityType>(expression: AnyExpressio
     if (expression instanceof UnaryExpression) {
         if (expression.operator == 'not') {
             const compiled = compileExpression(expression.right, usedPropsCache);
-            return ps => !compiled(ps);
+            return (ps, vars) => !compiled(ps, vars);
         }
 
         throw new Error(`unsupported unary operator '${(expression as any).operator}'`);
@@ -23,10 +23,10 @@ export function compileExpression<E extends EntityType>(expression: AnyExpressio
         const right = compileExpression(expression.right, usedPropsCache);
 
         if (expression.operator == 'and') {
-            return ps => left(ps) && right(ps);
+            return (ps, vars) => left(ps, vars) && right(ps, vars);
         }
 
-        return ps => left(ps) || right(ps);
+        return (ps, vars) => left(ps, vars) || right(ps, vars);
     }
 
     const leftProp = expression.left.key;
@@ -37,8 +37,7 @@ export function compileExpression<E extends EntityType>(expression: AnyExpressio
         usedPropsCache.add(rightProp);
 
         switch (expression.operator) {
-            default: throw new Error(`unsupported binary operator '${(expression as any).operator}'`);
-            case 'eq': return ps => ps[leftProp] == ps[rightProp];
+            case 'eq': return ps => ps[leftProp] === ps[rightProp];
             case 'gt': return ps => ps[leftProp] > ps[rightProp];
             case 'gte': return ps => ps[leftProp] >= ps[rightProp];
             case 'lt': return ps => ps[leftProp] < ps[rightProp];
@@ -48,9 +47,19 @@ export function compileExpression<E extends EntityType>(expression: AnyExpressio
 
     const rightValue = expression.right;
 
+    if (rightValue instanceof ExpressionVariable) {
+        const varName = rightValue.name as string;
+        switch (expression.operator) {
+            case 'eq': return (ps, vars) => ps[leftProp] === vars[varName];
+            case 'gt': return (ps, vars) => ps[leftProp] > vars[varName];
+            case 'gte': return (ps, vars) => ps[leftProp] >= vars[varName];
+            case 'lt': return (ps, vars) => ps[leftProp] < vars[varName];
+            case 'lte': return (ps, vars) => ps[leftProp] <= vars[varName];
+        }
+    }
+
     switch (expression.operator) {
-        default: throw new Error(`unsupported binary operator '${(expression as any).operator}'`);
-        case 'eq': return ps => ps[leftProp] == rightValue;
+        case 'eq': return ps => ps[leftProp] === rightValue;
         case 'gt': return ps => ps[leftProp] > rightValue;
         case 'gte': return ps => ps[leftProp] >= rightValue;
         case 'lt': return ps => ps[leftProp] < rightValue;

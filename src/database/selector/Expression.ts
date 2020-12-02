@@ -1,6 +1,7 @@
-import { Property } from "../..";
+import { Property } from "../property";
 import { EntityType } from "../Entity";
 import { BinaryCompareOperator, BinaryLogicOperator, UnaryOperator } from "./Operator";
+import { SelectorVars } from "./Selector";
 
 /**
  * Возможные типы константы в выражении
@@ -11,23 +12,32 @@ export type Constant =
     | boolean
 
 /**
+ * Класс переменной в выражении
+ */
+export class ExpressionVariable<Vars extends SelectorVars> {
+    constructor(
+        readonly name: keyof Vars
+    ) { }
+}
+
+/**
  * Класс унарного выражения
  */
-export class UnaryExpression<E extends EntityType, O extends UnaryOperator> {
+export class UnaryExpression<E extends EntityType, O extends UnaryOperator, Vars extends SelectorVars> {
     /**
      * @param operator оператор
      * @param right правая часть выражения
      */
     constructor(
         public readonly operator: O,
-        public readonly right: UnaryExpression<E, UnaryOperator> | BinaryExpression<E>,
+        public readonly right: UnaryExpression<E, UnaryOperator, Vars> | BinaryExpression<E, Vars>,
     ) { }
 }
 
 /**
  * Класс выражения сравнения левой и правой части
  */
-export class ComparisonExpression<E extends EntityType, O extends BinaryCompareOperator, T extends Constant> {
+export class ComparisonExpression<E extends EntityType, O extends BinaryCompareOperator, T extends Constant, Vars extends SelectorVars> {
     /**
      * @param operator оператор
      * @param left левая часть
@@ -36,7 +46,7 @@ export class ComparisonExpression<E extends EntityType, O extends BinaryCompareO
     constructor(
         public readonly operator: O,
         public readonly left: Property<E, T>,
-        public readonly right: Property<E, T> | T,
+        public readonly right: Property<E, T> | T | ExpressionVariable<Vars>,
     ) { }
 }
 
@@ -59,9 +69,9 @@ export class BooleanExpression<E extends EntityType, O extends BinaryLogicOperat
 /**
  * Бинарное выражение
  */
-export type BinaryExpression<E extends EntityType> = ComparisonExpression<E, BinaryCompareOperator, Constant> | BooleanExpression<E, BinaryLogicOperator>;
+export type BinaryExpression<E extends EntityType, Vars extends SelectorVars> = ComparisonExpression<E, BinaryCompareOperator, Constant, Vars> | BooleanExpression<E, BinaryLogicOperator>;
 
 /**
  * Любое выражение
  */
-export type AnyExpression<E extends EntityType> = UnaryExpression<E, UnaryOperator> | BinaryExpression<E>;
+export type AnyExpression<E extends EntityType> = UnaryExpression<E, UnaryOperator, any> | BinaryExpression<E, any>;
