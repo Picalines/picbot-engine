@@ -85,16 +85,6 @@ export class Bot {
             process.exit(0);
         });
 
-        for (const property of this.options.database.properties) {
-            this.database.properties.add(property);
-        }
-
-        this.commands.events.on('added', command => {
-            command.requiredProperties?.forEach(property => {
-                this.database.properties.add(property);
-            });
-        });
-
         this.client.once('ready', () => {
             this.database.load();
         });

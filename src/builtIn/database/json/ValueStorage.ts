@@ -44,8 +44,8 @@ export class JsonDatabaseValueStorage extends DatabaseValueStorage<EntityType> {
             this.compiledExpressions.set(selector, compiledExpression);
         }
 
-        const props = this.database.properties.list(this.entityType)
-            .filter(p => compiledExpression!.usedKeys.includes(p.key));
+        const props = [...this.database.cache.properties.values()]
+            .filter(p => p.entityType == this.entityType && compiledExpression!.usedKeys.includes(p.key));
 
         for (const entity of entities) {
             const entityProps: Record<string, any> = {};

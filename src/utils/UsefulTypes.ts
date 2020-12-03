@@ -15,6 +15,13 @@ export interface Disposable {
 }
 
 /**
+ * Интерфейс функции фильтрации
+ */
+export interface FilterFunction<T> {
+    (value: T): boolean;
+}
+
+/**
  * Расширение стандартного Partial<T> из TypeScript
  * https://gist.github.com/navix/6c25c15e0a2d3cd0e5bce999e0086fc9
  */

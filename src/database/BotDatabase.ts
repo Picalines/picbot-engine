@@ -1,10 +1,10 @@
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
 import { createEventStorage, EmitOf } from "../event";
-import { PropertyDefinitionStorage, PropertyAccessConstructor, Property, PropertyAccess, DatabaseValueStorage as ValueStorage } from "./property";
+import { PropertyAccessConstructor, Property, PropertyAccess, DatabaseValueStorage as ValueStorage, AnyProperty } from "./property";
 import { EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector";
 import { EntityType, Entity } from "./Entity";
 import { BotDatabaseHandler } from "./Handler";
-import { filterIterable } from "../utils";
+import { AddOfGroupedCache, createGroupedCache, filterIterable } from "../utils";
 import { Bot } from "../Bot";
 
 /**
@@ -12,9 +12,9 @@ import { Bot } from "../Bot";
  */
 export class BotDatabase {
     /**
-     * Хранит свойства, которые использовала база данных
+     * Кэш базы данных
      */
-    public readonly properties = new PropertyDefinitionStorage();
+    public readonly cache;
 
     #guildsStorage: ValueStorage<'guild'>;
     #memberStorages: Map<string, ValueStorage<'member'>>;
@@ -47,6 +47,22 @@ export class BotDatabase {
         this.events = events;
         this.#emit = emit;
 
+        const [caches, addToCache] = createGroupedCache({
+            properties: Property as new (...args: any) => AnyProperty,
+        });
+
+        this.cache = caches;
+
+        for (const property of this.bot.options.database.properties) {
+            addToCache.properties(property);
+        }
+
+        this.bot.commands.events.on('added', command => {
+            command.requiredProperties?.forEach(property => {
+                addToCache.properties(property);
+            });
+        });
+
         this.#guildsStorage = new this.handler.propertyStorageClass(this, 'guild') as any;
         this.#memberStorages = new Map();
 
@@ -76,7 +92,7 @@ export class BotDatabase {
      * @param property свойство сущности
      */
     public accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
-        if (!this.properties.has(property.key)) {
+        if (!this.cache.properties.has(property)) {
             throw new Error(`${property.entityType} property with key '${property.key}' is not defined`);
         }
 
