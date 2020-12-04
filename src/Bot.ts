@@ -207,14 +207,14 @@ export class Bot {
 
             fetchPrefixes = (bot, guild) => bot.database.accessProperty(guild, prefixes).value();
 
-            if (!options.database) {
-                options.database = {};
-            }
-            if (options.database.properties) {
-                (options.database.properties as AnyProperty[]).push(prefixes)
+            options.database ??= {};
+            options.database.cache ??= {};
+
+            if (options.database.cache.properties) {
+                (options.database.cache.properties as AnyProperty[]).push(prefixes)
             }
             else {
-                options.database.properties = [prefixes];
+                options.database.cache.properties = [prefixes];
             }
         }
 

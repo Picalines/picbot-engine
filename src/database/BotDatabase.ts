@@ -1,10 +1,10 @@
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
 import { createEventStorage, EmitOf } from "../event";
 import { PropertyAccessConstructor, Property, PropertyAccess, DatabaseValueStorage as ValueStorage, AnyProperty } from "./property";
-import { EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector";
+import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector";
 import { EntityType, Entity } from "./Entity";
 import { BotDatabaseHandler } from "./Handler";
-import { AddOfGroupedCache, createGroupedCache, filterIterable } from "../utils";
+import { AnyConstructor, createGroupedCache, filterIterable, GroupsOfCache } from "../utils";
 import { Bot } from "../Bot";
 
 /**
@@ -48,13 +48,16 @@ export class BotDatabase {
         this.#emit = emit;
 
         const [caches, addToCache] = createGroupedCache({
-            properties: Property as new (...args: any) => AnyProperty,
+            properties: Property as AnyConstructor<AnyProperty>,
+            selectors: EntitySelector as AnyConstructor<AnyEntitySelector>,
         });
 
         this.cache = caches;
 
-        for (const property of this.bot.options.database.properties) {
-            addToCache.properties(property);
+        for (const [key, array] of Object.entries(this.bot.options.database.cache)) {
+            for (const cacheItem of array) {
+                addToCache[key as keyof GroupsOfCache<BotDatabase['cache']>](cacheItem as any);
+            }
         }
 
         this.bot.commands.events.on('added', command => {
@@ -93,7 +96,7 @@ export class BotDatabase {
      */
     public accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
         if (!this.cache.properties.has(property)) {
-            throw new Error(`${property.entityType} property with key '${property.key}' is not defined`);
+            throw new Error(`unknown ${property.entityType} property '${property.key}'`);
         }
 
         let storage: ValueStorage<any> | undefined = undefined;
@@ -141,6 +144,10 @@ export class BotDatabase {
      * @param options настройки селектора
      */
     public async selectEntities<E extends EntityType, Vars extends SelectorVars>(selector: EntitySelector<E, Vars>, options: EntitySelectorOptions<E, Vars>): Promise<Entity<E>[]> {
+        if (!this.cache.selectors.has(selector)) {
+            throw new Error(`unknown ${selector.entityType} selector`);
+        }
+
         const { maxCount = Infinity } = options;
         if (maxCount <= 0) return [];
 

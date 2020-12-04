@@ -59,6 +59,4 @@ export abstract class DatabaseValueStorage<E extends EntityType> {
     abstract cleanupEntity(entity: Entity<E>): PromiseOrSync<void>;
 }
 
-export interface DatabaseValueStorageConstructor<E extends EntityType> {
-    new(database: BotDatabase, entityType: E): DatabaseValueStorage<E>;
-}
+export type DatabaseValueStorageConstructor<E extends EntityType> = new (database: BotDatabase, entityType: E) => DatabaseValueStorage<E>;

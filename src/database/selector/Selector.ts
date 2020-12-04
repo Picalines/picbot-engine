@@ -38,3 +38,5 @@ export class EntitySelector<E extends EntityType, Vars extends SelectorVars = Em
         Object.assign(this, definition);
     }
 }
+
+export type AnyEntitySelector = EntitySelector<any, any>;

@@ -1,6 +1,6 @@
 import { Guild } from "discord.js";
-import { DeepPartial, NonEmptyReadonly, Overwrite, PromiseOrSync } from "./utils";
-import { BotDatabaseHandler, AnyProperty, Property } from "./database";
+import { DeepPartial, GroupsOfCache, NonEmptyReadonly, Overwrite, PromiseOrSync } from "./utils";
+import { BotDatabaseHandler, AnyProperty, Property, AnyEntitySelector, BotDatabase } from "./database";
 import { JsonDatabaseHandler } from "./builtIn/database";
 import { LoggerOptions } from "./Logger";
 import { pipeLoggerTheme } from "./builtIn/loggerTheme/Pipe";
@@ -49,10 +49,9 @@ export type BotOptions = {
          */
         saveOnSigint: boolean;
         /**
-         * Свойства сущностей, с которыми работает база данных
-         * @default []
+         * Кэш базы данных
          */
-        properties: readonly AnyProperty[];
+        cache: { [K in keyof GroupsOfCache<BotDatabase['cache']>]: readonly InstanceType<GroupsOfCache<BotDatabase['cache']>[K]>[] };
     };
 };
 
@@ -75,7 +74,10 @@ export const DefaultBotOptions: BotOptions = {
             jsonIndent: 0,
         }),
         saveOnSigint: true,
-        properties: [],
+        cache: {
+            properties: [],
+            selectors: [],
+        },
     },
 };
 
@@ -91,5 +93,7 @@ export type BotOptionsArgument = Overwrite<DeepPartial<Omit<BotOptions, 'databas
     /**
      * Настройки базы данных бота
      */
-    database: Partial<BotOptions['database']>;
+    database: Overwrite<Partial<BotOptions['database']>, {
+        cache?: Partial<BotOptions['database']['cache']>,
+    }>;
 }>>;

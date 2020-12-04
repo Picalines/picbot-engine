@@ -22,6 +22,11 @@ export interface FilterFunction<T> {
 }
 
 /**
+ * @returns конструктор T
+ */
+export type AnyConstructor<T> = new (...args: any[]) => T;
+
+/**
  * Расширение стандартного Partial<T> из TypeScript
  * https://gist.github.com/navix/6c25c15e0a2d3cd0e5bce999e0086fc9
  */
