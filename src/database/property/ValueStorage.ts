@@ -1,7 +1,7 @@
-import { PromiseOrSync } from "../../utils";
+import { EmptyObject, PromiseOrSync } from "../../utils";
 import { BotDatabase } from "../BotDatabase";
 import { EntityType, Entity } from "../Entity";
-import { AnyExpression } from "../selector/Expression";
+import { AnyExpression, EntitySelector, SelectorVars, SelectorVarValues } from "../selector";
 
 /**
  * Абстрактный класс, хранящий значения свойств сущностей (серверов / участников)
@@ -41,10 +41,10 @@ export abstract class DatabaseValueStorage<E extends EntityType> {
     /**
      * @returns список выбранных сущностей, которые 'подходят' по условию expression
      * @param entities список всех сущностей
-     * @param expression выражение
-     * @param maxCount максимальное колчиество найденых сущностей. Гарантируется, что это оно не равно нулю
+     * @param selector селектор
+     * @param expression обработанное выражение
      */
-    abstract selectEntities(entities: IterableIterator<Entity<E>>, expression: AnyExpression<E>, maxCount: number): PromiseOrSync<Entity<E>[]>;
+    abstract selectEntities<Vars extends SelectorVars = EmptyObject>(entities: IterableIterator<Entity<E>>, selector: EntitySelector<E, Vars>, expression: AnyExpression<E>, variables: SelectorVarValues<Vars>): AsyncGenerator<Entity<E>> | Generator<Entity<E>>;
 
     /**
      * Очищает все данные в хранилище. Библиотека вызывает эту функцию,
@@ -59,6 +59,4 @@ export abstract class DatabaseValueStorage<E extends EntityType> {
     abstract cleanupEntity(entity: Entity<E>): PromiseOrSync<void>;
 }
 
-export interface DatabaseValueStorageConstructor<E extends EntityType> {
-    new(database: BotDatabase, entityType: E): DatabaseValueStorage<E>;
-}
+export type DatabaseValueStorageConstructor<E extends EntityType> = new (database: BotDatabase, entityType: E) => DatabaseValueStorage<E>;

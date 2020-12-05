@@ -2,6 +2,8 @@ export type PromiseOrSync<T> = Promise<T> | T;
 
 export type PromiseVoid = PromiseOrSync<void>;
 
+export type EmptyObject = { [K: string]: never };
+
 /**
  * Объект, который можно освободить из памяти
  */
@@ -11,6 +13,18 @@ export interface Disposable {
      */
     dispose(): void;
 }
+
+/**
+ * Интерфейс функции фильтрации
+ */
+export interface FilterFunction<T> {
+    (value: T): boolean;
+}
+
+/**
+ * @returns конструктор T
+ */
+export type AnyConstructor<T> = new (...args: any[]) => T;
 
 /**
  * Расширение стандартного Partial<T> из TypeScript

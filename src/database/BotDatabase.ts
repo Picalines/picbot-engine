@@ -1,27 +1,23 @@
-import { Property } from "./property/Property";
-import { EntitySelector, EntitySelectorOptions } from "./selector/Selector";
-import { EntityType, Entity } from "./Entity";
-import { PropertyAccess, PropertyAccessConstructor } from "./property/Access";
-import { DatabaseValueStorage } from "./property/ValueStorage";
-import { BotDatabaseHandler } from "./Handler";
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
-import { Bot } from "../Bot";
-import { PropertyDefinitionStorage } from "./property/DefinitionStorage";
-import { OperatorExpressions, QueryOperators } from "./selector/Operator";
-import { filterIterable } from "../utils";
 import { createEventStorage, EmitOf } from "../event";
+import { PropertyAccessConstructor, Property, PropertyAccess, DatabaseValueStorage as ValueStorage, AnyProperty } from "./property";
+import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector";
+import { EntityType, Entity } from "./Entity";
+import { BotDatabaseHandler } from "./Handler";
+import { AnyConstructor, createGroupedCache, filterIterable, GroupsOfCache } from "../utils";
+import { Bot } from "../Bot";
 
 /**
  * Класс базы данных бота
  */
 export class BotDatabase {
     /**
-     * Хранит свойства, которые использовала база данных
+     * Кэш базы данных
      */
-    public readonly properties = new PropertyDefinitionStorage();
+    public readonly cache;
 
-    #guildsStorage: DatabaseValueStorage<'guild'>;
-    #memberStorages: Map<string, DatabaseValueStorage<'member'>>;
+    #guildsStorage: ValueStorage<'guild'>;
+    #memberStorages: Map<string, ValueStorage<'member'>>;
 
     /**
      * События базы данных
@@ -50,6 +46,19 @@ export class BotDatabase {
 
         this.events = events;
         this.#emit = emit;
+
+        const [caches, addToCache] = createGroupedCache({
+            properties: Property as AnyConstructor<AnyProperty>,
+            selectors: EntitySelector as AnyConstructor<AnyEntitySelector>,
+        });
+
+        this.cache = caches;
+
+        for (const [key, array] of Object.entries(this.bot.options.database.cache)) {
+            for (const cacheItem of array) {
+                addToCache[key as keyof GroupsOfCache<BotDatabase['cache']>](cacheItem as any);
+            }
+        }
 
         this.#guildsStorage = new this.handler.propertyStorageClass(this, 'guild') as any;
         this.#memberStorages = new Map();
@@ -80,31 +89,30 @@ export class BotDatabase {
      * @param property свойство сущности
      */
     public accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
-        if (!this.properties.has(property.key)) {
-            throw new Error(`${property.entityType} property with key '${property.key}' is not defined`);
+        if (!this.cache.properties.has(property)) {
+            throw new Error(`unknown ${property.entityType} property '${property.key}'`);
         }
 
-        type ValueStorage = DatabaseValueStorage<E>;
-        let storage: ValueStorage | undefined = undefined;
+        let storage: ValueStorage<any> | undefined = undefined;
 
         if ((entity as GuildMember).guild) {
-            storage = this.#memberStorages.get((entity as GuildMember).guild.id) as ValueStorage | undefined;
+            storage = this.#memberStorages.get((entity as GuildMember).guild.id);
         }
         else {
-            storage = this.#guildsStorage as ValueStorage;
+            storage = this.#guildsStorage;
         }
 
         const constructor = (property.accessorClass ?? PropertyAccess) as PropertyAccessConstructor<T, A>;
 
         return new constructor(property, {
-            set: async (value: T) => {
+            set: async value => {
                 if (!property.validate(value)) {
                     throw new Error(`value '${value}' is not valid for database property '${property.key}'`);
                 }
 
                 if (!storage) {
-                    storage = new this.handler.propertyStorageClass(this, 'member') as ValueStorage;
-                    this.#memberStorages.set((entity as GuildMember).guild.id, storage as DatabaseValueStorage<'member'>);
+                    storage = new this.handler.propertyStorageClass(this, 'member');
+                    this.#memberStorages.set((entity as GuildMember).guild.id, storage as ValueStorage<'member'>);
                 }
 
                 await storage.storeValue(entity, property.key, value);
@@ -129,22 +137,26 @@ export class BotDatabase {
      * @param selector селектор сущностей
      * @param options настройки селектора
      */
-    public async selectEntities<E extends EntityType>(selector: EntitySelector<E>, options: EntitySelectorOptions<E>): Promise<Entity<E>[]> {
-        options.maxCount ??= Infinity;
-        if (options.maxCount <= 0) return [];
+    public async selectEntities<E extends EntityType, Vars extends SelectorVars>(selector: EntitySelector<E, Vars>, options: EntitySelectorOptions<E, Vars>): Promise<Entity<E>[]> {
+        if (!this.cache.selectors.has(selector)) {
+            throw new Error(`unknown ${selector.entityType} selector`);
+        }
 
-        const expression = selector.expression(OperatorExpressions as QueryOperators<E>);
-        let storage: DatabaseValueStorage<E>;
+        const { maxCount = Infinity } = options;
+        if (maxCount <= 0) return [];
+
+        const expression = selector.expression(OperatorExpressions as QueryOperators<E, Vars>);
+        let storage: ValueStorage<any>;
 
         if (selector.entityType == 'guild') {
-            storage = this.#guildsStorage as DatabaseValueStorage<E>;
+            storage = this.#guildsStorage;
         }
         else {
             const { guild } = options.manager as GuildMemberManager;
-            storage = this.#memberStorages.get(guild.id) as DatabaseValueStorage<E>;
+            storage = this.#memberStorages.get(guild.id)!;
             if (!storage) {
-                storage = new this.handler.propertyStorageClass(this, 'member') as DatabaseValueStorage<E>;
-                this.#memberStorages.set(guild.id, storage as DatabaseValueStorage<'member'>);
+                storage = new this.handler.propertyStorageClass(this, 'member');
+                this.#memberStorages.set(guild.id, storage);
             }
         }
 
@@ -153,12 +165,23 @@ export class BotDatabase {
             entities = filterIterable(entities, options.filter);
         }
 
-        const selected = await storage.selectEntities(entities, expression, options.maxCount);
+        const selectedGen = (storage as ValueStorage<E>).selectEntities(entities, selector as any, expression, options.variables);
+        const selected: Entity<E>[] = [];
+
+        const checkBreak = maxCount == Infinity ? (() => false) : (() => selected.length >= maxCount);
+
+        for await (const entity of selectedGen) {
+            selected.push(entity);
+            if (checkBreak()) {
+                break;
+            }
+        }
+
         if (!selected.length && options.throwOnNotFound) {
             throw options.throwOnNotFound;
         }
 
-        return selected.slice(0, options.maxCount);
+        return selected;
     }
 
     /**

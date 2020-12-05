@@ -1,12 +1,8 @@
-import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
-import { BotDatabaseHandler } from "../../../database/Handler";
 import { join } from "path";
+import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
 import { Guild } from "discord.js";
+import { BotDatabase, BotDatabaseHandler, Entity, EntityType, Property, PropertyAccess } from "../../../database";
 import { JsonDatabaseValueStorage } from "./ValueStorage";
-import { BotDatabase } from "../../../database/BotDatabase";
-import { Property } from "../../../database/property/Property";
-import { EntityType, Entity } from "../../../database/Entity";
-import { PropertyAccess } from "../../../database/property/Access";
 
 interface JsonHandlerOptions {
     /**
@@ -54,9 +50,11 @@ export class JsonDatabaseHandler extends BotDatabaseHandler {
             dataObject.properties.prefixes = dataObject.prefixes;
         }
 
+        const properties = [...database.cache.properties.values()];
+
         const setPropsObject = async <E extends EntityType>(entityType: E, entity: Entity<E>, obj: any) => {
-            const properties = database.properties.list(entityType).filter(p => p.key in obj);
-            await Promise.all(properties.map(p => database.accessProperty(entity, p).set(obj[p.key])));
+            const entityProps = properties.filter(p => p.entityType == entityType && p.key in obj);
+            await Promise.all(entityProps.map(p => database.accessProperty(entity, p).set(obj[p.key])));
         }
 
         if (typeof dataObject.properties == 'object') {
@@ -94,10 +92,12 @@ export class JsonDatabaseHandler extends BotDatabaseHandler {
             }
         }
 
-        const guildDefinedProps = database.properties.list('guild');
+        const properties = [...database.cache.properties.values()];
+
+        const guildDefinedProps = properties.filter(p => p.entityType == 'guild');
         await saveValues('guild', guildDefinedProps, guild);
 
-        const memberDefinedProps = database.properties.list('member');
+        const memberDefinedProps = properties.filter(p => p.entityType == 'member');
         const { cache: members } = guild.members;
         await Promise.all(members.map(member => saveValues('member', memberDefinedProps, member)));
 

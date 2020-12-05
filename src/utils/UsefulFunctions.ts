@@ -1,3 +1,5 @@
+import { FilterFunction } from "./UsefulTypes";
+
 /**
  * @returns true, если строка не пустая и не содержит пробелов
  * @param string строка
@@ -44,7 +46,7 @@ export function deepMerge<T>(origin: T, override: Partial<T>): T {
  * @param iterable итерируемый объект
  * @param filter функция фильтрации
  */
-export function* filterIterable<T>(iterable: IterableIterator<T>, filter: (v: T) => boolean): IterableIterator<T> {
+export function* filterIterable<T>(iterable: IterableIterator<T>, filter: FilterFunction<T>): IterableIterator<T> {
     for (const value of iterable) {
         if (filter(value)) {
             yield value;

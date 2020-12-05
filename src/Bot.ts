@@ -2,14 +2,13 @@ import { Client } from "discord.js";
 import { promises } from "fs";
 import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
-import { BotDatabase } from "./database/BotDatabase";
 import { deepMerge, GuildMessage, isGuildMessage } from "./utils";
 import { Logger } from "./Logger";
 import { CommandContext } from "./command/Context";
-import { AnyProperty, Property } from "./database/property/Property";
 import { helpCommand } from "./builtIn/command";
 import { AnyCommand } from "./command/Command";
 import { createEventStorage, EmitOf } from "./event";
+import { BotDatabase, Property, AnyProperty } from "./database";
 
 /**
  * Класс бота
@@ -84,16 +83,6 @@ export class Bot {
             }
 
             process.exit(0);
-        });
-
-        for (const property of this.options.database.properties) {
-            this.database.properties.add(property);
-        }
-
-        this.commands.events.on('added', command => {
-            command.requiredProperties?.forEach(property => {
-                this.database.properties.add(property);
-            });
         });
 
         this.client.once('ready', () => {
@@ -218,14 +207,14 @@ export class Bot {
 
             fetchPrefixes = (bot, guild) => bot.database.accessProperty(guild, prefixes).value();
 
-            if (!options.database) {
-                options.database = {};
-            }
-            if (options.database.properties) {
-                (options.database.properties as AnyProperty[]).push(prefixes)
+            options.database ??= {};
+            options.database.cache ??= {};
+
+            if (options.database.cache.properties) {
+                (options.database.cache.properties as AnyProperty[]).push(prefixes)
             }
             else {
-                options.database.properties = [prefixes];
+                options.database.cache.properties = [prefixes];
             }
         }
 
