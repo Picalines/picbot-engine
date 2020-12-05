@@ -60,12 +60,6 @@ export class BotDatabase {
             }
         }
 
-        this.bot.commands.events.on('added', command => {
-            command.requiredProperties?.forEach(property => {
-                addToCache.properties(property);
-            });
-        });
-
         this.#guildsStorage = new this.handler.propertyStorageClass(this, 'guild') as any;
         this.#memberStorages = new Map();
 
@@ -111,7 +105,7 @@ export class BotDatabase {
         const constructor = (property.accessorClass ?? PropertyAccess) as PropertyAccessConstructor<T, A>;
 
         return new constructor(property, {
-            set: async (value: T) => {
+            set: async value => {
                 if (!property.validate(value)) {
                     throw new Error(`value '${value}' is not valid for database property '${property.key}'`);
                 }

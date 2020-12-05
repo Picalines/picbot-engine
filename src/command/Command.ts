@@ -44,11 +44,6 @@ export interface CommandInfo<Args extends unknown[]> {
      * Примеры использования
      */
     readonly examples?: NonEmptyReadonly<string[]>;
-
-    /**
-     * Свойства сущностей в базе данных, с которыми работает команда
-     */
-    readonly requiredProperties?: NonEmptyReadonly<AnyProperty[]>;
 }
 
 /**
