@@ -28,10 +28,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
      */
     readonly #emit: EmitOf<CommandStorage['events']>;
 
-    /**
-     * @param bot ссылка на бота
-     */
-    constructor(readonly bot: Bot) {
+    constructor() {
         const [events, emit] = createEventStorage(this as CommandStorage, {
             added(command: AnyCommand) { },
         });
@@ -113,33 +110,5 @@ export class CommandStorage implements Iterable<AnyCommand> {
         }
 
         return map;
-    }
-
-    /**
-     * Вызывает require на все .js файлы из папки, и добавляет все экпортированные команды в хранилище.
-     * Команда должна быть экспортирована как `module.exports = new Command({ ... });`
-     * @param path путь до папки с командами
-     */
-    public requireFolder(path: PathLike) {
-        this.bot.logger.task(`loading commands from '${path}'`);
-
-        const jsFiles = readdirSync(path).filter(file => file.endsWith('.js'));
-
-        const _require = require.main?.require ?? require;
-        path = String(path);
-
-        const modules = jsFiles.map(file => {
-            const mPath = './' + join(path as string, file);
-            return [mPath, _require(mPath)];
-        });
-
-        const commands = modules.filter(exports => exports[1] instanceof Command) as [path: string, command: AnyCommand][];
-
-        commands.forEach(command => {
-            this.add(command[1]);
-            this.bot.logger.log(command[0]);
-        });
-
-        this.bot.logger.endTask('success', 'commands successfully loaded');
     }
 }

@@ -4,8 +4,9 @@ import { PropertyAccessConstructor, Property, PropertyAccess, DatabaseValueStora
 import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector";
 import { EntityType, Entity } from "./Entity";
 import { BotDatabaseHandler } from "./Handler";
-import { AnyConstructor, createGroupedCache, filterIterable, GroupsOfCache } from "../utils";
+import { AnyConstructor, createGroupedCache, filterIterable } from "../utils";
 import { Bot } from "../Bot";
+import { requireFolder } from "../utils/RequireFolder";
 
 /**
  * Класс базы данных бота
@@ -54,17 +55,25 @@ export class BotDatabase {
 
         this.cache = caches;
 
-        for (const [key, array] of Object.entries(this.bot.options.database.cache)) {
-            for (const cacheItem of array) {
-                addToCache[key as keyof GroupsOfCache<BotDatabase['cache']>](cacheItem as any);
-            }
-        }
+        this.bot.loadingSequence.stage('require properties', () => requireFolder(Property, this.bot.options.loadingPaths.properties).forEach(([path, p]) => {
+            addToCache.properties(p);
+            this.bot.logger.log(path);
+        }));
+
+        this.bot.loadingSequence.stage('require selectors', () => requireFolder(EntitySelector, this.bot.options.loadingPaths.selectors).forEach(([path, s]) => {
+            addToCache.selectors(s);
+            this.bot.logger.log(path);
+        }));
+
+        this.bot.loadingSequence.after('login', 'load database', async () => {
+            await this.load();
+        });
 
         this.#guildsStorage = new this.handler.propertyStorageClass(this, 'guild') as any;
         this.#memberStorages = new Map();
 
-        this.events.on('loaded', async () => await this.handler.onLoaded?.(this));
-        this.events.on('saved', async () => await this.handler.onSaved?.(this));
+        this.events.on('loaded', () => this.handler.onLoaded?.(this));
+        this.events.on('saved', () => this.handler.onSaved?.(this));
 
         bot.client.on('guildDelete', async guild => {
             const memberStorage = this.#memberStorages.get(guild.id);
@@ -189,19 +198,17 @@ export class BotDatabase {
      * @emits beforeLoading
      * @emits loaded
      */
-    public async load(): Promise<void> {
-        this.bot.logger.task(`loading ${this.bot.username}'s database...`);
-
+    private async load(): Promise<void> {
         this.#emit('beforeLoading');
 
         if (this.handler.prepareForLoading) {
-            this.bot.logger.task('preparing...');
+            this.bot.logger.task('preparing');
             await this.handler.prepareForLoading(this);
-            this.bot.logger.endTask('success', 'prepared successfully');
+            this.bot.logger.endTask('success', 'prepared');
         }
 
         if (this.handler.loadGuild) {
-            this.bot.logger.task('loading guilds...');
+            this.bot.logger.task('guilds');
 
             const guildsToLoad = this.bot.client.guilds.cache.map(g => g.id);
 
@@ -215,10 +222,8 @@ export class BotDatabase {
                 this.bot.logger.log(guild.name);
             }
 
-            this.bot.logger.endTask('success', 'guilds successfully loaded')
+            this.bot.logger.endTask('success', '')
         }
-
-        this.bot.logger.endTask('success', `${this.bot.username}'s database successfully loaded`);
 
         this.#emit('loaded');
     }
@@ -229,18 +234,18 @@ export class BotDatabase {
      * @emits saved
      */
     public async save(): Promise<void> {
-        this.bot.logger.task(`saving ${this.bot.username}'s database...`);
+        this.bot.logger.task(`saving ${this.bot.username}'s database`);
 
         this.#emit('beforeSaving');
 
         if (this.handler.prepareForSaving) {
-            this.bot.logger.task('preparing...');
+            this.bot.logger.task('preparing');
             await this.handler.prepareForSaving(this);
-            this.bot.logger.endTask('success', 'prepared successfully');
+            this.bot.logger.endTask('success', 'prepared');
         }
 
         if (this.handler.saveGuild) {
-            this.bot.logger.task('saving guilds...');
+            this.bot.logger.task('guilds');
 
             const { cache: guildsToSave } = this.bot.client.guilds;
 
@@ -253,10 +258,10 @@ export class BotDatabase {
                 this.bot.logger.log(guild.name);
             }
 
-            this.bot.logger.endTask('success', 'guilds successfully saved');
+            this.bot.logger.endTask('success', '');
         }
 
-        this.bot.logger.endTask('success', `${this.bot.username}'s database successfully saved`);
+        this.bot.logger.endTask('success', '');
 
         this.#emit('saved');
     }

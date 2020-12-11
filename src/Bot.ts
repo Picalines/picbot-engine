@@ -1,14 +1,15 @@
 import { Client } from "discord.js";
-import { promises } from "fs";
 import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
 import { deepMerge, GuildMessage, isGuildMessage } from "./utils";
 import { Logger } from "./Logger";
 import { CommandContext } from "./command/Context";
 import { helpCommand } from "./builtIn/command";
-import { AnyCommand } from "./command/Command";
+import { AnyCommand, Command } from "./command/Command";
 import { createEventStorage, EmitOf } from "./event";
-import { BotDatabase, Property, AnyProperty } from "./database";
+import { BotDatabase, Property } from "./database";
+import { StageSequenceBuilder } from "./utils/StageSequence";
+import { requireFolder } from "./utils/RequireFolder";
 
 /**
  * Класс бота
@@ -18,6 +19,11 @@ export class Bot {
      * Настройки бота
      */
     public readonly options: BotOptions;
+
+    /**
+     * Стадии загрузки бота
+     */
+    public readonly loadingSequence: StageSequenceBuilder;
 
     /**
      * Хранилище команд бота
@@ -48,7 +54,7 @@ export class Bot {
      * @param client Клиент API discord.js
      * @param options настройки бота
      */
-    constructor(readonly client: Client, options: BotOptionsArgument = {}) {
+    constructor(readonly client: Client, options: BotOptionsArgument) {
         const [events, emitEvent] = createEventStorage(this as Bot, {
             guildMemberMessage(message: GuildMessage) { },
             guildMyMessage(message: GuildMessage) { },
@@ -65,11 +71,20 @@ export class Bot {
 
         this.logger = new Logger(this.options.loggerOptions);
 
-        this.commands = new CommandStorage(this);
+        this.loadingSequence = new StageSequenceBuilder();
+
+        this.commands = new CommandStorage();
 
         if (this.options.useBuiltInHelpCommand) {
             this.commands.add(helpCommand as unknown as AnyCommand);
         }
+
+        this.loadingSequence.stage('require commands', () => {
+            requireFolder<AnyCommand>(Command, this.options.loadingPaths.commands).forEach(([path, command]) => {
+                this.commands.add(command)
+                this.logger.log(path);
+            });
+        });
 
         this.database = new BotDatabase(this, this.options.database.handler);
 
@@ -85,9 +100,15 @@ export class Bot {
             process.exit(0);
         });
 
-        this.client.once('ready', () => {
-            this.database.load();
-        });
+        this.loadingSequence.stage('login', () => new Promise((resolve, reject) => {
+            this.client.once('ready', () => {
+                this.logger.log('ready');
+                resolve();
+            });
+            this.client.login(this.options.token).catch(reject).then(() => {
+                this.logger.log(`logged in as ${this.username}`)
+            });
+        }));
 
         this.client.on('message', message => {
             if (isGuildMessage(message)) {
@@ -161,33 +182,26 @@ export class Bot {
         return;
     }
 
-    /**
-     * Аналог функции client.login c поддержкой чтения файла и переменных окружения
-     * @param token токен discord api
-     * @param tokenType тип токена. `file` прочитает файл с токеном. `env` подставит значение из `process.env`
-     */
-    public async login(token: string, tokenType: 'string' | 'file' | 'env' = 'string') {
-        this.logger.task('logging in Discord...');
+    async load() {
+        this.logger.task(`loading bot...`);
 
-        if (tokenType == 'env') {
-            if (process.env[token] === undefined) {
-                throw new Error(`env variable '${token}' not found`);
+        const stages = this.loadingSequence.build();
+
+        for (const { name, task } of stages) {
+            this.logger.task(name);
+
+            try {
+                await task();
             }
-            token = process.env[token]!;
-        }
-        else if (tokenType == 'file') {
-            token = (await promises.readFile(token)).toString();
+            catch (error) {
+                this.logger.endTask('error', error instanceof Error ? error.message : String(error));
+                throw error;
+            }
+
+            this.logger.endTask('success', '');
         }
 
-        try {
-            await this.client.login(token);
-        }
-        catch (error: unknown) {
-            this.logger.endTask('error', `could not log in: ${error instanceof Error ? error.message : String(error)}`);
-            return;
-        }
-
-        this.logger.endTask('success', 'logged in as ' + this.username);
+        this.logger.endTask('success', `bot '${this.username}' successfully loaded`);
     }
 
     /**
@@ -206,16 +220,6 @@ export class Bot {
             const prefixes = fetchPrefixes;
 
             fetchPrefixes = (bot, guild) => bot.database.accessProperty(guild, prefixes).value();
-
-            options.database ??= {};
-            options.database.cache ??= {};
-
-            if (options.database.cache.properties) {
-                (options.database.cache.properties as AnyProperty[]).push(prefixes)
-            }
-            else {
-                options.database.cache.properties = [prefixes];
-            }
         }
 
         return deepMerge(DefaultBotOptions, {

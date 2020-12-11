@@ -14,7 +14,7 @@ export { ArgumentSequence } from "./command/argument/Sequence";
 
 export * from './database';
 
-export { BotOptions, DefaultBotOptions } from "./BotOptions";
+export { BotOptions, DefaultBotOptions as DefaultBotOptions } from "./BotOptions";
 export { Bot } from "./Bot";
 
 export * from "./builtIn/reader";

@@ -81,8 +81,11 @@ export class Logger {
         this.#emit('log', logType, strLog);
 
         if (!this.hideInConsole) {
-            strLog = this.consoleTheme?.(logType, strLog, this.taskLevel, taskCompleted) ?? log;
-            (log instanceof Error ? console.trace : console.log)(strLog);
+            strLog = this.consoleTheme?.(logType, strLog, this.taskLevel, taskCompleted) ?? strLog;
+            console.log(strLog);
+            if (log instanceof Error) {
+                console.log(log.stack);
+            }
         }
     }
 
