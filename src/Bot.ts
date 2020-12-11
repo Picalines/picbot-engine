@@ -1,12 +1,12 @@
-import { Client } from "discord.js";
+import { Client, ClientEvents, Constants } from "discord.js";
 import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./BotOptions";
 import { CommandStorage } from "./command/Storage";
-import { deepMerge, GuildMessage, isGuildMessage } from "./utils";
+import { ClientEventNames, deepMerge, GuildMessage, isGuildMessage } from "./utils";
 import { Logger } from "./Logger";
 import { CommandContext } from "./command/Context";
 import { helpCommand } from "./builtIn/command";
 import { AnyCommand, Command } from "./command/Command";
-import { createEventStorage, EmitOf } from "./event";
+import { BotEventListener, createEventStorage, EmitOf, createNodeEmitterLink, PublicEventStorage } from "./event";
 import { BotDatabase, Property } from "./database";
 import { StageSequenceBuilder } from "./utils/StageSequence";
 import { requireFolder } from "./utils/RequireFolder";
@@ -34,6 +34,11 @@ export class Bot {
      * Логгер
      */
     readonly logger: Logger;
+
+    /**
+     * События клиента API
+     */
+    readonly clientEvents = createNodeEmitterLink<Client, { [E in keyof ClientEvents]: (...args: [...ClientEvents[E]]) => void }>(this.client, ClientEventNames);
 
     /**
      * События бота
@@ -82,13 +87,6 @@ export class Bot {
             this.commands.add(helpCommand as unknown as AnyCommand);
         }
 
-        this.loadingSequence.stage('require commands', () => {
-            requireFolder<AnyCommand>(Command, this.options.loadingPaths.commands).forEach(([path, command]) => {
-                this.commands.add(command)
-                this.logger.log(path);
-            });
-        });
-
         this.database = new BotDatabase(this, this.options.database.handler);
 
         this.loadingSequence.stage('login', () => new Promise((resolve, reject) => {
@@ -100,6 +98,20 @@ export class Bot {
                 this.logger.log(`logged in as ${this.username}`)
             });
         }));
+
+        this.loadingSequence.stage('require commands', () => {
+            requireFolder<AnyCommand>(Command, this.options.loadingPaths.commands).forEach(([path, command]) => {
+                this.commands.add(command)
+                this.logger.log(path);
+            });
+        });
+
+        this.loadingSequence.stage('require events', () => {
+            requireFolder(BotEventListener, this.options.loadingPaths.events).forEach(([path, listener]) => {
+                listener.connect(this);
+                this.logger.log(path);
+            });
+        });
 
         this.client.on('message', message => {
             if (isGuildMessage(message)) {

@@ -57,8 +57,8 @@ export interface EmitEvent<Emitter, Events> {
 /**
  * Интерфейс публичного хранилища событий (любые части программы могут вызывать emit)
  */
-export interface PublicEventStorage<Events> extends EventStorage<any, Events> {
-    readonly emit: EmitEvent<any, Events>;
+export interface PublicEventStorage<Events, UnsafeEmitter = any> extends EventStorage<UnsafeEmitter, Events> {
+    readonly emit: EmitEvent<UnsafeEmitter, Events>;
 }
 
 /**
@@ -66,4 +66,13 @@ export interface PublicEventStorage<Events> extends EventStorage<any, Events> {
  */
 export type EventsOf<S extends EventStorage<any, any>> = S extends EventStorage<any, infer Events> ? Events : never;
 
+/**
+ * Тип функции запуска для хранилища событий
+ */
 export type EmitOf<S extends EventStorage<any, any>> = EmitEvent<any, EventsOf<S>>;
+
+/**
+ * Достаёт тип слушателя события у класса с полем, которое хранит события
+ */
+export type NamedListenerOf<Emitter, SK extends keyof Emitter, E extends keyof EventsOf<Emitter[SK] extends EventStorage<Emitter, any> ? Emitter[SK] : never>> =
+    DefinitionToListener<Emitter, EventsOf<Emitter[SK] extends EventStorage<Emitter, any> ? Emitter[SK] : never>, E>;
