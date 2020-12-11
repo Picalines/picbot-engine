@@ -66,7 +66,7 @@ export class Bot {
 
             commandNotFound(message: GuildMessage, wrongName: string) { },
             commandError(message: GuildMessage, error: Error) { },
-            commandExecuted<Args extends unknown[]>(context: CommandContext<Args>) { },
+            commandExecuted(context: CommandContext<unknown[]>) { },
         });
 
         this.events = events;

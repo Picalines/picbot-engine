@@ -1,5 +1,5 @@
 import { Guild } from "discord.js";
-import { DeepPartial, DeepPartialExcept, NonEmptyReadonly, Overwrite, PromiseOrSync } from "./utils";
+import { DeepPartialExcept, NonEmptyReadonly, Overwrite, PromiseOrSync } from "./utils";
 import { BotDatabaseHandler, Property } from "./database";
 import { JsonDatabaseHandler } from "./builtIn/database";
 import { LoggerOptions } from "./Logger";
@@ -19,19 +19,19 @@ export type BotOptions = {
      */
     loadingPaths: {
         /**
-         * @default 'properties'
+         * @default 'src/properties'
          */
         properties: string;
         /**
-         * @default 'selectors'
+         * @default 'src/selectors'
          */
         selectors: string;
         /**
-         * @default 'events'
+         * @default 'src/events'
          */
         events: string;
         /**
-         * @default 'commands'
+         * @default 'src/commands'
          */
         commands: string;
     };
