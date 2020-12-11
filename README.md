@@ -8,8 +8,9 @@
 
 [Документация](https://picalines.github.io/picbot-engine/)
 
-## Логин и загрузка команд
+## Главный файл
 
+`src/index.js`
 ```js
 const { Client } = require('discord.js');
 const { Bot } = require('picbot-engine');
@@ -17,23 +18,23 @@ const { Bot } = require('picbot-engine');
 const client = new Client();
 
 const bot = new Bot(client, {
-    guild: {
-        defaultPrefixes: ['picbot.'], // стандартные префиксы для новых серверов
-    },
+    token: 'token.txt',
+    tokenType: 'file',
+    fetchPrefixes: ['picbot.'], // стандартные префиксы бота
 });
 
-// Импортирует все команды из папки commands 
-bot.commands.requireFolder('commands');
-
-// Прочитает токен бота из файла token.txt и использует в client.login
-bot.loginFromFile('token.txt');
+bot.load(); // начнёт загрузку бота
 ```
+
+Бот загружает команды и другие штуки из папок src/{commands,...}. Эти пути можно изменить в настройках бота (`loadingPaths`)
 
 ## Примеры команд
 
+Все команды будем писать в папке `src/commands`
+
 ### Ping
 
-`commands/ping.js`
+`src/commands/ping.js`
 ```js
 const { Command } = require('picbot-engine');
 
@@ -50,7 +51,7 @@ module.exports = new Command({
 
 ### Сложение двух чисел
 
-`commands/sum.js`
+`src/commands/sum.js`
 ```js
 const { Command, ArgumentSequence, numberReader } = require('picbot-engine');
 
@@ -84,7 +85,7 @@ module.exports = new Command({
 
 ### Сложение N чисел
 
-`commands/sum.js`
+`src/commands/sum.js`
 ```js
 const { Command, ArgumentSequence, restReader, numberReader } = require('picbot-engine');
 
@@ -114,7 +115,7 @@ module.exports = new Command({
 
 ### Ban
 
-`commands/ban.js`
+`src/commands/ban.js`
 ```js
 const { Command, ArgumentSequence, memberReader, remainingTextReader, optionalReader } = require('picbot-engine');
 
@@ -158,17 +159,29 @@ module.exports = new Command({
 });
 ```
 
-Код команды взят напрямую из библиотеки. Команда `ban` встроена в бота
+В библиотеку встроена только команда `help`. Остальные примеры базовых команд смотрите в README и [picbot-9](https://github.com/Picalines/picbot-9)
 
-У бота также есть встроенная команда `help`
+## Система событий
 
-Отключить встроенные команды можно через настройки в конструкторе `Bot`
+У бота есть свои события, обработчики которых можно писать в сторонних файлах
 
-## События discord.js
-
+`src/events/guildMemberMessage.js`
 ```js
-bot.client.on('событие discord.js', () => {
-    // ...
+const { BotEventListener } = require('picbot-engine');
+
+module.exports = new BotEventListener(bot => bot.events, 'guildMemberMessage', message => {
+    /*
+    Первым аргументом мы указываем функцию, которая достаёт "хранилище событий"
+    Вместо bot.events можно указать, например, bot.clientEvents для событий discord.js
+
+    Второй аргумент - имя события
+
+    Третий - слушатель события, обрабатывающий логику
+    Если объявить слушатель через function, вам будет доступно this
+    В данном случае this будет ботом
+    */
+
+    message.reply('pong!');
 });
 ```
 
@@ -176,60 +189,50 @@ bot.client.on('событие discord.js', () => {
 
 Для чтения аргументов библиотека использует специальные "функции чтения"
 
-Функция чтения примает строку ввод пользователя и *внешние данные* (*контекст*). Вернуть он должен либо информацию об аргументе (его длину в строке ввода и переведённое значение), либо ошибку.
+Функция чтения примает строку ввода пользователя и внешние данные (*контекст*). Вернуть он должен либо информацию об аргументе (его длину в строке ввода и переведённое значение), либо ошибку.
 
 Бот не хранит какой-то конкретный список таких функций внутри себя. Эти функции можно объявить хоть в коде самой команды, однако гораздо чаще вы будете импортировать их напрямую из библиотеки.
 
 Вот список встроенных функций для чтения аргументов (их документация раписана в `src/builtIn/reader/...`):
 
-* remainingTextReader - читает весь оставшийся текст в сообщении (использует String.trim)
+* `remainingTextReader` - читает весь оставшийся текст в сообщении (использует String.trim)
 
-* memberReader - читает упоминание участника сервера
+* `memberReader` - читает упоминание участника сервера
 
-* textChannelReader - читает упоминание текстового канала
+* `textChannelReader` - читает упоминание текстового канала
 
-* roleReader - читает упоминание роли
+* `roleReader` - читает упоминание роли
 
-* numberReader('int' | 'float', [min, max]) - возвращает функцию чтения числа
-    - 'int' - строго целое число, 'float' - дробное
-    - [min, max] - интервал, в котором находится число. По стандарту он равен `[-Infinity, Infinity]`
+* `numberReader('int' | 'float', [min, max])` - возвращает функцию чтения числа
+    - `'int'` - строго целое число, `'float'` - дробное
+    - `[min, max]` - отрезок, в котором находится число. По стандарту он равен `[-Infinity, Infinity]`
 
-* wordReader - читает слово (последовательность символов до пробела)
+* `wordReader` - читает слово (последовательность символов до пробела)
 
-* stringReader - читает строку в кавычках или апострофах
+* `stringReader` - читает строку в кавычках или апострофах
 
-* keywordReader(...) - читает ключевые слова.
-    - keywordReader('add', 'rm') - прочитает либо `add`, либо 'rm', либо кинет ошибку
-    - keywordReader('a', 'b', 'c', 'd', ...)
+* `keywordReader(...)` - читает ключевые слова.
+    - `keywordReader('add', 'rm')` - прочитает либо `add`, либо 'rm', либо кинет ошибку
+    - `keywordReader('a', 'b', 'c', 'd', ...)`
 
-* optionalReader(otherReader, defaultValue) - делает аргумент необязательным
-    - otherReader - другая функция чтения
-    - defaultValue - стандартное значение аргумента. Если не указать, библиотека подставит `null`
+* `optionalReader(otherReader, defaultValue)` - делает аргумент необязательным
+    - `otherReader` - другая функция чтения
+    - `defaultValue` - стандартное значение аргумента. Если не указать, библиотека подставит `null`
 
-* mergeReaders(reader_1, reader_2, ...) - соединяет несколько функций чтения в одну
-    - mergeReaders(memberReader, numberReader('int')) -> [GuildMember, number]
+* `mergeReaders(reader_1, reader_2, ...)` - соединяет несколько функций чтения в одну
+    - `mergeReaders(memberReader, numberReader('int'))` -> [GuildMember, number]
 
-* repeatReader(reader, times) - вызывает функцию чтения `reader` `times` раз
+* `repeatReader(reader, times)` - вызывает функцию чтения `reader` `times` раз
 
-* restReader(reader) - использует функцию чтения до конца команды
-    - restReader(memberReader) - прочитает столько упоминаний, сколько введёт пользователь
-    - restReader(memberReader, 3) - кинет ошибку, если пользователь введёт меньше 3-х упоминаний
-
-## Встроенные команды
-
-У бота есть список встроенных команд:
-* `help` - помощь по всем командам
-* `ban` - банит участника сервера
-* `kick` - кикает участника сервера
-* `prefix` - управление префиксами на сервере
-* `avatar` - пишет ссылку на аватар участника сервера
-* `clear` - очищает N последних сообщений
+* `restReader(reader)` - использует функцию чтения до конца команды
+    - `restReader(memberReader)` - прочитает столько упоминаний, сколько введёт пользователь
+    - `restReader(memberReader, 3)` - кинет ошибку, если пользователь введёт меньше 3-х упоминаний
 
 ## Кастомные аргументы команд
 
 Выше я описал концепцию функций чтения. Логично, что вы можете реализовать свои собственные функции чтения. Тут я приведу простой пример функции, которая прочитает кастомный класс `Vector`
 
-`vector.js`
+`src/vector.js`
 ```js
 const { parsedRegexReader } = require('picbot-engine');
 
@@ -265,8 +268,10 @@ module.exports = {
 };
 ```
 
-`commands/vectorSum.js`
+`src/commands/vectorSum.js`
 ```js
+const { vectorReader } = require('../vector');
+
 module.exports = new Command({
     name: 'vectorsum',
 
@@ -292,22 +297,33 @@ module.exports = new Command({
 
 ## Работа с базой данных
 
+### Свойства
+
 Представим, что вы делаете команду `warn`. Она должна увеличивать счётчик warn'ов у указанного участника. Как только этот счётчик достигнет некой отметки, которая, например, настраивается отдельной командой `setmaxwarns`, бот забанит этого участника.
 
 Сначала мы объявим `свойства` для базы данных:
+
+`src/properties/warns.js`
 ```js
 const { Property, NumberPropertyAccess } = require('picbot-engine');
 
-// счётчик warn'ов у участников сервера
-const warnsProperty = new Property({
-    key: 'warns', // уникальное название свойства в базе данных
-    entityType: 'member', // тип сущности, у которой есть свойство ('member' / 'guild')
-    defaultValue: 0, // стандартное кол-во warn'ов у любого участника сервера
-    validate: warns => warns >= 0, // функция валидации. Кол-во warn'ов не может быть меньше 0 
+// счётчик warn'ов у каждого участника сервера
+
+module.exports = new Property({
+    key: 'warns',                        // уникальное название свойства в базе данных
+    entityType: 'member',                // тип сущности, у которой есть свойство ('member' / 'guild')
+    defaultValue: 0,                     // стандартное кол-во warn'ов
+    validate: warns => warns >= 0,       // функция валидации. Кол-во warn'ов не может быть меньше 0 
     accessorClass: NumberPropertyAccess, // об этом ниже
 });
+```
 
-// максимальное кол-во warn'ов на сервере
+`src/properties/maxWarns.js`
+```js
+const { Property, NumberPropertyAccess } = require('picbot-engine');
+
+// максимальное кол-во warn'ов у каждого сервера
+
 const maxWarnsProperty = new Property({
     key: 'maxWarns',
     entityType: 'guild',
@@ -317,37 +333,13 @@ const maxWarnsProperty = new Property({
 });
 ```
 
-Потом мы должны указать эти свойства в настройках бота
-```js
-const { warnsProperty, maxWarnsProperty } = require('./properties');
-
-const client = new Client();
-
-const bot = new Bot(client, {
-    database: {
-        definedProperties: [
-            warnsProperty, maxWarnsProperty
-        ]
-    },
-});
-```
-
-Если учитывать, что все свойства мы будем объявлять в файле `properties.js`, то их добавление в настройки можно упростить:
-```js
-const properties = require('./properties');
-
-const bot = new Bot(new Client(), {
-    database: {
-        definedProperties: Object.values(properties),
-    },
-});
-```
-
 Теперь сделаем команду warn:
-`commands/warn.js`
+`src/commands/warn.js`
 ```js
 const { Command } = require('picbot-engine');
-const { warnsProperty, maxWarnsProperty } = require('../properties');
+
+const warnsProperty = require('../properties/warns');
+const maxWarnsProperty = require('../properties/maxWarns');
 
 module.exports = new Command({
     name: 'warn',
@@ -367,14 +359,16 @@ module.exports = new Command({
         const targetWarns = database.accessProperty(target, warnsProperty);
         const maxWarns = database.accessProperty(target.guild, maxWarnsProperty);
 
-        // у обоих свойств мы ставили параметр accessorClass на NumberPropertyAccess
-        // это было нужно, чтобы у 'объектов доступа' был метод increase,
-        // который увеличивает значение свойства как с оператором +=
+        /*
+        У обоих свойств мы ставили параметр accessorClass на NumberPropertyAccess.
+        Это было нужно, чтобы у 'объектов доступа' был метод increase,
+        который увеличивает значение свойства как с оператором +=
 
-        // По стандарту (если не указывать accessorClass) у объекта доступа
-        // есть методы value и set (прочитать и записать новое значение).
-        // Метод increase у NumberPropertyAccess на самом деле просто использует
-        // set и value, а нужен только для упрощения кода.
+        По стандарту (если не указывать accessorClass) у объекта доступа
+        есть методы value и set (прочитать и записать новое значение).
+        Метод increase у NumberPropertyAccess на самом деле просто использует
+        set и value, а нужен только для упрощения кода.
+        */
 
         const newTargetWarns = await targetWarns.increase(1);
         const maxWarnsValue = await maxWarns.value();
@@ -392,10 +386,11 @@ module.exports = new Command({
 ```
 
 и команда `setmaxwarns`:
-`commands/setMaxWarns.js`
+`src/commands/setMaxWarns.js`
 ```js
 const { Command } = require('picbot-engine');
-const { maxWarnsProperty } = require('../properties');
+
+const maxWarnsProperty = require('../properties/maxWarns');
 
 module.exports = new Command({
     name: 'setmaxwarns',
@@ -414,7 +409,8 @@ module.exports = new Command({
             throw new Error('Максимальное кол-во предупреждений не может быть меньше 1');
         }
 
-        // функция database.accessProperty синхронная, а await нам нужен для вызова set
+        // функция database.accessProperty синхронная, а await нам нужен для вызова set.
+        // команда кинет исключение, если пользователь введёт значение меньше 3 (validate)
         await database.accessProperty(guild, maxWarnsProperty).set(newMaxWarns);
 
         await message.reply(`Максимальное кол-во предупреждений на сервере теперь \`${newMaxWarns}\``);
@@ -422,6 +418,85 @@ module.exports = new Command({
 });
 ```
 
-А теперь главное. Весь код команд и свойств никак не зависит от базы данных, которую выберет разработчик.
+### Селекторы
 
-По стандарту в библиотеке реализована простая база данных на json, которая сохраняет и загружает все данные из локальной папки `database` (не забудьте добавить в `.gitignore`!). Однако кроме json вы можете реализовать свою базу данных через интерфейс `BotDatabaseHandler`. Я не буду здесь приводить примеров, *потому что лень*. В сурс коде (`src/database/Handler.ts`) уже расписаны нужные для работы функции.
+Потом мы резко захотели сделать поиск по предупреждённым участникам сервера. Для этого в библиотеке есть *селекторы*
+
+`src/selectors/minWarns.js`
+```js
+const { EntitySelector } = require('picbot-engine');
+
+const warnsProperty = require('../properties/warns');
+
+module.exports = new EntitySelector({
+    entityType: 'member', // кого ищем
+
+    variables: {
+        minWarns: Number, // параметр minWarns будем читать из аргументов
+    },
+
+    expression: q => q.gte(warnsProperty, q.var('minWarns')), // 'boolean' выражение
+    /*
+    Это выражение можно мысленно представить в виде стрелочной функции:
+    member => member.warns >= minwarns
+
+    Однако представлены они не так для оптимизации под разные виды баз данных
+
+    Доступные операторы:
+
+    gte - GreaterThanEquals - >=
+    gt - GreaterThan - >
+    lt - <, lte - <=
+    eq - ==
+    and - &&, or - ||, not - !
+
+    Пример сложного выражения:
+    q => q.and(
+        q.eq(xpProperty, 0),
+        q.gt(warnsProperty, 1)
+    )
+    */
+});
+```
+
+и используем селектор в команде
+
+`src/commands/findwarned.js`
+```js
+const { Command, ArgumentSequence, optionalReader, numberReader } = require('picbot-engine');
+
+const minWarnsSelector = require('../selectors/minWarns');
+
+module.exports = new Command({
+    name: 'findwarned',
+
+    description: 'Ищет предупреждённых участников',
+
+    arguments: new ArgumentSequence(
+        {
+            name: 'minWarns',
+            description: 'Минимальное кол-во варнов',
+            reader: optionalReader(numberReader('int', [1, Infinity]), 1),
+        }
+    ),
+
+    execute: async ({ message, database, args: [minWarns] }) => {
+        const selected = await database.selectEntities(minWarnsSelector, {
+            manager: message.guild.members, // если искать сервера, то нужно указать client.guilds
+            throwOnNotFound: new Error('Ничего не найдено'), // если не указать, selected может быть пустым
+            variables: { minWarns }, // переменные для селектора
+            maxCount: 10, // максимальное
+            filter: m => !m.permissions.has('ADMINISTRATOR'), // фильтрует участника перед выборкой
+        });
+
+        await message.reply(selected.map(m => m.displayName).join(', '))
+    },
+});
+
+```
+
+### Итог
+
+А теперь главное. Весь код команд и свойств никак не зависит от базы данных, которую выберет пользователь.
+
+По стандарту в библиотеке реализована простая база данных на json, которая сохраняет и загружает все данные из локальной папки `database` (не забудьте добавить в `.gitignore`!). Однако кроме json вы можете реализовать свою базу данных через класс `BotDatabaseHandler`. Я не буду здесь приводить примеров, *потому что лень*. В сурс коде (`src/database/Handler.ts`) уже расписаны нужные для работы функции.
