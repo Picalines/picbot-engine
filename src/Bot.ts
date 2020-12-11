@@ -182,6 +182,9 @@ export class Bot {
         return;
     }
 
+    /**
+     * Загружает бота
+     */
     async load() {
         this.logger.task(`loading bot...`);
 
