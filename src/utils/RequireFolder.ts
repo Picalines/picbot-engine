@@ -19,13 +19,14 @@ export function requireFolder<T>(constructor: AnyConstructor<T>, folder: string)
 
     const exports = jsFiles.map<ExportItem<T>>(file => {
         const path = join('.', folder, file);
-        const item = _require('./' + path);
+        const moduleExports = _require('./' + path);
 
-        if (!(item instanceof constructor)) {
+        const isClass = moduleExports instanceof constructor;
+        if (!(isClass || moduleExports.default instanceof constructor)) {
             throw new Error(`default export of type ${constructor.name} expected in module ${path}`);
         }
 
-        return [path, item];
+        return [path, isClass ? moduleExports : moduleExports.default];
     });
 
     for (const subFolder of subFolders) {
