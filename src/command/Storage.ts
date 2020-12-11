@@ -21,7 +21,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
     /**
      * События хранилища команд
      */
-    public readonly events;
+    readonly events;
 
     /**
      * Приватная функция вызова события
@@ -41,7 +41,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
      * Добавляет команду в память бота
      * @param command команда
      */
-    public add(command: AnyCommand): void {
+    add(command: AnyCommand): void {
         const assertNameCollision = (name: string) => {
             if (this.has(name)) {
                 throw new Error(`command name or alias '${name}' overlaps with another command`);
@@ -64,7 +64,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
      * @param name имя или алиас команды
      * @param nameOnly нужно ли ингорировать алиасы
      */
-    public get<Args extends unknown[]>(name: string, nameOnly = false): Command<Args> | undefined {
+    get<Args extends unknown[]>(name: string, nameOnly = false): Command<Args> | undefined {
         return (this.nameMap.get(name) ?? (!nameOnly ? this.aliasMap.get(name) : undefined)) as Command<Args> | undefined;
     }
 
@@ -73,7 +73,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
      * @param name имя или алиас команды
      * @param nameOnly нужно ли игнорировать алиасы
      */
-    public has(name: string, nameOnly = false): boolean {
+    has(name: string, nameOnly = false): boolean {
         name = name.toLowerCase();
         return this.nameMap.has(name) || (!nameOnly && this.aliasMap.has(name));
     }
@@ -92,7 +92,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
         return [...this.nameMap.values()];
     }
 
-    public [Symbol.iterator]() {
+    [Symbol.iterator]() {
         return new Set(this.nameMap.values()).values();
     }
 
@@ -100,7 +100,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
      * Возвращает словарь с командами, сгруппированными по свойству [[CommandInfo.group]]
      * @param defaultGroup группа команд, у которой не прописано свойство [[CommandInfo.group]]
      */
-    public grouped(defaultGroup: string): Map<string, AnyCommand[]> {
+    grouped(defaultGroup: string): Map<string, AnyCommand[]> {
         const map = new Map<string, AnyCommand[]>();
 
         for (const command of this) {

@@ -15,7 +15,7 @@ export class BotDatabase {
     /**
      * Кэш базы данных
      */
-    public readonly cache;
+    readonly cache;
 
     #guildsStorage: ValueStorage<'guild'>;
     #memberStorages: Map<string, ValueStorage<'member'>>;
@@ -23,7 +23,7 @@ export class BotDatabase {
     /**
      * События базы данных
      */
-    public readonly events;
+    readonly events;
 
     /**
      * Приватная функция вызова события
@@ -35,8 +35,8 @@ export class BotDatabase {
      * @param handler обработчик базы данных
      */
     constructor(
-        public readonly bot: Bot,
-        public readonly handler: BotDatabaseHandler,
+        readonly bot: Bot,
+        readonly handler: BotDatabaseHandler,
     ) {
         const [events, emit] = createEventStorage(this as BotDatabase, {
             beforeSaving() { },
@@ -97,7 +97,7 @@ export class BotDatabase {
      * @param entity сущность (сервер / участник сервера)
      * @param property свойство сущности
      */
-    public accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
+    accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
         if (!this.cache.properties.has(property)) {
             throw new Error(`unknown ${property.entityType} property '${property.key}'`);
         }
@@ -146,7 +146,7 @@ export class BotDatabase {
      * @param selector селектор сущностей
      * @param options настройки селектора
      */
-    public async selectEntities<E extends EntityType, Vars extends SelectorVars>(selector: EntitySelector<E, Vars>, options: EntitySelectorOptions<E, Vars>): Promise<Entity<E>[]> {
+    async selectEntities<E extends EntityType, Vars extends SelectorVars>(selector: EntitySelector<E, Vars>, options: EntitySelectorOptions<E, Vars>): Promise<Entity<E>[]> {
         if (!this.cache.selectors.has(selector)) {
             throw new Error(`unknown ${selector.entityType} selector`);
         }
@@ -233,7 +233,7 @@ export class BotDatabase {
      * @emits beforeSaving
      * @emits saved
      */
-    public async save(): Promise<void> {
+    async save(): Promise<void> {
         this.bot.logger.task(`saving ${this.bot.username}'s database`);
 
         this.#emit('beforeSaving');

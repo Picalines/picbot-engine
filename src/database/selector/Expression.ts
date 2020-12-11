@@ -29,8 +29,8 @@ export class UnaryExpression<E extends EntityType, O extends UnaryOperator, Vars
      * @param right правая часть выражения
      */
     constructor(
-        public readonly operator: O,
-        public readonly right: UnaryExpression<E, UnaryOperator, Vars> | BinaryExpression<E, Vars>,
+        readonly operator: O,
+        readonly right: UnaryExpression<E, UnaryOperator, Vars> | BinaryExpression<E, Vars>,
     ) { }
 }
 
@@ -44,9 +44,9 @@ export class ComparisonExpression<E extends EntityType, O extends BinaryCompareO
      * @param right правая часть
      */
     constructor(
-        public readonly operator: O,
-        public readonly left: Property<E, T>,
-        public readonly right: Property<E, T> | T | ExpressionVariable<Vars>,
+        readonly operator: O,
+        readonly left: Property<E, T>,
+        readonly right: Property<E, T> | T | ExpressionVariable<Vars>,
     ) { }
 }
 
@@ -60,9 +60,9 @@ export class BooleanExpression<E extends EntityType, O extends BinaryLogicOperat
      * @param right правая часть
      */
     constructor(
-        public readonly operator: O,
-        public readonly left: AnyExpression<E>,
-        public readonly right: AnyExpression<E>,
+        readonly operator: O,
+        readonly left: AnyExpression<E>,
+        readonly right: AnyExpression<E>,
     ) { }
 }
 

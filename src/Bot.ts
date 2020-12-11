@@ -18,32 +18,32 @@ export class Bot {
     /**
      * Настройки бота
      */
-    public readonly options: BotOptions;
+    readonly options: BotOptions;
 
     /**
      * Стадии загрузки бота
      */
-    public readonly loadingSequence: StageSequenceBuilder;
+    readonly loadingSequence: StageSequenceBuilder;
 
     /**
      * Хранилище команд бота
      */
-    public readonly commands: CommandStorage;
+    readonly commands: CommandStorage;
 
     /**
      * База данных бота
      */
-    public readonly database: BotDatabase;
+    readonly database: BotDatabase;
 
     /**
      * Логгер
      */
-    public readonly logger: Logger;
+    readonly logger: Logger;
 
     /**
      * События бота
      */
-    public readonly events;
+    readonly events;
 
     /**
      * Приватная функция вызова событий
@@ -120,7 +120,7 @@ export class Bot {
     /**
      * @returns юзернейм бота. Если [[Client.user]] равно `undefined`, вернёт `bot`
      */
-    public get username(): string {
+    get username(): string {
         return this.client.user?.username ?? 'bot';
     }
 

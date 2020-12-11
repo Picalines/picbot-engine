@@ -45,7 +45,7 @@ export class Logger {
     /**
      * События логгера
      */
-    public readonly events;
+    readonly events;
 
     /**
      * Приватная функция вызова событий

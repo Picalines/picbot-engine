@@ -10,12 +10,12 @@ export class CommandContext<Args extends unknown[]> {
     /**
      * Участник сервера, который запустил команду
      */
-    public readonly executor: GuildMember;
+    readonly executor: GuildMember;
 
     /**
      * Объект аргументов команды (содержит данные, если у команды прописан синтаксис. Иначе undefined)
      */
-    public readonly args: Args;
+    readonly args: Args;
 
     /**
      * @param command команда

@@ -12,8 +12,8 @@ export abstract class DatabaseValueStorage<E extends EntityType> {
      * @param entityType тип сущностей в хранилище
      */
     constructor(
-        public readonly database: BotDatabase,
-        public readonly entityType: E,
+        readonly database: BotDatabase,
+        readonly entityType: E,
     ) { }
 
     /**

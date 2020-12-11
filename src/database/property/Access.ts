@@ -39,7 +39,7 @@ export class PropertyAccess<T> {
      * @param methods методы доступа. Библиотека сама передаёт этот параметр в [[BotDatabase.accessProperty]]
      */
     constructor(
-        public readonly property: Property<EntityType, T>,
+        readonly property: Property<EntityType, T>,
         methods: AccessMethods<T>
     ) {
         Object.assign(this, methods);
@@ -47,5 +47,5 @@ export class PropertyAccess<T> {
 }
 
 export interface PropertyAccessConstructor<T, A extends PropertyAccess<T> = PropertyAccess<T>> {
-    new (property: Property<EntityType, T>, methods: AccessMethods<T>): A;
+    new(property: Property<EntityType, T>, methods: AccessMethods<T>): A;
 }
