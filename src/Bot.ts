@@ -21,11 +21,6 @@ export class Bot {
     readonly options: BotOptions;
 
     /**
-     * Стадии загрузки бота
-     */
-    readonly loadingSequence: StageSequenceBuilder;
-
-    /**
      * Хранилище команд бота
      */
     readonly commands: CommandStorage;
@@ -51,6 +46,16 @@ export class Bot {
     readonly #emit: EmitOf<Bot['events']>;
 
     /**
+     * Стадии загрузки бота
+     */
+    readonly loadingSequence = new StageSequenceBuilder();
+
+    /**
+     * Стадии выключения бота
+     */
+    readonly shutdownSequence = new StageSequenceBuilder();
+
+    /**
      * @param client Клиент API discord.js
      * @param options настройки бота
      */
@@ -71,8 +76,6 @@ export class Bot {
 
         this.logger = new Logger(this.options.loggerOptions);
 
-        this.loadingSequence = new StageSequenceBuilder();
-
         this.commands = new CommandStorage();
 
         if (this.options.useBuiltInHelpCommand) {
@@ -88,18 +91,6 @@ export class Bot {
 
         this.database = new BotDatabase(this, this.options.database.handler);
 
-        process.once('SIGINT', async () => {
-            if (this.options.destroyClientOnSigint) {
-                this.client.destroy();
-            }
-
-            if (this.options.database.saveOnSigint) {
-                await this.database.save();
-            }
-
-            process.exit(0);
-        });
-
         this.loadingSequence.stage('login', () => new Promise((resolve, reject) => {
             this.client.once('ready', () => {
                 this.logger.log('ready');
@@ -114,6 +105,16 @@ export class Bot {
             if (isGuildMessage(message)) {
                 this.handleGuildMessage(message);
             }
+        });
+
+        this.shutdownSequence.stage('logout', () => {
+            this.client.destroy();
+        });
+
+        process.once('SIGINT', () => {
+            this.shutdown()
+                .then(() => process.exit(0))
+                .catch(() => process.exit(1));
         });
     }
 
@@ -186,9 +187,24 @@ export class Bot {
      * Загружает бота
      */
     async load() {
-        this.logger.task(`loading bot...`);
+        await this.executeStages(this.loadingSequence, 'loading', 'loaded');
+    }
 
-        const stages = this.loadingSequence.build();
+    /**
+     * Выключает бота
+     */
+    async shutdown() {
+        await this.executeStages(this.shutdownSequence, 'shutting down', 'shutted down');
+    }
+
+    /**
+     * Выполняет стадии из StageSequenceBuilder
+     * @ignore
+     */
+    private async executeStages(stagesBuilder: StageSequenceBuilder, gerund: string, doneState: string) {
+        this.logger.task(`${gerund} bot...`);
+
+        const stages = stagesBuilder.build();
 
         for (const { name, task } of stages) {
             this.logger.task(name);
@@ -204,7 +220,7 @@ export class Bot {
             this.logger.endTask('success', '');
         }
 
-        this.logger.endTask('success', `bot '${this.username}' successfully loaded`);
+        this.logger.endTask('success', `bot '${this.username}' successfully ${doneState}`);
     }
 
     /**

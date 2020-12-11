@@ -69,6 +69,10 @@ export class BotDatabase {
             await this.load();
         });
 
+        this.bot.shutdownSequence.after('logout', 'save database', async () => {
+            await this.save();
+        });
+
         this.#guildsStorage = new this.handler.propertyStorageClass(this, 'guild') as any;
         this.#memberStorages = new Map();
 
@@ -233,9 +237,7 @@ export class BotDatabase {
      * @emits beforeSaving
      * @emits saved
      */
-    async save(): Promise<void> {
-        this.bot.logger.task(`saving ${this.bot.username}'s database`);
-
+    private async save(): Promise<void> {
         this.#emit('beforeSaving');
 
         if (this.handler.prepareForSaving) {
@@ -260,8 +262,6 @@ export class BotDatabase {
 
             this.bot.logger.endTask('success', '');
         }
-
-        this.bot.logger.endTask('success', '');
 
         this.#emit('saved');
     }

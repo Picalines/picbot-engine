@@ -51,11 +51,6 @@ export type BotOptions = {
      */
     useBuiltInHelpCommand: boolean;
     /**
-     * Вызывать ли `client.destroy` при событии `process.SIGINT`
-     * @default true
-     */
-    destroyClientOnSigint: boolean;
-    /**
      * Настройки логгера
      */
     loggerOptions: Partial<LoggerOptions>;
@@ -68,11 +63,6 @@ export type BotOptions = {
          * @default new JsonDatabaseHandler({ rootFolderPath: '/database/', guildsPath: '/guilds/' })
          */
         handler: BotDatabaseHandler;
-        /**
-         * Сохранять ли базу данных на событии `process.SIGINT`.
-         * @default true
-         */
-        saveOnSigint: boolean;
     };
 };
 
@@ -102,7 +92,6 @@ export const DefaultBotOptions: BotOptions = {
         selectors: 'src/selectors',
     },
     canBotsRunCommands: false,
-    destroyClientOnSigint: true,
     fetchPrefixes: () => ['!'],
     useBuiltInHelpCommand: true,
     loggerOptions: {
@@ -115,6 +104,5 @@ export const DefaultBotOptions: BotOptions = {
             databasePath: '/database/',
             jsonIndent: 0,
         }),
-        saveOnSigint: true,
     },
 };
