@@ -1,4 +1,3 @@
-import { GuildMember } from "discord.js";
 import { GuildMessage } from "../utils";
 import { Command } from "./Command";
 import { Bot } from "../Bot";
@@ -7,11 +6,6 @@ import { Bot } from "../Bot";
  * Контекст выполнения запущенной команды
  */
 export class CommandContext<Args extends unknown[]> {
-    /**
-     * Участник сервера, который запустил команду
-     */
-    readonly executor: GuildMember;
-
     /**
      * Объект аргументов команды (содержит данные, если у команды прописан синтаксис. Иначе undefined)
      */
@@ -27,14 +21,33 @@ export class CommandContext<Args extends unknown[]> {
         readonly bot: Bot,
         readonly message: GuildMessage,
     ) {
-        this.executor = message.member;
-
-        if (command.arguments) {
+        if (this.command.arguments) {
             const userInput = message.content.replace(/^\S+\s*/, '');
-            this.args = command.arguments.readArguments(userInput, this as unknown as CommandContext<unknown[]>);
+            this.args = this.command.arguments.readArguments(userInput, this as unknown as CommandContext<unknown[]>);
         }
         else {
             this.args = [] as any;
         }
+    }
+
+    /**
+     * Участник сервера, который запустил команду
+     */
+    get executor() {
+        return this.message.member;
+    }
+
+    /**
+     * Ссылка на базу данных бота
+     */
+    get database() {
+        return this.bot.database;
+    }
+
+    /**
+     * Ссылка на логгер бота
+     */
+    get logger() {
+        return this.bot.logger;
     }
 }
