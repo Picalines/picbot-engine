@@ -32,7 +32,7 @@ const makeCommandInfo = <Args extends unknown[]>(embed: MessageEmbed, command: C
     embed.addField('Описание', command.description);
 
     if (command.arguments) {
-        const argumentInfos = command.arguments.definitions.map(arg => `• ${arg.name} - ${arg.description}`);
+        const argumentInfos = command.arguments.definitions.map((arg, index) => `${index + 1}. ${arg.name} - ${arg.description}`);
         embed.addField('Аргументы', argumentInfos.join('\n'));
     }
 

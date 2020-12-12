@@ -48,11 +48,11 @@ export class ArgumentSequence<Args extends unknown[]> implements CommandArgument
      * @param argument аргумент команды
      * @param context контекст команды
      */
-    private readArgument<T>(userInput: string, argument: CommandArgument<T>, context: CommandContext<unknown[]>): [slicedInput: string, parsedValue: T] {
+    private readArgument<T>(userInput: string, argument: CommandArgument<T>, index: number, context: CommandContext<unknown[]>): [slicedInput: string, parsedValue: T] {
         const readerResult = argument.reader(userInput, context);
         if (readerResult.isError) {
             const error = readerResult.error ?? 'not found';
-            throw new Error(`error in argument '${argument.name}': ${error}`);
+            throw new Error(`error in argument #${index + 1} '${argument.name}': ${error}`);
         }
 
         const { length: argumentLength, parsedValue } = readerResult.value;
@@ -73,9 +73,9 @@ export class ArgumentSequence<Args extends unknown[]> implements CommandArgument
      */
     readArguments(userInput: string, context: CommandContext<unknown[]>): Args {
         const values = [];
-        for (const argument of this.definitions) {
+        for (const [index, argument] of this.definitions.entries()) {
             let value;
-            [userInput, value] = this.readArgument(userInput, argument, context);
+            [userInput, value] = this.readArgument(userInput, argument, index, context);
             values.push(value);
         }
         return values as Args;
