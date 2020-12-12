@@ -1,4 +1,4 @@
-import { CommandContext } from "../../../command/Context";
+import { CommandContext } from "../../../command";
 import { numberReader } from "../Number";
 
 const context = null as unknown as CommandContext<unknown[]>;

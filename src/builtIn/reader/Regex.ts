@@ -1,6 +1,5 @@
 import { ValueParser } from "../../utils";
-import { ArgumentReader } from "../../command/argument/Reader";
-import { CommandContext } from "../../command/Context";
+import { ArgumentReader, CommandContext } from "../../command";
 
 /**
  * Читает аргумент по регулярному выражению

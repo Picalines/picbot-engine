@@ -1,6 +1,5 @@
-import { ArgumentReader } from "../../command/argument/Reader";
+import { ArgumentReader, CommandContext } from "../../command";
 import { parsedRegexReader } from "./Regex";
-import { CommandContext } from "../../command/Context";
 
 /**
  * Функция, получающая упомянутый объект по его id

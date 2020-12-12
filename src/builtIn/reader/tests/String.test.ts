@@ -1,5 +1,5 @@
 import { keywordReader, remainingTextReader, wordReader } from "../String";
-import { CommandContext } from "../../../command/Context";
+import { CommandContext } from "../../../command";
 
 const context = null as unknown as CommandContext<unknown[]>;
 
