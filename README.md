@@ -336,7 +336,7 @@ const maxWarnsProperty = new Property({
 Теперь сделаем команду warn:
 `src/commands/warn.js`
 ```js
-const { Command } = require('picbot-engine');
+const { Command, ArgumentSequence, memberReader } = require('picbot-engine');
 
 const warnsProperty = require('../properties/warns');
 const maxWarnsProperty = require('../properties/maxWarns');
@@ -348,12 +348,19 @@ module.exports = new Command({
     description: 'Предупреждает участника сервера',
     group: 'Администрирование',
 
-    syntax: '<member:target>',
+    arguments: new ArgumentSequence(
+        {
+            name: 'target',
+            description: 'Жертва',
+            reader: memberReader,
+        }
+    ),
+
     examples: [
         '`warn @Test` кинет предупреждение участнику @Test',
     ],
 
-    execute: async ({ message, args: { target }, bot: { database } }) => {
+    execute: async ({ message, bot: { database }, args: [target] }) => {
         // database.accessProperty даёт доступ к чтению / записи значения свойства
         // (будем говорить, что accessProperty возвращает объект доступа)
         const targetWarns = database.accessProperty(target, warnsProperty);
@@ -388,7 +395,7 @@ module.exports = new Command({
 и команда `setmaxwarns`:
 `src/commands/setMaxWarns.js`
 ```js
-const { Command } = require('picbot-engine');
+const { Command, ArgumentSequence, numberReader } = require('picbot-engine');
 
 const maxWarnsProperty = require('../properties/maxWarns');
 
@@ -399,16 +406,19 @@ module.exports = new Command({
     description: 'Ставит максимальное кол-во предупреждений для участников сервера',
     group: 'Администрирование',
 
-    syntax: '<number:newMaxWarns>',
+    arguments: new ArgumentSequence(
+        {
+            name: 'newMaxWarns',
+            description: 'Новое максимальное кол-во предупреждений',
+            reader: numberReader('int', [3, Infinity]),
+        }
+    ),
+
     examples: [
         '`setmaxwarns 10` поставит максимальное кол-во предупреждений на 10',
     ],
 
-    execute: async ({ message, executor: { guild }, args: { newMaxWarns }, bot: { database } }) => {
-        if (newMaxWarns < 1) {
-            throw new Error('Максимальное кол-во предупреждений не может быть меньше 1');
-        }
-
+    execute: async ({ message, database, executor: { guild }, args: [newMaxWarns] }) => {
         // функция database.accessProperty синхронная, а await нам нужен для вызова set.
         // команда кинет исключение, если пользователь введёт значение меньше 3 (validate)
         await database.accessProperty(guild, maxWarnsProperty).set(newMaxWarns);
