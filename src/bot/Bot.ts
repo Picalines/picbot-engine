@@ -2,7 +2,7 @@ import { Client, ClientEvents } from "discord.js";
 import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./Options";
 import { ClientEventNames, deepMerge, GuildMessage, isGuildMessage } from "../utils";
 import { Logger } from "../Logger";
-import { helpCommand } from "../builtIn/command";
+import { helpCommand } from "../builtIn";
 import { AnyCommand, Command, CommandContext, CommandStorage } from "../command";
 import { BotEventListener, createEventStorage, EmitOf, createNodeEmitterLink } from "../event";
 import { BotDatabase, Property } from "../database";

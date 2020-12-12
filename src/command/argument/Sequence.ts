@@ -1,4 +1,4 @@
-import { spaceReader } from "../../builtIn/reader/String";
+import { spaceReader } from "../../builtIn";
 import { CommandArgument } from "./Argument";
 import { CommandContext } from "../Context";
 import { ArgsDefinitions, CommandArgumentsReader } from "./Reader";
