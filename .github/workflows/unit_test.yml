@@ -1,4 +1,4 @@
-name: Master Branch Unit Testing
+name: master building test
 
 on:
   pull_request:
@@ -18,5 +18,3 @@ jobs:
         run: |
           npm -v
           npm ci
-      - name: npm test
-        run: npm test
