@@ -2,7 +2,7 @@ import { Guild } from "discord.js";
 import { DeepPartialExcept, NonEmptyReadonly, Overwrite, PromiseOrSync } from "../utils";
 import { BotDatabaseHandler, Property } from "../database";
 import { JsonDatabaseHandler, pipeLoggerTheme } from "../builtIn";
-import { LoggerOptions } from "../Logger";
+import { LoggerOptions } from "../logger";
 import { Bot } from "./Bot";
 
 /**

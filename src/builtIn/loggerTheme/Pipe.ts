@@ -1,4 +1,4 @@
-import { Logger, LogType } from "../../Logger";
+import { Logger, LogType } from "../../logger";
 
 /**
  * Цветные префиксы для разных типов лога

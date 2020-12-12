@@ -1,5 +1,5 @@
 export * from "./utils";
-export * from "./Logger";
+export * from "./logger";
 export * from "./event";
 export * from "./command";
 export * from "./database";
