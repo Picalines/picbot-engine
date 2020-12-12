@@ -1,2 +1,1 @@
-export { JsonDatabaseHandler } from "./json/Handler";
-export { JsonDatabaseValueStorage } from "./json/ValueStorage";
+export * from "./json";

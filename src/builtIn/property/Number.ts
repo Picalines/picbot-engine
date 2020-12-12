@@ -1,10 +1,9 @@
-import { EntityType, Property, PropertyAccess } from '../../database';
+import { PropertyAccess } from '../../database';
 
+/**
+ * Объект доступа к числовому свойству
+ */
 export class NumberPropertyAccess extends PropertyAccess<number> {
-    constructor(property: Property<EntityType, number, PropertyAccess<number>>, methods: any) {
-        super(property, methods);
-    }
-
     /**
      * Увеличивает числовое свойство на `delta`
      * @param delta на сколько увеличить свойство

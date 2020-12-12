@@ -11,6 +11,20 @@ export type LogType =
     | "success";
 
 /**
+ * Тема логгера в консоли
+ */
+export interface LoggerConsoleTheme {
+    /**
+     * @param logType тип лога
+     * @param log лог
+     * @param taskLevel уровень 'вложенности' лога (увеличивается при `task` и уменьшается при `endTask`)
+     * @param taskCompleted вызывается ли тема внутри `endTask`
+     * @returns новую строку лог, которая позже попадает в `console.log`
+     */
+    (logType: LogType, log: string, taskLevel: number, taskCompleted: boolean): string;
+}
+
+/**
  * Настройки логгера
  */
 export interface LoggerOptions {
@@ -28,7 +42,7 @@ export interface LoggerOptions {
     /**
      * Функция 'темы' логгера. Вызывается перед `console.log`
      */
-    consoleTheme?(logType: LogType, log: string, taskLevel: number, taskCompleted: boolean): string;
+    readonly consoleTheme?: LoggerConsoleTheme;
 }
 
 export interface Logger extends LoggerOptions { }
@@ -87,6 +101,14 @@ export class Logger {
                 console.log(log.stack);
             }
         }
+    }
+
+    /**
+     * Функция-подсказка анализатору кода для создания темы логгера
+     * @param themeFunction функция-тема
+     */
+    static theme(themeFunction: LoggerConsoleTheme) {
+        return themeFunction;
     }
 
     task(log: any) {
