@@ -1,4 +1,4 @@
-import { ArgumentReader } from "../../command";
+import { ArgumentReader } from "../Reader";
 import { parsedRegexReader } from "./Regex";
 
 /**

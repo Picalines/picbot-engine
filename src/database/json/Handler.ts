@@ -1,8 +1,11 @@
 import { join } from "path";
 import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
 import { Guild } from "discord.js";
-import { BotDatabase, BotDatabaseHandler, Entity, EntityType, Property, PropertyAccess } from "../../../database";
 import { JsonDatabaseValueStorage } from "./ValueStorage";
+import { BotDatabaseHandler } from "../Handler";
+import { BotDatabase } from "../BotDatabase";
+import { Entity, EntityType } from "../Entity";
+import { Property, PropertyAccess } from "../property";
 
 interface JsonHandlerOptions {
     /**

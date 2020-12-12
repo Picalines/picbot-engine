@@ -1,5 +1,7 @@
 import { Guild, GuildMember } from "discord.js";
-import { EntityType, Entity, DatabaseValueStorage, EntitySelector, AnyExpression } from "../../../database";
+import { Entity, EntityType } from "../Entity";
+import { DatabaseValueStorage } from "../property";
+import { AnyExpression, EntitySelector } from "../selector";
 import { CompiledExpression, compileExpression } from "./Expression";
 
 type CompiledExpressionData = { arrow: CompiledExpression, usedKeys: string[] };

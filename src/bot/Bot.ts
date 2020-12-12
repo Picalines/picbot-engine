@@ -1,11 +1,10 @@
 import { Client, ClientEvents } from "discord.js";
 import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./Options";
 import { ClientEventNames, deepMerge, GuildMessage, isGuildMessage, requireFolder, StageSequenceBuilder } from "../utils";
-import { Logger } from "../logger/Logger";
-import { helpCommand } from "../builtIn";
-import { AnyCommand, Command, CommandContext, CommandStorage } from "../command";
+import { AnyCommand, Command, CommandContext, CommandStorage, helpCommand } from "../command";
 import { BotEventListener, createEventStorage, EmitOf, createNodeEmitterLink } from "../event";
 import { BotDatabase, Property } from "../database";
+import { Logger } from "../logger/Logger";
 
 /**
  * Класс бота

@@ -1,5 +1,5 @@
-import { ArgumentReader } from "../../command";
-import { Primitive } from "../../utils";
+import { Primitive } from "../../../utils";
+import { ArgumentReader } from "../Reader";
 import { spaceReader } from "./String";
 
 /**

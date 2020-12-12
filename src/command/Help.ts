@@ -1,7 +1,7 @@
-import { ArgumentSequence, Command } from "../../command";
-import { optionalReader, wordReader } from "../reader";
+import { Command } from "./Command";
+import { ArgumentSequence, optionalReader, wordReader } from "./argument";
 import { GuildMember, MessageEmbed } from "discord.js";
-import { Bot } from "../../bot";
+import { Bot } from "../bot";
 
 const formatList = (list: string[]) => list.map(el => `\`${el}\``).join(', ');
 

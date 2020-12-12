@@ -1,4 +1,4 @@
-import { PropertyAccess } from '../../database';
+import { PropertyAccess } from './Access';
 
 /**
  * Объект доступа к числовому свойству

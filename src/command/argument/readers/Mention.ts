@@ -1,4 +1,5 @@
-import { ArgumentReader, CommandContext } from "../../command";
+import { CommandContext } from "../../Context";
+import { ArgumentReader } from "../Reader";
 import { parsedRegexReader } from "./Regex";
 
 /**
