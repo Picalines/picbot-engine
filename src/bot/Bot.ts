@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import { Client, ClientEvents } from "discord.js";
 import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./Options";
 import { ClientEventNames, deepMerge, GuildMessage, isGuildMessage, requireFolder, StageSequenceBuilder } from "../utils";
@@ -33,7 +34,7 @@ export class Bot {
     /**
      * События клиента API
      */
-    readonly clientEvents = createNodeEmitterLink<Client, { [E in keyof ClientEvents]: (...args: [...ClientEvents[E]]) => void }>(this.client, ClientEventNames);
+    readonly clientEvents = createNodeEmitterLink<Client, { [E in keyof ClientEvents]: (...args: ClientEvents[E]) => void }>(this.client, ClientEventNames);
 
     /**
      * События бота
@@ -193,15 +194,15 @@ export class Bot {
     /**
      * Загружает бота
      */
-    async load() {
-        await this.executeStages(this.loadingSequence, 'loading', 'loaded');
+    load() {
+        return this.executeStages(this.loadingSequence, 'loading', 'loaded');
     }
 
     /**
      * Выключает бота
      */
-    async shutdown() {
-        await this.executeStages(this.shutdownSequence, 'shutting down', 'shutted down');
+    shutdown() {
+        return this.executeStages(this.shutdownSequence, 'shutting down', 'shutted down');
     }
 
     /**
@@ -235,7 +236,7 @@ export class Bot {
      * @param options аргумент настроек
      */
     private parseOptionsArgument(options: BotOptionsArgument): BotOptions {
-        let { fetchPrefixes } = options;
+        let { fetchPrefixes, token } = options;
 
         if (fetchPrefixes instanceof Array) {
             const prefixes = fetchPrefixes as string[];
@@ -248,9 +249,31 @@ export class Bot {
             fetchPrefixes = (bot, guild) => bot.database.accessProperty(guild, prefixes).value();
         }
 
+        const { tokenType = 'string' } = options;
+
+        switch (tokenType) {
+            default:
+                throw new Error(`unsupported token type '${tokenType}'`);
+
+            case 'string':
+                break;
+
+            case 'env':
+                if (!(token in process.env)) {
+                    throw new Error('token environment variable not found');
+                }
+                token = process.env[token]!;
+                break;
+
+            case 'file':
+                token = readFileSync(token).toString();
+                break;
+        }
+
         return deepMerge(DefaultBotOptions, {
             ...options as any,
             fetchPrefixes,
+            token,
         });
     }
 }

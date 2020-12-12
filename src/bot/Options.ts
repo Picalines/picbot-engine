@@ -12,6 +12,13 @@ export type BotOptions = {
      * Токен бота
      */
     token: string;
+
+    /**
+     * Тип токена
+     * @default 'string'
+     */
+    tokenType: 'string' | 'file' | 'env';
+
     /**
      * Пути для загрузчика
      */
@@ -20,38 +27,46 @@ export type BotOptions = {
          * @default 'src/properties'
          */
         properties: string;
+
         /**
          * @default 'src/selectors'
          */
         selectors: string;
+
         /**
          * @default 'src/events'
          */
         events: string;
+
         /**
          * @default 'src/commands'
          */
         commands: string;
     };
+
     /**
      * Могут ли другие боты использовать команды
      * @default false
      */
     canBotsRunCommands: boolean;
+
     /**
      * Функция, возвращающая список префиксов бота на сервере
      * @default () => ['!']
      */
     fetchPrefixes: (bot: Bot, guild: Guild) => PromiseOrSync<string[]>;
+
     /**
      * Использовать ли встроенную команду help
      * @default true
      */
     useBuiltInHelpCommand: boolean;
+
     /**
      * Настройки логгера
      */
     loggerOptions: Partial<LoggerOptions>;
+
     /**
      * Настройки базы данных
      */
@@ -83,6 +98,7 @@ export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'
  */
 export const DefaultBotOptions: BotOptions = {
     token: '',
+    tokenType: 'string',
     loadingPaths: {
         commands: 'src/commands',
         events: 'src/events',
