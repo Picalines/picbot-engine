@@ -1,4 +1,4 @@
-import { readdirSync } from "fs";
+import { Dirent, readdirSync } from "fs";
 import { join } from "path";
 import { AnyConstructor } from "./UsefulTypes";
 
@@ -10,7 +10,17 @@ type ExportItem<T> = [path: string, item: T];
  * @param folder путь до папки
  */
 export function requireFolder<T>(constructor: AnyConstructor<T>, folder: string): ExportItem<T>[] {
-    const dir = readdirSync(folder, { withFileTypes: true });
+    let dir: Dirent[];
+
+    try {
+        dir = readdirSync(folder, { withFileTypes: true });
+    }
+    catch (error) {
+        if (error?.code === 'ENOENT') {
+            return [];
+        }
+        throw error;
+    }
 
     const jsFiles = dir.filter(d => d.isFile() && d.name.endsWith('.js')).map(d => d.name);
     const subFolders = dir.filter(d => d.isDirectory()).map(d => d.name);
