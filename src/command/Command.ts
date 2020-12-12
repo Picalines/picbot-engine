@@ -2,7 +2,7 @@ import { BitFieldResolvable, Permissions, PermissionString } from "discord.js";
 import { GuildMessage, NonEmptyReadonly, Overwrite, PromiseVoid } from "../utils";
 import { CommandArgumentsReader } from "./argument/Reader";
 import { CommandContext } from "./Context";
-import { Bot } from "../Bot";
+import { Bot } from "../bot";
 
 /**
  * Информация о команде

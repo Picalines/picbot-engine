@@ -1,12 +1,11 @@
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
 import { createEventStorage, EmitOf } from "../event";
+import { AnyConstructor, createGroupedCache, filterIterable, requireFolder } from "../utils";
 import { PropertyAccessConstructor, Property, PropertyAccess, DatabaseValueStorage as ValueStorage, AnyProperty } from "./property";
 import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector";
 import { EntityType, Entity } from "./Entity";
 import { BotDatabaseHandler } from "./Handler";
-import { AnyConstructor, createGroupedCache, filterIterable } from "../utils";
-import { Bot } from "../Bot";
-import { requireFolder } from "../utils/RequireFolder";
+import { Bot } from "../bot";
 
 /**
  * Класс базы данных бота

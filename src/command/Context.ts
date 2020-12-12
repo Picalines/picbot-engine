@@ -1,6 +1,6 @@
 import { GuildMessage } from "../utils";
 import { Command } from "./Command";
-import { Bot } from "../Bot";
+import { Bot } from "../bot";
 
 /**
  * Контекст выполнения запущенной команды

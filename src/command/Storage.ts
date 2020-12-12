@@ -1,6 +1,3 @@
-import { PathLike, readdirSync } from "fs";
-import { join } from "path";
-import { Bot } from "../Bot";
 import { createEventStorage, EmitOf } from "../event";
 import { AnyCommand, Command } from "./Command";
 
