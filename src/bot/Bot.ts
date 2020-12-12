@@ -83,7 +83,7 @@ export class Bot {
             this.commands.add(helpCommand as unknown as AnyCommand);
         }
 
-        this.database = new BotDatabase(this, this.options.database.handler);
+        this.database = new BotDatabase(this);
 
         this.loadingSequence.stage('login', () => new Promise((resolve, reject) => {
             this.client.once('ready', () => {

@@ -12,6 +12,11 @@ import { Bot } from "../bot";
  */
 export class BotDatabase {
     /**
+     * Обработчик базы данных
+     */
+    readonly handler: BotDatabaseHandler;
+
+    /**
      * Кэш базы данных
      */
     readonly cache;
@@ -35,8 +40,9 @@ export class BotDatabase {
      */
     constructor(
         readonly bot: Bot,
-        readonly handler: BotDatabaseHandler,
     ) {
+        this.handler = this.bot.options.databaseHandler;
+
         const [events, emit] = createEventStorage(this as BotDatabase, {
             beforeSaving() { },
             saved() { },

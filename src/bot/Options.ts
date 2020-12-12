@@ -7,7 +7,7 @@ import { Bot } from "./Bot";
 /**
  * Объект с настройками бота
  */
-export type BotOptions = {
+export type BotOptions = Readonly<{
     /**
      * Токен бота
      */
@@ -22,7 +22,7 @@ export type BotOptions = {
     /**
      * Пути для загрузчика
      */
-    loadingPaths: {
+    loadingPaths: Readonly<{
         /**
          * @default 'src/properties'
          */
@@ -42,7 +42,7 @@ export type BotOptions = {
          * @default 'src/commands'
          */
         commands: string;
-    };
+    }>;
 
     /**
      * Могут ли другие боты использовать команды
@@ -68,16 +68,11 @@ export type BotOptions = {
     loggerOptions: Partial<LoggerOptions>;
 
     /**
-     * Настройки базы данных
+     * Обработчик базы данных (объект, хранящий функции для загрузки / сохранения данных серверов)
+     * @default new JsonDatabaseHandler({ rootFolderPath: '/database/', guildsPath: '/guilds/' })
      */
-    database: {
-        /**
-         * Обработчик базы данных (объект, хранящий функции для загрузки / сохранения данных серверов)
-         * @default new JsonDatabaseHandler({ rootFolderPath: '/database/', guildsPath: '/guilds/' })
-         */
-        handler: BotDatabaseHandler;
-    };
-};
+    databaseHandler: BotDatabaseHandler;
+}>;
 
 /**
  * Аргумент настроек бота в его конструкторе
@@ -87,10 +82,6 @@ export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'
      * Список стандартных префиксов / свойство префиксов в базе данных / функция, возвращающая список префиксов на сервере
      */
     fetchPrefixes: NonEmptyReadonly<string[]> | Property<'guild', string[]> | BotOptions['fetchPrefixes'];
-    /**
-     * Настройки базы данных бота
-     */
-    database: Partial<BotOptions['database']>;
 }>>;
 
 /**
@@ -113,10 +104,8 @@ export const DefaultBotOptions: BotOptions = {
         ignoreWarnings: false,
         consoleTheme: pipeLoggerTheme,
     },
-    database: {
-        handler: new JsonDatabaseHandler({
-            databasePath: '/database/',
-            jsonIndent: 0,
-        }),
-    },
+    databaseHandler: new JsonDatabaseHandler({
+        databasePath: '/database/',
+        jsonIndent: 0,
+    }),
 };
