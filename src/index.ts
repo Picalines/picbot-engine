@@ -8,8 +8,7 @@ export * from "./command";
 
 export * from "./database";
 
-export * from "./BotOptions";
-export * from "./Bot";
+export * from "./bot";
 
 export * from "./builtIn/reader";
 export * from "./builtIn/command";
