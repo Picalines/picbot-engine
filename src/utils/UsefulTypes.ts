@@ -46,12 +46,12 @@ export type DeepPartialExcept<T, K extends keyof T> = DeepPartial<T> & PartialEx
 /**
  * Массив, который содержит хотя бы 1 элемент
  */
-export type NonEmpty<T> = T extends (infer U)[] ? U[] & { [0]: U } : never;
+export type NonEmpty<T> = T extends (infer U)[] ? [U, ...U[]] : never;
 
 /**
  * Массив, который содержит хотя бы 1 элемент. Элементы доступны только для чтения
  */
-export type NonEmptyReadonly<T> = T extends readonly (infer U)[] ? readonly U[] & { [0]: U } : never;
+export type NonEmptyReadonly<T> = T extends readonly (infer U)[] ? readonly [U, ...U[]] : never;
 
 /**
  * @example Overwrite<{ a: number, b: number }, { a: 'test' }> -> { a: 'test', b: number }
