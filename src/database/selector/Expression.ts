@@ -69,9 +69,13 @@ export class BooleanExpression<E extends EntityType, O extends BinaryLogicOperat
 /**
  * Бинарное выражение
  */
-export type BinaryExpression<E extends EntityType, Vars extends SelectorVars> = ComparisonExpression<E, BinaryCompareOperator, Constant, Vars> | BooleanExpression<E, BinaryLogicOperator>;
+export type BinaryExpression<E extends EntityType, Vars extends SelectorVars> =
+    | ComparisonExpression<E, BinaryCompareOperator, any, Vars>
+    | BooleanExpression<E, BinaryLogicOperator>;
 
 /**
  * Любое выражение
  */
-export type AnyExpression<E extends EntityType> = UnaryExpression<E, UnaryOperator, any> | BinaryExpression<E, any>;
+export type AnyExpression<E extends EntityType> =
+    | UnaryExpression<E, UnaryOperator, any>
+    | BinaryExpression<E, any>;
