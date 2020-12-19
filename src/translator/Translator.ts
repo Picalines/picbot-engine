@@ -1,6 +1,6 @@
 import { Bot } from "../bot";
 import { requireFolder } from "../utils";
-import { TermsDefinition, TermCollection, TermContext } from "./TermCollection";
+import { TermsDefinition, TermCollection } from "./TermCollection";
 import { TranslationCollection } from "./TranslationCollection";
 
 export class Translator {
