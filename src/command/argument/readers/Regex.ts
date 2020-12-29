@@ -1,5 +1,5 @@
 import { ValueParser } from "../../../utils";
-import { ArgumentReader } from "../Reader";
+import { ArgumentReader } from "../Argument";
 import { CommandContext } from "../../Context";
 
 /**

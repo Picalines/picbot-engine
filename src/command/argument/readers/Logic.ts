@@ -1,11 +1,11 @@
-import { ArgumentReader } from "../Reader";
+import { ArgumentReader } from "../Argument";
 import { spaceReader } from "./String";
 
 /**
  * @returns функцию, которая либо читает аргумент, либо возвращает стандартное значение, если аргумент не найден
  * @param reader функция, читающая аргумент
  */
-export const optionalReader = <T, D>(reader: ArgumentReader<T>, defaultValue: D): ArgumentReader<T | D> => {
+export const optionalReader = <T, D extends T | null | undefined>(reader: ArgumentReader<T>, defaultValue: D): ArgumentReader<T | D> => {
     return (userInput, context) => {
         const result = reader(userInput, context);
         if (result.isError && !userInput.length) {

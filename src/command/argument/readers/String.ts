@@ -1,5 +1,5 @@
 import { Failable } from "../../../utils";
-import { ArgumentReader, ArgumentString } from "../Reader";
+import { ArgumentReader, ArgumentString } from "../Argument";
 import { parsedRegexReader, regexReader } from "./Regex";
 
 /**

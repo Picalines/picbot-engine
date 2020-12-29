@@ -1,7 +1,6 @@
 import { spaceReader } from "../argument";
-import { CommandArgument } from "./Argument";
+import { ArgsDefinitions, CommandArgument } from "./Argument";
 import { CommandContext } from "../Context";
-import { ArgsDefinitions } from "./Reader";
 import { constTerm, TermCollection } from "../../translator";
 import { assert, Indexes } from "../../utils";
 

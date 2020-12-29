@@ -18,7 +18,7 @@ export class Translator {
             }
         }
 
-        this.bot.loadingSequence.stage('load terms', () => {
+        this.bot.loadingSequence.stage('require terms', () => {
             if (this.bot.options.useBuiltInHelpCommand) {
                 addTerms(helpEmbedTerms);
                 this.#translations.get(helpEmbedTerms)!.set(helpEmbedTranslationsRU.locale, helpEmbedTranslationsRU);
@@ -37,7 +37,7 @@ export class Translator {
             }
         });
 
-        this.bot.loadingSequence.after('require commands', 'load translations', () => {
+        this.bot.loadingSequence.after('require commands', 'require translations', () => {
 
             this.#translations.get(helpCommand.terms)?.set('ru', helpInfoTranslationRU);
 

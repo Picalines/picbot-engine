@@ -1,4 +1,4 @@
-import { ArgumentReader } from "../Reader";
+import { ArgumentReader } from "../Argument";
 import { parsedRegexReader } from "./Regex";
 
 /**
