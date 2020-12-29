@@ -1,4 +1,5 @@
-import { PromiseVoid } from ".";
+import { PromiseVoid } from "./UsefulTypes";
+import { assert } from "./UsefulFunctions";
 
 interface Stage {
     readonly name: string;
@@ -42,13 +43,8 @@ export class StageSequenceBuilder {
     }
 
     build(): Stage[] {
-        if (this.afters.size) {
-            throw new Error(`sequence is missing stage '${this.afters.keys().next().value}'`);
-        }
-        if (!this.stages.length) {
-            throw new Error(`sequence is empty`);
-        }
-
+        assert(!this.afters.size, `sequence is missing stage '${this.afters.keys().next().value}'`);
+        assert(this.stages.length, `sequence is empty`);
         return [...this.stages];
     }
 }

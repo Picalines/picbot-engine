@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { Client, ClientEvents } from "discord.js";
 import { BotOptions, BotOptionsArgument, BotOptionsArgumentFetcher as FetcherArgument, BotOptionsFetcher as Fetcher, DefaultBotOptions } from "./Options";
-import { ClientEventNames, deepMerge, GuildMessage, isGuildMessage, requireFolder, StageSequenceBuilder } from "../utils";
+import { assert, ClientEventNames, deepMerge, GuildMessage, isGuildMessage, requireFolder, StageSequenceBuilder } from "../utils";
 import { AnyCommand, Command, CommandContext, CommandStorage, helpCommand } from "../command";
 import { BotEventListener, createEventStorage, EmitOf, createNodeEmitterLink } from "../event";
 import { BotDatabase, Property } from "../database";
@@ -85,11 +85,11 @@ export class Bot {
 
         this.commands = new CommandStorage();
 
+        this.translator = new Translator(this);
+
         if (this.options.useBuiltInHelpCommand) {
             this.commands.add(helpCommand as unknown as AnyCommand);
         }
-
-        this.translator = new Translator(this);
 
         this.database = new BotDatabase(this);
 
@@ -259,9 +259,7 @@ export class Bot {
                 break;
 
             case 'env':
-                if (!(token in process.env)) {
-                    throw new Error('token environment variable not found');
-                }
+                assert(token in process.env, 'token environment variable not found');
                 token = process.env[token]!;
                 break;
 

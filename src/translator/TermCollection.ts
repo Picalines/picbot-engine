@@ -1,22 +1,51 @@
-/**
- * Объект, ключ которого - это имя термина, а значение - контекст термина (массив с именами аргументов)
- */
-export type TermsDefinition = { readonly [termId: string]: readonly string[] };
+import { assert, Mutable } from "../utils";
+import { TermDefinition, TermContexts, TermTranslation } from "./Term";
+import { TranslationCollection, TranslationCollectionDefinition } from "./TranslationCollection";
 
-/**
- * Коллекция терминов
- */
-export class TermCollection<Terms extends TermsDefinition> {
+export class TermCollection<Contexts extends TermContexts> {
     /**
-     * @param terms объявление терминов коллекции
+     * Контексты терминов
      */
-    constructor(readonly terms: { readonly [ID in keyof Terms]: readonly [...Terms[ID]] }) { }
+    readonly contexts: Contexts;
+
+    /**
+     * Стандартные переводы терминов
+     */
+    readonly defaultTranslations: TranslationCollection<Contexts>;
+
+    /**
+     * @param terms термины переводчика
+     */
+    constructor(terms: { [K in keyof Contexts]: TermDefinition<Contexts[K]> }) {
+        const contexts: Mutable<Contexts> = {} as any;
+        const translations: Mutable<TranslationCollectionDefinition<Contexts>['translations']> = {} as any;
+
+        for (const term in terms) {
+            contexts[term] = terms[term].context;
+            translations[term] = terms[term].translation as any;
+        }
+
+        this.contexts = contexts;
+
+        this.defaultTranslations = new TranslationCollection({
+            locale: '__default',
+            terms: this,
+            translations,
+        });
+    }
+
+    /**
+     * @returns массив имён терминов
+     */
+    names(): (keyof Contexts)[] {
+        return Object.keys(this.contexts);
+    }
 
     /**
      * @returns true, если такой термин есть в коллекции
      */
-    has(term: string): term is keyof Terms & string {
-        return term in this.terms;
+    has(term: string | number | symbol): term is keyof Contexts {
+        return term in this.contexts;
     }
 
     /**
@@ -24,23 +53,16 @@ export class TermCollection<Terms extends TermsDefinition> {
      * @returns true, если такой термин есть в коллекции
      * @param term термин для проверки
      */
-    assertHas(term: string): asserts term is keyof Terms & string {
-        if (!this.has(term)) {
-            throw new Error(`unkown term '${term}'`);
-        }
+    assertHas(term: string | number | symbol): asserts term is keyof Contexts {
+        assert(this.has(term), `unkown term '${String(term)}'`)
     }
 
     /**
      * @returns ключи контекста термина (список имён аргументов, которые нужно передать переводчику)
      * @param term термин
      */
-    contextKeys<ID extends keyof Terms & string>(term: ID): Terms[ID] {
+    context<K extends keyof Contexts>(term: K): Contexts[K] {
         this.assertHas(term);
-        return this.terms[term] as Terms[ID];
+        return this.contexts[term];
     }
 }
-
-/**
- * Контекст термина
- */
-export type TermContext<Keys extends readonly string[]> = { readonly [ID in Keys[number]]: string };

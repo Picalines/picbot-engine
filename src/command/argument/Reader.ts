@@ -9,11 +9,12 @@ export interface ArgumentString<T> {
     /**
      * Длина строки аргумента
      */
-    length: number;
+    readonly length: number;
+
     /**
      * Переведённое значение аргумента
      */
-    parsedValue: T;
+    readonly parsedValue: T;
 }
 
 /**
@@ -24,21 +25,4 @@ export type ArgumentReader<T> = ValueParser<string, ArgumentString<T>, CommandCo
 /**
  * Список объявлений аргументов
  */
-export type ArgsDefinitions<Args extends unknown[]> = readonly [...{ [K in keyof Args]: CommandArgument<Args[K]> }];
-
-/**
- * Интерфейс объекта, который читает и хранит информацию об аргументах команды
- */
-export interface CommandArgumentsReader<Args extends unknown[]> {
-    /**
-     * Список объявлений аргументов
-     */
-    readonly definitions: ArgsDefinitions<Args>;
-
-    /**
-     * Читает аргументы команды из сообщения
-     * @param userInput ввод пользователя
-     * @param context контекст команды
-     */
-    readArguments(userInput: string, context: CommandContext<unknown[]>): Args;
-}
+export type ArgsDefinitions<Args extends unknown[]> = { readonly [K in keyof Args]: CommandArgument<Args[K]> };

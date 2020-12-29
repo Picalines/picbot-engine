@@ -2,7 +2,7 @@ export type PromiseOrSync<T> = Promise<T> | T;
 
 export type PromiseVoid = PromiseOrSync<void>;
 
-export type EmptyObject = { [K: string]: never };
+export type EmptyObject = { [K: string]: never; [K: number]: never };
 
 /**
  * Объект, который можно освободить из памяти
@@ -57,3 +57,7 @@ export type NonEmptyReadonly<T> = T extends readonly (infer U)[] ? readonly [U, 
  * @example Overwrite<{ a: number, b: number }, { a: 'test' }> -> { a: 'test', b: number }
  */
 export type Overwrite<T, U> = Pick<T, Exclude<keyof T, keyof U>> & U;
+
+export type Indexes<Tuple extends any[]> = { [I in keyof Tuple]: I }[number];
+
+export type Mutable<T> = { [K in keyof T]: T[K] };

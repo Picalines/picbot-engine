@@ -1,4 +1,3 @@
-import { InferPrimitive } from "../../utils";
 import { ArgumentReader } from "./Reader";
 
 /**
@@ -13,10 +12,10 @@ export interface CommandArgument<T> {
     /**
      * Описание аргумента
      */
-    readonly description: string;
+    readonly description?: string;
 
     /**
      * @returns функцию, читающаю аргумент
      */
-    readonly reader: ArgumentReader<InferPrimitive<T>>;
+    readonly reader: ArgumentReader<T>;
 }

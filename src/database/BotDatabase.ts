@@ -1,6 +1,6 @@
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
 import { createEventStorage, EmitOf } from "../event";
-import { AnyConstructor, createGroupedCache, filterIterable, requireFolder } from "../utils";
+import { AnyConstructor, assert, createGroupedCache, filterIterable, requireFolder } from "../utils";
 import { PropertyAccessConstructor, Property, PropertyAccess, DatabaseValueStorage as ValueStorage, AnyProperty } from "./property";
 import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector";
 import { EntityType, Entity } from "./Entity";
@@ -107,9 +107,7 @@ export class BotDatabase {
      * @param property свойство сущности
      */
     accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
-        if (!this.cache.properties.has(property)) {
-            throw new Error(`unknown ${property.entityType} property '${property.key}'`);
-        }
+        assert(this.cache.properties.has(property), `unknown ${property.entityType} property '${property.key}'`);
 
         let storage: ValueStorage<any> | undefined = undefined;
 
@@ -124,9 +122,7 @@ export class BotDatabase {
 
         return new constructor(property, {
             set: async value => {
-                if (!property.validate(value)) {
-                    throw new Error(`value '${value}' is not valid for database property '${property.key}'`);
-                }
+                assert(property.validate(value), `value '${value}' is not valid for database property '${property.key}'`);
 
                 if (!storage) {
                     storage = new this.handler.propertyStorageClass(this, 'member');
@@ -156,9 +152,7 @@ export class BotDatabase {
      * @param options настройки селектора
      */
     async selectEntities<E extends EntityType, Vars extends SelectorVars>(selector: EntitySelector<E, Vars>, options: EntitySelectorOptions<E, Vars>): Promise<Entity<E>[]> {
-        if (!this.cache.selectors.has(selector)) {
-            throw new Error(`unknown ${selector.entityType} selector`);
-        }
+        assert(this.cache.selectors.has(selector), `unknown ${selector.entityType} selector`);
 
         const { maxCount = Infinity } = options;
         if (maxCount <= 0) return [];

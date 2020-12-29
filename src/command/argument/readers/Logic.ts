@@ -1,4 +1,3 @@
-import { Primitive } from "../../../utils";
 import { ArgumentReader } from "../Reader";
 import { spaceReader } from "./String";
 
@@ -6,10 +5,7 @@ import { spaceReader } from "./String";
  * @returns функцию, которая либо читает аргумент, либо возвращает стандартное значение, если аргумент не найден
  * @param reader функция, читающая аргумент
  */
-export function optionalReader<T>(reader: ArgumentReader<T>, defaultValue?: null): ArgumentReader<T | null>
-export function optionalReader<T>(reader: ArgumentReader<T>, defaultValue: T): ArgumentReader<T>
-export function optionalReader<T, D extends Primitive>(reader: ArgumentReader<T>, defaultValue: D): ArgumentReader<T | D>
-export function optionalReader<T, D>(reader: ArgumentReader<T>, defaultValue: D = null!): ArgumentReader<T | D> {
+export const optionalReader = <T, D>(reader: ArgumentReader<T>, defaultValue: D): ArgumentReader<T | D> => {
     return (userInput, context) => {
         const result = reader(userInput, context);
         if (result.isError && !userInput.length) {

@@ -1,4 +1,4 @@
-import { FilterFunction } from "./UsefulTypes";
+import { FilterFunction, NonEmptyReadonly } from "./UsefulTypes";
 
 /**
  * @returns true, если строка не пустая и не содержит пробелов
@@ -51,5 +51,17 @@ export function* filterIterable<T>(iterable: IterableIterator<T>, filter: Filter
         if (filter(value)) {
             yield value;
         }
+    }
+}
+
+export const capitalize = (str: string) => str[0].toUpperCase() + str.slice(1);
+
+export const orderedList = (...elements: readonly string[]) => elements.map((element, index) => `${index + 1}. ${element.trim()}`).join('\n');
+
+export const unorderedList = (...elements: readonly string[]) => elements.map(element => '• ' + element.trim()).join('\n');
+
+export function assert(condition: any, message?: string): asserts condition {
+    if (!condition) {
+        throw new Error(message || "assertion failed");
     }
 }

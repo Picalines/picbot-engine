@@ -1,20 +1,15 @@
-import { TermCollection, TermContext, TermsDefinition } from "./TermCollection";
+import { assert, EmptyObject } from "../utils";
+import { TermContexts, TermContextValues, TermTranslation } from "./Term";
+import { TermCollection } from "./TermCollection";
 
 /**
- * Перевод термина
+ * Объявление коллекции переводов
  */
-export type TermTranslation<ContextKeys extends readonly string[]> = string | ((args: TermContext<ContextKeys>) => string);
-
-/**
- * Объект, содержащий переводы терминов
- */
-export type TranslationsDefinition<Terms extends TermsDefinition> = { [ID in keyof Terms]: TermTranslation<Terms[ID]> };
-
-interface TranslationCollectionDefinition<Terms extends TermsDefinition> {
+export interface TranslationCollectionDefinition<Contexts extends TermContexts> {
     /**
      * Коллекция терминов, которую мы переводим
      */
-    readonly terms: TermCollection<Terms>;
+    readonly terms: TermCollection<Contexts>;
 
     /**
      * Язык, на который мы переводим термины
@@ -24,17 +19,21 @@ interface TranslationCollectionDefinition<Terms extends TermsDefinition> {
     /**
      * Перевод терминов
      */
-    readonly translations: TranslationsDefinition<Terms>;
+    readonly translations: { readonly [K in keyof Contexts]: Contexts[K] extends EmptyObject ? string : TermTranslation<Contexts[K]> };
 }
 
-export interface TranslationCollection<Terms extends TermsDefinition> extends TranslationCollectionDefinition<Terms> { }
+export interface TranslationCollection<Contexts extends TermContexts> extends TranslationCollectionDefinition<Contexts> { }
 
 /**
  * Коллекция переводов
  */
-export class TranslationCollection<Terms extends TermsDefinition> {
-    constructor(definition: TranslationCollectionDefinition<Terms>) {
+export class TranslationCollection<Contexts extends TermContexts> {
+    /**
+     * @param definition объявление коллекции переводов
+     */
+    constructor(definition: TranslationCollectionDefinition<Contexts>) {
         Object.assign(this, definition);
+        assert(this.locale, `invalid ${TranslationCollection.name} locale`);
     }
 
     /**
@@ -42,32 +41,22 @@ export class TranslationCollection<Terms extends TermsDefinition> {
      * @param term термин
      * @param context контекст термина
      */
-    translate<ID extends keyof Terms & string>(term: ID, ...context: [...Terms[ID] extends [] ? [undefined?] : [TermContext<Terms[ID]>]]): string {
-        this.terms.assertHas(term);
-
-        const translator = this.translations[term] as TermTranslation<Terms[ID]>;
+    get<K extends keyof Contexts>(term: K, ...context: Contexts[K] extends EmptyObject ? [undefined?] : [TermContextValues<Contexts[K]>]): string {
+        const translator: TermTranslation<Contexts[K]> | string = this.translations[term];
 
         if (typeof translator == 'string') {
             return translator;
         }
 
-        const contextKeys = this.terms.contextKeys(term);
-
-        if (!contextKeys.length) {
-            return translator({} as TermContext<Terms[ID]>)
-        }
-
-        return translator(context[0] as TermContext<Terms[ID]>);
+        return translator(context[0] as any ?? ({} as TermContextValues<Contexts[K]>))
     }
 
     /**
      * @returns новая коллекция переводов, у которой переводы из первой (this) коллекции переписаны переводами из второй (otherTranslations). Термины и локаль сохраняются.
      * @param otherTranslations другая коллекция переводов тех же терминов на тот же язык
      */
-    override(otherTranslations: TranslationCollection<Terms>): TranslationCollection<Terms> {
-        if (!(otherTranslations.locale == this.locale && otherTranslations.terms == this.terms)) {
-            throw new Error(`${TranslationCollection.name} objects are not compatible`);
-        }
+    override(otherTranslations: TranslationCollection<Contexts>): TranslationCollection<Contexts> {
+        assert(otherTranslations.locale == this.locale && otherTranslations.terms == this.terms, `${TranslationCollection.name} objects are not compatible`);
 
         return new TranslationCollection({
             terms: this.terms,

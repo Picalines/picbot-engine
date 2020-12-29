@@ -1,45 +1,52 @@
 import { spaceReader } from "../argument";
 import { CommandArgument } from "./Argument";
 import { CommandContext } from "../Context";
-import { ArgsDefinitions, CommandArgumentsReader } from "./Reader";
+import { ArgsDefinitions } from "./Reader";
+import { constTerm, TermCollection } from "../../translator";
+import { assert, Indexes } from "../../utils";
 
 /**
  * Класс, хранящий объявления аргументов команды
  */
-export class ArgumentSequence<Args extends unknown[]> implements CommandArgumentsReader<Args> {
+export class ArgumentSequence<Args extends unknown[]> {
     /**
      * Список объявленных аргументов
      */
-    readonly definitions: ArgsDefinitions<Args>;
+    private readonly definitions: ArgsDefinitions<Args>;
+
+    /**
+     * Термины имён и описаний аргументов для переводчика
+     */
+    readonly terms: TermCollection<{ [I in `${Indexes<Args>}_${"name" | "description"}`]: {} }>;
 
     /**
      * @param definitions объявления аргументов команды
      */
     constructor(...definitions: ArgsDefinitions<Args>) {
-        if (!definitions.length) {
-            throw new Error('argument definitions array is empty');
+        assert(definitions.length, 'argument definitions array is empty');
+
+        const terms = {} as any;
+        const names = new Set<string>();
+
+        for (const [index, { name, description }] of definitions.entries()) {
+            assert(name, `argument name is invalid`);
+
+            assert(!names.has(name), `duplicate argument name '${name}'`)
+            names.add(name);
+
+            terms[`${index}_name`] = constTerm(name);
+            terms[`${index}_description`] = constTerm(description ?? '');
         }
 
-        const names = definitions.map(d => d.name);
-        for (const [index, name] of names.entries()) {
-            if (!ArgumentSequence.validateArgumentName(name)) {
-                throw new Error(`command argument name '${name}' is invalid`);
-            }
-            if (names.some((n, i) => name == n && index != i)) {
-                throw new Error(`duplicate command argument name '${name}'`);
-            }
-        }
-
-        this.definitions = [...definitions];
+        this.definitions = [...definitions] as unknown as ArgsDefinitions<Args>;
+        this.terms = new TermCollection(terms);
     }
 
     /**
-     * Проверяет имя аргумента
-     * @param name имя аргумента
-     * @returns true, если name не пустрая строка и не содержит пробелов
+     * Кол-во аргументов в последовательности
      */
-    static validateArgumentName(name: string) {
-        return name.length > 0 && !name.includes(' ');
+    get length() {
+        return this.definitions.length;
     }
 
     /**
@@ -71,7 +78,7 @@ export class ArgumentSequence<Args extends unknown[]> implements CommandArgument
      * @param userInput строка ввода пользователя
      * @param context контекст команды
      */
-    readArguments(userInput: string, context: CommandContext<unknown[]>): Args {
+    read(userInput: string, context: CommandContext<unknown[]>): Args {
         const values = [];
         for (const [index, argument] of this.definitions.entries()) {
             let value;
