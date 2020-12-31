@@ -12,3 +12,8 @@ export type Entity<T extends EntityType> =
     T extends 'guild' ? Guild
     : T extends 'member' ? GuildMember
     : never;
+
+/**
+ * Любая сущность
+ */
+export type AnyEntity = Entity<EntityType>;

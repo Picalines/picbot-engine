@@ -152,7 +152,7 @@ export class BotDatabase {
      * @param options настройки селектора
      */
     async selectEntities<E extends EntityType, Vars extends SelectorVars>(selector: EntitySelector<E, Vars>, options: EntitySelectorOptions<E, Vars>): Promise<Entity<E>[]> {
-        assert(this.cache.selectors.has(selector), `unknown ${selector.entityType} selector`);
+        assert(this.cache.selectors.has(selector as any), `unknown ${selector.entityType} selector`);
 
         const { maxCount = Infinity } = options;
         if (maxCount <= 0) return [];

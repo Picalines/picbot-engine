@@ -1,7 +1,6 @@
-import { Guild, GuildMember } from "discord.js";
-import { Entity, EntityType } from "../Entity";
+import { AnyEntity, EntityType } from "../Entity";
 import { DatabaseValueStorage } from "../property";
-import { AnyExpression, EntitySelector } from "../selector";
+import { AnyEntitySelector, AnyExpression, EntitySelector } from "../selector";
 import { CompiledExpression, compileExpression } from "./Expression";
 
 type CompiledExpressionData = { arrow: CompiledExpression, usedKeys: string[] };
@@ -17,7 +16,7 @@ export class JsonDatabaseValueStorage extends DatabaseValueStorage<EntityType> {
      */
     private readonly compiledExpressions = new WeakMap<EntitySelector<EntityType>, CompiledExpressionData>();
 
-    storeValue<T>(entity: Entity<EntityType>, key: string, value: T) {
+    storeValue(entity: AnyEntity, key: string, value: any) {
         let propertyMap = this.propertyMaps.get(key);
 
         if (!propertyMap) {
@@ -28,15 +27,15 @@ export class JsonDatabaseValueStorage extends DatabaseValueStorage<EntityType> {
         propertyMap.set(entity.id, value);
     }
 
-    restoreValue(entity: Entity<EntityType>, key: string) {
+    restoreValue(entity: AnyEntity, key: string) {
         return this.propertyMaps.get(key)?.get(entity.id);
     }
 
-    deleteValue(entity: Entity<EntityType>, key: string) {
+    deleteValue(entity: AnyEntity, key: string) {
         return this.propertyMaps.get(key)?.delete(entity.id) ?? false;
     }
 
-    *selectEntities(entities: IterableIterator<Guild | GuildMember>, selector: EntitySelector<EntityType, any>, expression: AnyExpression<EntityType>, variables: any) {
+    *selectEntities(entities: IterableIterator<AnyEntity>, selector: AnyEntitySelector, expression: AnyExpression<EntityType>, variables: any) {
         let compiledExpression = this.compiledExpressions.get(selector);
 
         if (compiledExpression === undefined) {
@@ -62,7 +61,7 @@ export class JsonDatabaseValueStorage extends DatabaseValueStorage<EntityType> {
         this.propertyMaps.clear();
     }
 
-    cleanupEntity(entity: Guild | GuildMember) {
+    cleanupEntity(entity: AnyEntity) {
         for (const propMap of this.propertyMaps.values()) {
             propMap.delete(entity.id);
         }
