@@ -1,5 +1,4 @@
 import { GuildMemberManager, GuildManager } from "discord.js";
-import { EmptyObject } from "../../utils";
 import { EntityType, Entity } from "../Entity";
 import { SelectorVars, SelectorVarValues } from "./Selector";
 
@@ -28,7 +27,7 @@ export type EntitySelectorOptions<E extends EntityType, Vars extends SelectorVar
      * @default undefined
      */
     readonly throwOnNotFound?: Error;
-} & (Vars extends EmptyObject ? {} : {
+} & ({} extends Vars ? {} : {
     /**
      * Переменные, нужные селектору для работы
      */

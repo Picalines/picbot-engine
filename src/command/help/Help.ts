@@ -14,7 +14,7 @@ export const helpCommand = new Command({
 
     arguments: new ArgumentSequence(
         {
-            name: 'command',
+            description: 'name or alias of the command',
             reader: optionalReader(wordReader, null),
         }
     ),
@@ -52,5 +52,6 @@ export const helpInfoTranslationRU = new TranslationCollection({
             '`!help` покажет список доступных команд',
             '`!help test` покажет информацию о команде `test`',
         ),
+        argument_0_description: 'имя или алиас нужной команды',
     },
 });

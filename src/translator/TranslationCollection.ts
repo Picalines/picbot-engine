@@ -1,4 +1,4 @@
-import { assert, EmptyObject } from "../utils";
+import { assert } from "../utils";
 import { TermContexts, TermContextValues, TermTranslation } from "./Term";
 import { TermCollection } from "./TermCollection";
 
@@ -19,7 +19,7 @@ export interface TranslationCollectionDefinition<Contexts extends TermContexts> 
     /**
      * Перевод терминов
      */
-    readonly translations: { readonly [K in keyof Contexts]: Contexts[K] extends EmptyObject ? string : TermTranslation<Contexts[K]> };
+    readonly translations: { readonly [K in keyof Contexts]: {} extends Contexts[K] ? string : TermTranslation<Contexts[K]> };
 }
 
 export interface TranslationCollection<Contexts extends TermContexts> extends TranslationCollectionDefinition<Contexts> { }
@@ -41,7 +41,7 @@ export class TranslationCollection<Contexts extends TermContexts> {
      * @param term термин
      * @param context контекст термина
      */
-    get<K extends keyof Contexts>(term: K, ...context: Contexts[K] extends EmptyObject ? [undefined?] : [TermContextValues<Contexts[K]>]): string {
+    get<K extends keyof Contexts>(term: K, ...context: {} extends Contexts[K] ? [undefined?] : [TermContextValues<Contexts[K]>]): string {
         const translator: TermTranslation<Contexts[K]> | string = this.translations[term];
 
         if (typeof translator == 'string') {

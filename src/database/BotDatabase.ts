@@ -177,7 +177,7 @@ export class BotDatabase {
             entities = filterIterable(entities, options.filter);
         }
 
-        const selectedGen = (storage as ValueStorage<E>).selectEntities(entities, selector as any, expression, options.variables);
+        const selectedGen = (storage as ValueStorage<E>).selectEntities(entities, selector as any, expression, options.variables as any);
         const selected: Entity<E>[] = [];
 
         const checkBreak = maxCount == Infinity ? (() => false) : (() => selected.length >= maxCount);

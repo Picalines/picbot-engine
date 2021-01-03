@@ -1,44 +1,24 @@
 import { spaceReader } from "../argument";
 import { ArgsDefinitions, CommandArgument } from "./Argument";
 import { CommandContext } from "../Context";
-import { constTerm, TermCollection } from "../../translator";
-import { assert, Indexes } from "../../utils";
+import { assert } from "../../utils";
+import { argumentReaderTerms } from "./readers";
 
 /**
  * Класс, хранящий объявления аргументов команды
  */
 export class ArgumentSequence<Args extends unknown[]> {
     /**
-     * Список объявленных аргументов
+     * Список объявлений аргументов
      */
-    private readonly definitions: ArgsDefinitions<Args>;
-
-    /**
-     * Термины имён и описаний аргументов для переводчика
-     */
-    readonly terms: TermCollection<{ [I in `${Indexes<Args>}_${"name" | "description"}`]: {} }>;
+    readonly definitions: ArgsDefinitions<Args>;
 
     /**
      * @param definitions объявления аргументов команды
      */
     constructor(...definitions: ArgsDefinitions<Args>) {
         assert(definitions.length, 'argument definitions array is empty');
-
-        const terms = {} as any;
-        const names = new Set<string>();
-
-        for (const [index, { name, description }] of definitions.entries()) {
-            assert(name, `argument name is invalid`);
-
-            assert(!names.has(name), `duplicate argument name '${name}'`)
-            names.add(name);
-
-            terms[`${index}_name`] = constTerm(name);
-            terms[`${index}_description`] = constTerm(description ?? '');
-        }
-
         this.definitions = [...definitions] as unknown as ArgsDefinitions<Args>;
-        this.terms = new TermCollection(terms);
     }
 
     /**
@@ -58,13 +38,13 @@ export class ArgumentSequence<Args extends unknown[]> {
         const readerResult = argument.reader(userInput, context);
         if (readerResult.isError) {
             const error = readerResult.error ?? 'not found';
-            throw new Error(`error in argument #${index + 1} '${argument.name}': ${error}`);
+            throw new Error(context.translator(argumentReaderTerms)('errorInArgument', { index, error }));
         }
 
         const { length: argumentLength, parsedValue } = readerResult.value;
         userInput = userInput.slice(argumentLength);
 
-        const spaceReaderResult = spaceReader(userInput, undefined as any);
+        const spaceReaderResult = spaceReader(userInput, context);
         if (!spaceReaderResult.isError && spaceReaderResult.value.length) {
             userInput = userInput.slice(spaceReaderResult.value.length);
         }

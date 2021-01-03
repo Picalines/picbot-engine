@@ -1,5 +1,5 @@
 import { Bot } from "../bot";
-import { helpCommand, helpEmbedTerms, helpEmbedTranslationsRU, helpInfoTranslationRU } from "../command";
+import { argumentReaderTerms, argumentReaderTermTranslationRU, helpCommand, helpEmbedTerms, helpEmbedTranslationsRU, helpInfoTranslationRU } from "../command";
 import { assert, requireFolder } from "../utils";
 import { TermContexts } from "./Term";
 import { TermCollection } from "./TermCollection";
@@ -19,6 +19,8 @@ export class Translator {
         }
 
         this.bot.loadingSequence.stage('require terms', () => {
+            addTerms(argumentReaderTerms);
+
             if (this.bot.options.useBuiltInHelpCommand) {
                 addTerms(helpEmbedTerms);
                 this.#translations.get(helpEmbedTerms)!.set(helpEmbedTranslationsRU.locale, helpEmbedTranslationsRU);
@@ -30,16 +32,12 @@ export class Translator {
             });
         });
 
-        this.bot.commands.events.on('added', command => {
-            addTerms(command.terms);
-            if (command.arguments) {
-                addTerms(command.arguments.terms);
-            }
-        });
+        this.bot.commands.events.on('added', command => addTerms(command.terms));
 
         this.bot.loadingSequence.after('require commands', 'require translations', () => {
 
             this.#translations.get(helpCommand.terms)?.set('ru', helpInfoTranslationRU);
+            this.#translations.get(argumentReaderTerms)?.set('ru', argumentReaderTermTranslationRU);
 
             requireFolder(TranslationCollection, this.bot.options.loadingPaths.translations).forEach(([path, translations]) => {
                 this.bot.logger.log(path);

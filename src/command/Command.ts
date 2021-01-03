@@ -1,5 +1,5 @@
 import { BitFieldResolvable, GuildMember, Permissions, PermissionString } from "discord.js";
-import { assert, GuildMessage, NonEmptyReadonly, Overwrite, PromiseVoid } from "../utils";
+import { assert, GuildMessage, NonEmptyReadonly, Overwrite, PromiseVoid, Indexes } from "../utils";
 import { CommandContext } from "./Context";
 import { Bot } from "../bot";
 import { constTerm, TermCollection } from "../translator";
@@ -82,7 +82,9 @@ export class Command<Args extends unknown[]> {
     /**
      * Термины команды для переводчика
      */
-    readonly terms: TermCollection<{ description: {}, group: {}, tutorial: {} }>;
+    readonly terms: TermCollection<{
+        [I in "description" | "group" | "tutorial" | `argument_${Indexes<Args>}_description`]: {}
+    }>;
 
     /**
      * @param definition информация о команде
@@ -102,18 +104,19 @@ export class Command<Args extends unknown[]> {
 
         this.executeable = executeable;
 
+        const argTerms = {} as any;
+        this.arguments?.definitions.forEach(({ description }, index) => {
+            argTerms[`argument_${index}_description`] = constTerm(description);
+        });
+
         this.terms = new TermCollection({
             description: constTerm(info.description),
             group: constTerm(info.group),
             tutorial: constTerm(info.tutorial),
+            ...argTerms,
         });
 
-        const namesToValidate = [this.name];
-        if (this.aliases) {
-            namesToValidate.push(...this.aliases);
-        }
-
-        for (const name of namesToValidate) {
+        for (const name of [this.name, ...(this.aliases ?? [])]) {
             assert(Command.validateName(name), `invalid command name or alias '${name}'`);
         }
     }

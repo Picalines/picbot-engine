@@ -1,9 +1,9 @@
-import { EmptyObject, PrimitiveConstructor, PrimitiveInstanceType } from "../utils";
+import { PrimitiveConstructor, PrimitiveInstanceType } from "../utils";
 
 /**
  * Объявление контекста термина
  */
-export type TermContext = { readonly [key: string]: PrimitiveConstructor } | EmptyObject;
+export type TermContext = { readonly [key: string]: PrimitiveConstructor };
 
 /**
  * Объект со значениями контекста термина
@@ -36,7 +36,7 @@ export type TermContexts = Readonly<Record<string, TermContext>>;
  * Сокращение для терминов, которым не нужны данные из вне (контекст - пустой объект)
  * @param translation перевод термина
  */
-export function constTerm(translation: string | (() => string)): TermDefinition<EmptyObject> {
+export function constTerm(translation: string | (() => string)): TermDefinition<{}> {
     if (typeof translation == 'string') {
         const defaultTranslation = translation;
         translation = () => defaultTranslation;

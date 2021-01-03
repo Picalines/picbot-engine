@@ -31,14 +31,9 @@ export type ArgsDefinitions<Args extends unknown[]> = { readonly [K in keyof Arg
  */
 export interface CommandArgument<T> {
     /**
-     * Имя аргумента команды
-     */
-    readonly name: string;
-
-    /**
      * Описание аргумента
      */
-    readonly description?: string;
+    readonly description: string;
 
     /**
      * @returns функцию, читающаю аргумент

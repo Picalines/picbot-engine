@@ -2,8 +2,6 @@ export type PromiseOrSync<T> = Promise<T> | T;
 
 export type PromiseVoid = PromiseOrSync<void>;
 
-export type EmptyObject = { [K: string]: never;[K: number]: never };
-
 /**
  * Объект, который можно освободить из памяти
  */

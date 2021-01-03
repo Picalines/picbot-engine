@@ -1,4 +1,4 @@
-import { EmptyObject, PromiseOrSync } from "../../utils";
+import { PromiseOrSync } from "../../utils";
 import { BotDatabase } from "../BotDatabase";
 import { EntityType, Entity } from "../Entity";
 import { AnyExpression, EntitySelector, SelectorVars, SelectorVarValues } from "../selector";
@@ -44,7 +44,7 @@ export abstract class DatabaseValueStorage<E extends EntityType> {
      * @param selector селектор
      * @param expression обработанное выражение
      */
-    abstract selectEntities<Vars extends SelectorVars = EmptyObject>(entities: IterableIterator<Entity<E>>, selector: EntitySelector<E, Vars>, expression: AnyExpression<E>, variables: SelectorVarValues<Vars>): AsyncGenerator<Entity<E>> | Generator<Entity<E>>;
+    abstract selectEntities<Vars extends SelectorVars = {}>(entities: IterableIterator<Entity<E>>, selector: EntitySelector<E, Vars>, expression: AnyExpression<E>, variables: SelectorVarValues<Vars>): AsyncGenerator<Entity<E>> | Generator<Entity<E>>;
 
     /**
      * Очищает все данные в хранилище. Библиотека вызывает эту функцию,

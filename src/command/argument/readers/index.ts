@@ -1,3 +1,4 @@
+export * from "./Terms";
 export * from "./Logic";
 export * from "./Regex";
 export * from "./String";

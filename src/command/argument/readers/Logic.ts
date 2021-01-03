@@ -1,6 +1,7 @@
 import { TupleOf } from "../../../utils";
 import { ArgumentReader } from "../Argument";
 import { spaceReader } from "./String";
+import { argumentReaderTerms as readerTerms } from "./Terms";
 
 /**
  * @returns функцию, которая либо читает аргумент, либо возвращает стандартное значение, если аргумент не найден
@@ -14,10 +15,6 @@ export const optionalReader = <T, D extends T | null | undefined>(reader: Argume
     return result;
 }
 
-const innerError = (error: string, inElement: string): ReturnType<ArgumentReader<any>> => {
-    return { isError: true, error: `error in ${inElement}: ${error ?? 'not found'}` };
-}
-
 /**
  * Соединяет несколько функций чтения в одну
  * @param readers функции чтения
@@ -26,10 +23,13 @@ export const mergeReaders = <T extends any[]>(...readers: { [K in keyof T]: Argu
     const values: T = [] as any;
     let length = 0;
 
-    for (let i = 0; i < readers.length; i++) {
-        const valResult = readers[i](userInput.slice(length), context);
+    for (let index = 0; index < readers.length; index++) {
+        const valResult = readers[index](userInput.slice(length), context);
         if (valResult.isError) {
-            return innerError(valResult.error, `element #${i + 1}`);
+            return {
+                isError: true,
+                error: context.translator(readerTerms)('errorInItem', { index, error: valResult.error }),
+            };
         }
 
         values.push(valResult.value.parsedValue);
@@ -61,12 +61,15 @@ export const repeatReader = <T, L extends number>(reader: ArgumentReader<T>, cou
 export const restReader = <T, L extends number>(reader: ArgumentReader<T>, atLeast?: L): ArgumentReader<TupleOf<T, L> & T[]> => {
     return (userInput, context) => {
         const values = [];
-        let length = 0;
+        let length = 0, index = 0;
 
         while (length < userInput.length) {
             const valResult = reader(userInput.slice(length), context);
             if (valResult.isError) {
-                return innerError(valResult.error, 'last element');
+                return {
+                    isError: true,
+                    error: context.translator(readerTerms)('errorInItem', { index, error: valResult.error }),
+                };
             }
 
             values.push(valResult.value.parsedValue);
@@ -76,12 +79,20 @@ export const restReader = <T, L extends number>(reader: ArgumentReader<T>, atLea
             if (!spaceResult.isError) {
                 length += spaceResult.value.length;
             }
+
+            index++;
         }
 
         if (values.length < (atLeast ??= 0 as L)) {
-            return { isError: true, error: `at least ${atLeast} element(s) expected` };
+            return {
+                isError: true,
+                error: context.translator(readerTerms)('atLeastNItemsExpected', { count: atLeast }),
+            };
         }
 
-        return { isError: false, value: { length, parsedValue: values } };
+        return {
+            isError: false,
+            value: { length, parsedValue: values as TupleOf<T, L> & T[] },
+        };
     };
 }
