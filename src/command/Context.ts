@@ -17,7 +17,7 @@ export class CommandContext<Args extends unknown[]> {
      * @param terms коллекция терминов
      * @param defaultLocale локаль, которую нужно использовать, если для локали сервера нет нужного перевода
      */
-    readonly translator: <Contexts extends TermContexts>(terms: TermCollection<Contexts>) => TranslationCollection<Contexts>['get'];
+    readonly translate: <Contexts extends TermContexts>(terms: TermCollection<Contexts>) => TranslationCollection<Contexts>['translations'];
 
     /**
      * @param command команда
@@ -31,7 +31,7 @@ export class CommandContext<Args extends unknown[]> {
         readonly message: GuildMessage,
         readonly locale: string,
     ) {
-        this.translator = terms => this.bot.translator.get(terms, this.locale);
+        this.translate = terms => this.bot.translator.translations(terms, this.locale);
 
         if (this.command.arguments) {
             const userInput = message.content.replace(/^\S+\s*/, '');

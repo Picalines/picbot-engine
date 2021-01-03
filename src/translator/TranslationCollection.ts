@@ -19,7 +19,7 @@ export interface TranslationCollectionDefinition<Contexts extends TermContexts> 
     /**
      * Перевод терминов
      */
-    readonly translations: { readonly [K in keyof Contexts]: {} extends Contexts[K] ? string : TermTranslation<Contexts[K]> };
+    readonly translations: { readonly [K in keyof Contexts]: TermTranslation<Contexts[K]> };
 }
 
 export interface TranslationCollection<Contexts extends TermContexts> extends TranslationCollectionDefinition<Contexts> { }
@@ -31,24 +31,11 @@ export class TranslationCollection<Contexts extends TermContexts> {
     /**
      * @param definition объявление коллекции переводов
      */
-    constructor(definition: TranslationCollectionDefinition<Contexts>) {
+    constructor(
+        definition: TranslationCollectionDefinition<Contexts>
+    ) {
         Object.assign(this, definition);
         assert(this.locale, `invalid ${TranslationCollection.name} locale`);
-    }
-
-    /**
-     * @returns перевод термина на язык коллекции с учётом контекста
-     * @param term термин
-     * @param context контекст термина
-     */
-    get<K extends keyof Contexts>(term: K, ...context: {} extends Contexts[K] ? [undefined?] : [TermContextValues<Contexts[K]>]): string {
-        const translator: TermTranslation<Contexts[K]> | string = this.translations[term];
-
-        if (typeof translator == 'string') {
-            return translator;
-        }
-
-        return translator(context[0] as any ?? ({} as TermContextValues<Contexts[K]>))
     }
 
     /**

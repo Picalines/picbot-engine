@@ -19,7 +19,7 @@ export const wordReader: ArgumentReader<string> = regexReader(/\S+/);
 export const remainingTextReader: ArgumentReader<string> = (userInput, context) => {
     userInput = userInput.trim();
     if (!userInput) {
-        return { isError: true, error: context.translator(readerTerms)('notFound') };
+        return { isError: true, error: context.translate(readerTerms).notFound };
     }
     return {
         isError: false,
@@ -40,7 +40,7 @@ export const keywordReader = <W extends string>(...keywords: W[]): ArgumentReade
         if (wordResult.isError || !(keywords as string[]).includes(wordResult.value.parsedValue)) {
             return {
                 isError: true,
-                error: context.translator(readerTerms)('keywordExpected', { keywordList: keywords.join(', ') }),
+                error: context.translate(readerTerms).keywordExpected({ keywordList: keywords.join(', ') }),
             };
         }
         return wordResult;

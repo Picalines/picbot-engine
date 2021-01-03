@@ -13,7 +13,7 @@ export type TermContextValues<C extends TermContext> = { readonly [key in keyof 
 /**
  * Функция-переводчик термина
  */
-export type TermTranslation<C extends TermContext> = (context: TermContextValues<C>) => string;
+export type TermTranslation<C extends TermContext> = {} extends C ? string : ((context: TermContextValues<C>) => string);
 
 /**
  * Термин переводчика
@@ -36,11 +36,6 @@ export type TermContexts = Readonly<Record<string, TermContext>>;
  * Сокращение для терминов, которым не нужны данные из вне (контекст - пустой объект)
  * @param translation перевод термина
  */
-export function constTerm(translation: string | (() => string)): TermDefinition<{}> {
-    if (typeof translation == 'string') {
-        const defaultTranslation = translation;
-        translation = () => defaultTranslation;
-    }
-
+export function constTerm(translation: string): TermDefinition<{}> {
     return { context: {}, translation }
 }

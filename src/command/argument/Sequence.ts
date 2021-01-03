@@ -38,7 +38,7 @@ export class ArgumentSequence<Args extends unknown[]> {
         const readerResult = argument.reader(userInput, context);
         if (readerResult.isError) {
             const error = readerResult.error ?? 'not found';
-            throw new Error(context.translator(argumentReaderTerms)('errorInArgument', { index, error }));
+            throw new Error(context.translate(argumentReaderTerms).errorInArgument({ index, error }));
         }
 
         const { length: argumentLength, parsedValue } = readerResult.value;

@@ -28,7 +28,7 @@ export const mergeReaders = <T extends any[]>(...readers: { [K in keyof T]: Argu
         if (valResult.isError) {
             return {
                 isError: true,
-                error: context.translator(readerTerms)('errorInItem', { index, error: valResult.error }),
+                error: context.translate(readerTerms).errorInItem({ index, error: valResult.error }),
             };
         }
 
@@ -68,7 +68,7 @@ export const restReader = <T, L extends number>(reader: ArgumentReader<T>, atLea
             if (valResult.isError) {
                 return {
                     isError: true,
-                    error: context.translator(readerTerms)('errorInItem', { index, error: valResult.error }),
+                    error: context.translate(readerTerms).errorInItem({ index, error: valResult.error }),
                 };
             }
 
@@ -86,7 +86,7 @@ export const restReader = <T, L extends number>(reader: ArgumentReader<T>, atLea
         if (values.length < (atLeast ??= 0 as L)) {
             return {
                 isError: true,
-                error: context.translator(readerTerms)('atLeastNItemsExpected', { count: atLeast }),
+                error: context.translate(readerTerms).atLeastNItemsExpected({ count: atLeast }),
             };
         }
 

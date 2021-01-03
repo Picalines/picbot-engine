@@ -20,7 +20,7 @@ export const numberReader = (type: 'int' | 'float', range?: [min: number, max: n
     return parsedRegexReader(/[+-]?\d+(\.\d*)?/, (numberInput, context) => {
         const number = parseNumber(numberInput);
         if (isNaN(number) || !inRange(number)) {
-            return { isError: true, error: context.translator(readerTerms)('numberIsNotInRange', { number, min: range![0], max: range![1] }) }
+            return { isError: true, error: context.translate(readerTerms).numberIsNotInRange({ number, min: range![0], max: range![1] }) }
         }
         return { isError: false, value: number };
     });

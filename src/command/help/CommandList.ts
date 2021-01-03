@@ -4,9 +4,9 @@ import { CommandContext } from "../Context";
 import { Bot } from "../../bot";
 
 export const embedCommandList = (bot: Bot, embed: MessageEmbed, requester: GuildMember, context: CommandContext<any>) => {
-    const embedLabel = context.translator(helpEmbedTerms);
+    const embedLabel = context.translate(helpEmbedTerms);
 
-    embed.setTitle(embedLabel('botCommandsList'));
+    embed.setTitle(embedLabel.botCommandsList);
 
     const groupFields = new Map<string, EmbedField>();
 
@@ -15,7 +15,7 @@ export const embedCommandList = (bot: Bot, embed: MessageEmbed, requester: Guild
             continue;
         }
 
-        const group = context.translator(command.terms)('group');
+        const { group } = context.translate(command.terms);
 
         let field = groupFields.get(group);
         if (!field) {

@@ -14,7 +14,7 @@ export const regexReader = (regex: RegExp): ArgumentReader<string> => {
     return (userInput, context) => {
         const firstMatch = userInput.match(regex)?.[0];
         if (firstMatch === undefined) {
-            return { isError: true, error: context.translator(readerTerms)('notFound') };
+            return { isError: true, error: context.translate(readerTerms).notFound };
         }
         return {
             isError: false,

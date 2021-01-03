@@ -1,5 +1,5 @@
 import { assert, Mutable } from "../utils";
-import { TermDefinition, TermContexts, TermTranslation } from "./Term";
+import { TermDefinition, TermContexts } from "./Term";
 import { TranslationCollection, TranslationCollectionDefinition } from "./TranslationCollection";
 
 export class TermCollection<Contexts extends TermContexts> {

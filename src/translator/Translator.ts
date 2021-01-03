@@ -50,18 +50,12 @@ export class Translator {
      * @param terms коллекция терминов
      * @param toLocale локаль, на которую нужно перевести термины
      */
-    translations<Contexts extends TermContexts>(terms: TermCollection<Contexts>, toLocale: string): TranslationCollection<Contexts> {
+    collection<Contexts extends TermContexts>(terms: TermCollection<Contexts>, toLocale: string): TranslationCollection<Contexts> {
         assert(toLocale, 'invalid locale');
         return (this.termsMap(terms).get(toLocale) ?? terms.defaultTranslations) as TranslationCollection<Contexts>;
     }
 
-    /**
-     * @returns функцию-переводчик терминов на нужную локаль
-     * @param terms коллекция терминов
-     * @param toLocale локаль, на которую нужно переводить термины
-     */
-    get<Contexts extends TermContexts>(terms: TermCollection<Contexts>, toLocale: string): TranslationCollection<Contexts>['get'] {
-        const collection = this.translations(terms, toLocale);
-        return (term, ...context) => collection.get(term, ...context);
+    translations<Contexts extends TermContexts>(terms: TermCollection<Contexts>, toLocale: string): TranslationCollection<Contexts>['translations'] {
+        return this.collection(terms, toLocale).translations;
     }
 }

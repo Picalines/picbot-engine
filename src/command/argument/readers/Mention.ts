@@ -19,7 +19,7 @@ export const mentionReader = <T>(mentionRegex: RegExp, getter: MentionGetter<T>)
     if (!(id && (mentioned = getter(context, id)))) {
         return {
             isError: true,
-            error: context.translator(readerTerms)('notFound')
+            error: context.translate(readerTerms).notFound,
         };
     }
     return { isError: false, value: mentioned };
