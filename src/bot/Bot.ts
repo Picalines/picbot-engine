@@ -1,10 +1,9 @@
-import { readFileSync } from "fs";
 import { Client, ClientEvents } from "discord.js";
-import { BotOptions, BotOptionsArgument, BotOptionsArgumentFetcher as FetcherArgument, BotOptionsFetcher as Fetcher, DefaultBotOptions } from "./Options";
-import { assert, ClientEventNames, deepMerge, GuildMessage, isGuildMessage, requireFolder, StageSequenceBuilder } from "../utils";
-import { AnyCommand, Command, CommandContext, CommandStorage, helpCommand } from "../command";
+import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Options";
+import { ClientEventNames, GuildMessage, isGuildMessage, requireFolder, StageSequenceBuilder } from "../utils";
+import { CommandContext, CommandStorage } from "../command";
 import { BotEventListener, createEventStorage, EmitOf, createNodeEmitterLink } from "../event";
-import { BotDatabase, Property } from "../database";
+import { BotDatabase } from "../database";
 import { Logger } from "../logger/Logger";
 import { Translator } from "../translator";
 
@@ -79,17 +78,13 @@ export class Bot {
         this.events = events;
         this.#emit = emitEvent;
 
-        this.options = this.parseOptionsArgument(options);
+        this.options = parseBotOptionsArgument(options);
 
         this.logger = new Logger(this.options.loggerOptions);
 
-        this.commands = new CommandStorage();
+        this.commands = new CommandStorage(this);
 
         this.translator = new Translator(this);
-
-        if (this.options.useBuiltInHelpCommand) {
-            this.commands.add(helpCommand as unknown as AnyCommand);
-        }
 
         this.database = new BotDatabase(this);
 
@@ -103,24 +98,11 @@ export class Bot {
             });
         }));
 
-        this.loadingSequence.stage('require commands', () => {
-            requireFolder<AnyCommand>(Command, this.options.loadingPaths.commands).forEach(([path, command]) => {
-                this.commands.add(command)
-                this.logger.log(path);
-            });
-        });
-
         this.loadingSequence.stage('require events', () => {
             requireFolder(BotEventListener, this.options.loadingPaths.events).forEach(([path, listener]) => {
                 listener.connect(this);
                 this.logger.log(path);
             });
-        });
-
-        this.client.on('message', message => {
-            if (isGuildMessage(message)) {
-                this.handleGuildMessage(message);
-            }
         });
 
         this.shutdownSequence.stage('logout', () => {
@@ -131,6 +113,12 @@ export class Bot {
             this.shutdown()
                 .then(() => process.exit(0))
                 .catch(() => process.exit(1));
+        });
+
+        this.client.on('message', message => {
+            if (isGuildMessage(message)) {
+                this.handleGuildMessage(message);
+            }
         });
     }
 
@@ -237,64 +225,5 @@ export class Bot {
         }
 
         this.logger.endTask('success', `bot '${this.username}' successfully ${doneState}`);
-    }
-
-    /**
-     * Выносит логику превращения настроек бота
-     * @param options аргумент настроек
-     */
-    private parseOptionsArgument(options: BotOptionsArgument): BotOptions {
-        let { fetchPrefixes, fetchLocale, token } = options;
-
-        fetchPrefixes = this.parseFetcher(fetchPrefixes, <(f: any) => f is string[]>(f => f instanceof Array));
-        fetchLocale = this.parseFetcher(fetchLocale, <(f: any) => f is string>(f => typeof f === 'string'));
-
-        const { tokenType = 'string' } = options;
-
-        switch (tokenType) {
-            default:
-                throw new Error(`unsupported token type '${tokenType}'`);
-
-            case 'string':
-                break;
-
-            case 'env':
-                assert(token in process.env, 'token environment variable not found');
-                token = process.env[token]!;
-                break;
-
-            case 'file':
-                token = readFileSync(token).toString();
-                break;
-        }
-
-        return deepMerge(DefaultBotOptions, {
-            ...options as any,
-            fetchPrefixes,
-            fetchLocale,
-            token,
-        });
-    }
-
-    /**
-     * Вспомогательная функция для обработки [[BotOptions.fetchPrefixes]] и [[BotOptions.fetchLocale]]
-     */
-    private parseFetcher<T>(fetcher: FetcherArgument<T> | undefined, isValue: (fetcher: FetcherArgument<T> | undefined) => fetcher is T): Fetcher<T> | undefined {
-        if (!fetcher) {
-            return undefined;
-        }
-
-        if (isValue(fetcher)) {
-            const value = fetcher;
-
-            fetcher = () => value;
-        }
-        else if (fetcher instanceof Property) {
-            const property = fetcher;
-
-            fetcher = (bot, guild) => bot.database.accessProperty(guild, property).value();
-        }
-
-        return fetcher as Fetcher<T>;
     }
 }

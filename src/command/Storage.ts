@@ -1,5 +1,7 @@
-import { createEventStorage, EmitOf } from "../event";
+import { Bot } from "../bot";
+import { requireFolder } from "../utils";
 import { AnyCommand, Command } from "./Command";
+import { helpCommand } from "./help";
 
 /**
  * Хранилище команд
@@ -15,45 +17,33 @@ export class CommandStorage implements Iterable<AnyCommand> {
      */
     private readonly aliasMap = new Map<string, AnyCommand>();
 
-    /**
-     * События хранилища команд
-     */
-    readonly events;
-
-    /**
-     * Приватная функция вызова события
-     */
-    readonly #emit: EmitOf<CommandStorage['events']>;
-
-    constructor() {
-        const [events, emit] = createEventStorage(this as CommandStorage, {
-            added(command: AnyCommand) { },
-        });
-
-        this.events = events;
-        this.#emit = emit;
-    }
-
-    /**
-     * Добавляет команду в память бота
-     * @param command команда
-     */
-    add(command: AnyCommand): void {
-        const assertNameCollision = (name: string) => {
-            if (this.has(name)) {
-                throw new Error(`command name or alias '${name}' overlaps with another command`);
+    constructor(readonly bot: Bot) {
+        const addCommand = (command: AnyCommand) => {
+            const assertNameCollision = (name: string) => {
+                if (this.has(name)) {
+                    throw new Error(`command name or alias '${name}' overlaps with another command`);
+                }
             }
+
+            assertNameCollision(command.name);
+            this.nameMap.set(command.name, command);
+
+            command.aliases?.forEach(alias => {
+                assertNameCollision(alias);
+                this.aliasMap.set(alias, command);
+            });
         }
 
-        assertNameCollision(command.name);
-        this.nameMap.set(command.name, command);
+        this.bot.loadingSequence.stage('require commands', () => {
+            if (this.bot.options.useBuiltInHelpCommand) {
+                addCommand(helpCommand as unknown as AnyCommand);
+            }
 
-        command.aliases?.forEach(alias => {
-            assertNameCollision(alias);
-            this.aliasMap.set(alias, command);
+            requireFolder<AnyCommand>(Command, this.bot.options.loadingPaths.commands).forEach(([path, command]) => {
+                addCommand(command);
+                this.bot.logger.log(path);
+            });
         });
-
-        this.#emit('added', command);
     }
 
     /**
@@ -61,8 +51,8 @@ export class CommandStorage implements Iterable<AnyCommand> {
      * @param name имя или алиас команды
      * @param nameOnly нужно ли ингорировать алиасы
      */
-    get<Args extends unknown[]>(name: string, nameOnly = false): Command<Args> | undefined {
-        return (this.nameMap.get(name) ?? (!nameOnly ? this.aliasMap.get(name) : undefined)) as Command<Args> | undefined;
+    get(name: string, nameOnly = false): AnyCommand | undefined {
+        return this.nameMap.get(name) ?? (!nameOnly ? this.aliasMap.get(name) : undefined);
     }
 
     /**
