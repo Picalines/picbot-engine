@@ -48,11 +48,6 @@ export type BotOptions = Readonly<{
         commands: string;
 
         /**
-         * @default 'src/terms'
-         */
-        terms: string;
-
-        /**
          * @default 'src/translations'
          */
         translations: string;
@@ -119,7 +114,6 @@ export const DefaultBotOptions: BotOptions = {
         events: 'src/events',
         properties: 'src/properties',
         selectors: 'src/selectors',
-        terms: 'src/terms',
         translations: 'src/translations',
     },
     canBotsRunCommands: false,

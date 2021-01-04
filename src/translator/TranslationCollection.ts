@@ -1,5 +1,5 @@
 import { assert } from "../utils";
-import { TermContexts, TermContextValues, TermTranslation } from "./Term";
+import { TermContexts, TermTranslation } from "./Term";
 import { TermCollection } from "./TermCollection";
 
 /**
@@ -31,9 +31,7 @@ export class TranslationCollection<Contexts extends TermContexts> {
     /**
      * @param definition объявление коллекции переводов
      */
-    constructor(
-        definition: TranslationCollectionDefinition<Contexts>
-    ) {
+    constructor(definition: TranslationCollectionDefinition<Contexts>) {
         Object.assign(this, definition);
         assert(this.locale, `invalid ${TranslationCollection.name} locale`);
     }
