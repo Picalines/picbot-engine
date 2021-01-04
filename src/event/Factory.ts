@@ -1,3 +1,4 @@
+import { assert } from "../utils";
 import { EmitEvent, EventListener, EventStorage, PublicEventStorage } from "./EventStorage";
 
 /**
@@ -16,9 +17,7 @@ export function createEventStorage<Emitter, Events>(emitter: Emitter, events: Ev
     });
 
     const assertEventName = (eventName: keyof Events) => {
-        if (!eventNames.includes(eventName)) {
-            throw new Error(`event storage does not contain an event '${eventName}'`);
-        }
+        assert(eventNames.includes(eventName), `event storage does not contain an event '${eventName}'`);
     }
 
     const storage: EventStorage<Emitter, Events> = {

@@ -1,6 +1,7 @@
 import { CommandContext } from "../../Context";
-import { ArgumentReader } from "../Reader";
+import { ArgumentReader } from "../Argument";
 import { parsedRegexReader } from "./Regex";
+import { argumentReaderTerms as readerTerms } from "./Terms";
 
 /**
  * Функция, получающая упомянутый объект по его id
@@ -14,12 +15,12 @@ type MentionGetter<T> = (context: CommandContext<unknown[]>, id: string) => T | 
  */
 export const mentionReader = <T>(mentionRegex: RegExp, getter: MentionGetter<T>): ArgumentReader<T> => parsedRegexReader(mentionRegex, (mention, context) => {
     const id = mention.match(/\d+/)?.[0];
-    if (!id) {
-        return { isError: true, error: 'id not found in mention' };
-    }
-    const mentioned = getter(context, id);
-    if (!mentioned) {
-        return { isError: true, error: 'mentioned object not found' };
+    let mentioned: T | null | undefined;
+    if (!(id && (mentioned = getter(context, id)))) {
+        return {
+            isError: true,
+            error: context.translate(readerTerms).notFound,
+        };
     }
     return { isError: false, value: mentioned };
 });

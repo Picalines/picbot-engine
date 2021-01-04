@@ -1,5 +1,6 @@
-import { ArgumentReader } from "../Reader";
+import { ArgumentReader } from "../Argument";
 import { parsedRegexReader } from "./Regex";
+import { argumentReaderTerms as readerTerms } from "./Terms";
 
 /**
  * Читает число (целое / дробное, положительное / отрицательное)
@@ -16,13 +17,10 @@ export const numberReader = (type: 'int' | 'float', range?: [min: number, max: n
         range = [-Infinity, Infinity];
     }
 
-    return parsedRegexReader(/[+-]?\d+(\.\d*)?/, numberInput => {
+    return parsedRegexReader(/[+-]?\d+(\.\d*)?/, (numberInput, context) => {
         const number = parseNumber(numberInput);
-        if (isNaN(number)) {
-            return { isError: true, error: `'${numberInput}' is not a number (${type})` };
-        }
-        if (!inRange(number)) {
-            return { isError: true, error: `${numberInput} is not in range [${range!.slice(0, 2)}]` }
+        if (isNaN(number) || !inRange(number)) {
+            return { isError: true, error: context.translate(readerTerms).numberIsNotInRange({ number, min: range![0], max: range![1] }) }
         }
         return { isError: false, value: number };
     });

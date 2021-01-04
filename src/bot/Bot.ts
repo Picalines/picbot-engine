@@ -1,11 +1,12 @@
 import { readFileSync } from "fs";
 import { Client, ClientEvents } from "discord.js";
-import { BotOptions, BotOptionsArgument, DefaultBotOptions } from "./Options";
-import { ClientEventNames, deepMerge, GuildMessage, isGuildMessage, requireFolder, StageSequenceBuilder } from "../utils";
+import { BotOptions, BotOptionsArgument, BotOptionsArgumentFetcher as FetcherArgument, BotOptionsFetcher as Fetcher, DefaultBotOptions } from "./Options";
+import { assert, ClientEventNames, deepMerge, GuildMessage, isGuildMessage, requireFolder, StageSequenceBuilder } from "../utils";
 import { AnyCommand, Command, CommandContext, CommandStorage, helpCommand } from "../command";
 import { BotEventListener, createEventStorage, EmitOf, createNodeEmitterLink } from "../event";
 import { BotDatabase, Property } from "../database";
 import { Logger } from "../logger/Logger";
+import { Translator } from "../translator";
 
 /**
  * Класс бота
@@ -25,6 +26,11 @@ export class Bot {
      * База данных бота
      */
     readonly database: BotDatabase;
+
+    /**
+     * Переводчик
+     */
+    readonly translator: Translator;
 
     /**
      * Логгер
@@ -78,6 +84,8 @@ export class Bot {
         this.logger = new Logger(this.options.loggerOptions);
 
         this.commands = new CommandStorage();
+
+        this.translator = new Translator(this);
 
         if (this.options.useBuiltInHelpCommand) {
             this.commands.add(helpCommand as unknown as AnyCommand);
@@ -236,18 +244,10 @@ export class Bot {
      * @param options аргумент настроек
      */
     private parseOptionsArgument(options: BotOptionsArgument): BotOptions {
-        let { fetchPrefixes, token } = options;
+        let { fetchPrefixes, fetchLocale, token } = options;
 
-        if (fetchPrefixes instanceof Array) {
-            const prefixes = fetchPrefixes as string[];
-
-            fetchPrefixes = () => prefixes;
-        }
-        else if (fetchPrefixes instanceof Property) {
-            const prefixes = fetchPrefixes;
-
-            fetchPrefixes = (bot, guild) => bot.database.accessProperty(guild, prefixes).value();
-        }
+        fetchPrefixes = this.parseFetcher(fetchPrefixes, <(f: any) => f is string[]>(f => f instanceof Array));
+        fetchLocale = this.parseFetcher(fetchLocale, <(f: any) => f is string>(f => typeof f === 'string'));
 
         const { tokenType = 'string' } = options;
 
@@ -259,9 +259,7 @@ export class Bot {
                 break;
 
             case 'env':
-                if (!(token in process.env)) {
-                    throw new Error('token environment variable not found');
-                }
+                assert(token in process.env, 'token environment variable not found');
                 token = process.env[token]!;
                 break;
 
@@ -273,7 +271,30 @@ export class Bot {
         return deepMerge(DefaultBotOptions, {
             ...options as any,
             fetchPrefixes,
+            fetchLocale,
             token,
         });
+    }
+
+    /**
+     * Вспомогательная функция для обработки [[BotOptions.fetchPrefixes]] и [[BotOptions.fetchLocale]]
+     */
+    private parseFetcher<T>(fetcher: FetcherArgument<T> | undefined, isValue: (fetcher: FetcherArgument<T> | undefined) => fetcher is T): Fetcher<T> | undefined {
+        if (!fetcher) {
+            return undefined;
+        }
+
+        if (isValue(fetcher)) {
+            const value = fetcher;
+
+            fetcher = () => value;
+        }
+        else if (fetcher instanceof Property) {
+            const property = fetcher;
+
+            fetcher = (bot, guild) => bot.database.accessProperty(guild, property).value();
+        }
+
+        return fetcher as Fetcher<T>;
     }
 }

@@ -1,6 +1,7 @@
 import { ValueParser } from "../../../utils";
-import { ArgumentReader } from "../Reader";
+import { ArgumentReader } from "../Argument";
 import { CommandContext } from "../../Context";
+import { argumentReaderTerms as readerTerms } from "./Terms";
 
 /**
  * Читает аргумент по регулярному выражению
@@ -10,10 +11,10 @@ export const regexReader = (regex: RegExp): ArgumentReader<string> => {
     if (!regex.source.startsWith('^')) {
         regex = new RegExp('^' + regex.source);
     }
-    return userInput => {
+    return (userInput, context) => {
         const firstMatch = userInput.match(regex)?.[0];
         if (firstMatch === undefined) {
-            return { isError: true, error: 'not found' };
+            return { isError: true, error: context.translate(readerTerms).notFound };
         }
         return {
             isError: false,

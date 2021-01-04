@@ -1,8 +1,9 @@
-import { BitFieldResolvable, Permissions, PermissionString } from "discord.js";
-import { GuildMessage, NonEmptyReadonly, Overwrite, PromiseVoid } from "../utils";
-import { CommandArgumentsReader } from "./argument/Reader";
+import { BitFieldResolvable, GuildMember, Permissions, PermissionString } from "discord.js";
+import { assert, GuildMessage, NonEmptyReadonly, Overwrite, PromiseVoid, Indexes } from "../utils";
 import { CommandContext } from "./Context";
 import { Bot } from "../bot";
+import { constTerm, TermCollection } from "../translator";
+import { ArgumentSequence } from "./argument";
 
 /**
  * Информация о команде
@@ -22,27 +23,12 @@ export interface CommandInfo<Args extends unknown[]> {
     /**
      * Аргументы команды
      */
-    readonly arguments?: CommandArgumentsReader<Args>;
-
-    /**
-     * Описание команды
-     */
-    readonly description: string;
-
-    /**
-     * Группа, к которой принадлежит команда
-     */
-    readonly group?: string;
+    readonly arguments?: ArgumentSequence<Args>;
 
     /**
      * Права участника сервера
      */
     readonly permissions: Permissions;
-
-    /**
-     * Примеры использования
-     */
-    readonly examples?: NonEmptyReadonly<string[]>;
 }
 
 /**
@@ -56,6 +42,21 @@ interface CommandExecuteable<Args extends unknown[]> {
  * Аргумент конструктора команды
  */
 interface CommandInfoArgument<Args extends unknown[]> {
+    /**
+     * Описание команды
+     */
+    readonly description: string;
+
+    /**
+     * Группа, к которой принадлежит команда
+     */
+    readonly group: string;
+
+    /**
+     * Как пользоваться командой
+     */
+    readonly tutorial: string;
+
     /**
      * Права участника сервера (библиотека вызывает [[Permissions.freeze]]!)
      */
@@ -76,30 +77,55 @@ export class Command<Args extends unknown[]> {
     /**
      * Функция, выполняющая основную логику команды
      */
-    private executeable: CommandExecuteable<Args>;
+    readonly executeable: CommandExecuteable<Args>;
 
     /**
-     * @param info информация о команде
+     * Термины команды для переводчика
      */
-    constructor(info: Overwrite<CommandInfo<Args>, CommandInfoArgument<Args>>) {
-        const { execute, permissions, ...docInfo } = info;
+    readonly terms: TermCollection<{
+        [I in "description" | "group" | "tutorial" | `argument_${Indexes<Args>}_description`]: {}
+    }>;
+
+    /**
+     * @param definition информация о команде
+     */
+    constructor(definition: Overwrite<CommandInfo<Args>, CommandInfoArgument<Args>>) {
+        const { execute: executeable, permissions, name, aliases, arguments: args, ...info } = definition;
 
         const frozenPermissions = new Permissions(permissions);
         frozenPermissions.freeze();
 
-        Object.assign(this, { ...docInfo, permissions: frozenPermissions });
-        this.executeable = execute;
+        Object.assign(this, {
+            name,
+            aliases,
+            arguments: args,
+            permissions: frozenPermissions,
+        });
 
-        const namesToValidate = [this.name];
-        if (this.aliases) {
-            namesToValidate.push(...this.aliases);
-        }
+        this.executeable = executeable;
 
-        for (const name of namesToValidate) {
-            if (!Command.validateName(name)) {
-                throw new Error(`invalid command name or alias '${name}'`);
-            }
+        const argTerms = {} as any;
+        this.arguments?.definitions.forEach(({ description }, index) => {
+            argTerms[`argument_${index}_description`] = constTerm(description);
+        });
+
+        this.terms = new TermCollection({
+            description: constTerm(info.description),
+            group: constTerm(info.group),
+            tutorial: constTerm(info.tutorial),
+            ...argTerms,
+        });
+
+        for (const name of [this.name, ...(this.aliases ?? [])]) {
+            assert(Command.validateName(name), `invalid command name or alias '${name}'`);
         }
+    }
+
+    /**
+     * @returns true, если участник сервера может использовать команду
+     */
+    canBeExecutedBy(member: GuildMember): boolean {
+        return !member.permissions.missing(this.permissions.bitfield).length;
     }
 
     /**
@@ -108,12 +134,11 @@ export class Command<Args extends unknown[]> {
      * @param message сообщение, которое запускает команду
      */
     async execute(bot: Bot, message: GuildMessage): Promise<CommandContext<Args>> {
-        const missingPermissions = message.member.permissions.missing(this.permissions.bitfield);
-        if (missingPermissions.length) {
-            throw new Error(`not enough permissions`);
-        }
+        assert(this.canBeExecutedBy(message.member), message.member.displayName + ` can\`t run command '${this.name}'`);
 
-        const context = new CommandContext(this, bot, message);
+        const locale = await bot.options.fetchLocale(bot, message.guild);
+
+        const context = new CommandContext(this, bot, message, locale);
         await this.executeable.call(this, context);
 
         return context;

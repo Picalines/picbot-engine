@@ -1,6 +1,6 @@
 import { PropertyAccess, PropertyAccessConstructor } from "./Access";
 import { EntityType } from "../Entity";
-import { validateIdentifier } from "../../utils";
+import { assert, validateIdentifier } from "../../utils";
 
 /**
  * Объявление свойства в базе данных
@@ -47,13 +47,8 @@ export class Property<E extends EntityType, T, A extends PropertyAccess<T> = Pro
     constructor(definition: PropertyDefinition<E, T, A>) {
         Object.assign(this, definition);
 
-        if (!validateIdentifier(this.key)) {
-            throw new Error(`property key '${this.key}' is invalid (empty or includes spaces)`);
-        }
-
-        if (!this.validate(this.defaultValue)) {
-            throw new Error(`default value of property '${this.key}' is invalid (validate returned false)`);
-        }
+        assert(validateIdentifier(this.key), `property key '${this.key}' is invalid (empty or includes spaces)`);
+        assert(this.validate(this.defaultValue), `default value of property '${this.key}' is invalid (validate returned false)`);
     }
 }
 

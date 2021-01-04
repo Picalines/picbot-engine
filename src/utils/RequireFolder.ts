@@ -1,5 +1,6 @@
 import { Dirent, readdirSync } from "fs";
 import { join } from "path";
+import { assert } from "./UsefulFunctions";
 import { AnyConstructor } from "./UsefulTypes";
 
 type ExportItem<T> = [path: string, item: T];
@@ -32,9 +33,7 @@ export function requireFolder<T>(constructor: AnyConstructor<T>, folder: string)
         const moduleExports = _require('./' + path);
 
         const isClass = moduleExports instanceof constructor;
-        if (!(isClass || moduleExports.default instanceof constructor)) {
-            throw new Error(`default export of type ${constructor.name} expected in module ${path}`);
-        }
+        assert(isClass || moduleExports.default instanceof constructor, `default export of type ${constructor.name} expected in module ${path}`);
 
         return [path, isClass ? moduleExports : moduleExports.default];
     });

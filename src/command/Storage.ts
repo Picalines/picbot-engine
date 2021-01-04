@@ -82,30 +82,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
         return this.nameMap.size;
     }
 
-    /**
-     * @returns список всех команд в хранилище
-     */
-    array(): AnyCommand[] {
-        return [...this.nameMap.values()];
-    }
-
     [Symbol.iterator]() {
-        return new Set(this.nameMap.values()).values();
-    }
-
-    /**
-     * Возвращает словарь с командами, сгруппированными по свойству [[CommandInfo.group]]
-     * @param defaultGroup группа команд, у которой не прописано свойство [[CommandInfo.group]]
-     */
-    grouped(defaultGroup: string): Map<string, AnyCommand[]> {
-        const map = new Map<string, AnyCommand[]>();
-
-        for (const command of this) {
-            const group = command.group || defaultGroup;
-            const array = map.get(group);
-            array ? array.push(command) : map.set(group, [command]);
-        }
-
-        return map;
+        return this.nameMap.values();
     }
 }

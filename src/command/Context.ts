@@ -1,6 +1,7 @@
 import { GuildMessage } from "../utils";
 import { Command } from "./Command";
 import { Bot } from "../bot";
+import { TermCollection, TermContexts, TranslationCollection } from "../translator";
 
 /**
  * Контекст выполнения запущенной команды
@@ -12,18 +13,29 @@ export class CommandContext<Args extends unknown[]> {
     readonly args: Args;
 
     /**
+     * @returns переводчик коллекции терминов (учитывает локаль сервера)
+     * @param terms коллекция терминов
+     * @param defaultLocale локаль, которую нужно использовать, если для локали сервера нет нужного перевода
+     */
+    readonly translate: <Contexts extends TermContexts>(terms: TermCollection<Contexts>) => TranslationCollection<Contexts>['translations'];
+
+    /**
      * @param command команда
      * @param bot ссылка на бота
      * @param message сообщение с командой
+     * @param locale локаль сервера, полученная из [[BotOptions.fetchLocale]]
      */
     constructor(
         readonly command: Command<Args>,
         readonly bot: Bot,
         readonly message: GuildMessage,
+        readonly locale: string,
     ) {
+        this.translate = terms => this.bot.translator.translations(terms, this.locale);
+
         if (this.command.arguments) {
             const userInput = message.content.replace(/^\S+\s*/, '');
-            this.args = this.command.arguments.readArguments(userInput, this as unknown as CommandContext<unknown[]>);
+            this.args = this.command.arguments.read(userInput, this as unknown as CommandContext<unknown[]>);
         }
         else {
             this.args = [] as any;

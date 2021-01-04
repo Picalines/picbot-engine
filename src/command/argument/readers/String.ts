@@ -1,11 +1,12 @@
 import { Failable } from "../../../utils";
-import { ArgumentReader, ArgumentString } from "../Reader";
+import { ArgumentReader, ArgumentString } from "../Argument";
 import { parsedRegexReader, regexReader } from "./Regex";
+import { argumentReaderTerms as readerTerms } from "./Terms";
 
 /**
  * Читает пробелы между аргументами
  */
-export const spaceReader = regexReader(/\s+/);
+export const spaceReader = regexReader(/\s*/);
 
 /**
  * Читает слово (последовательность символов до пробела)
@@ -15,10 +16,10 @@ export const wordReader: ArgumentReader<string> = regexReader(/\S+/);
 /**
  * Читает оставшийся текст сообщения
  */
-export const remainingTextReader: ArgumentReader<string> = userInput => {
+export const remainingTextReader: ArgumentReader<string> = (userInput, context) => {
     userInput = userInput.trim();
     if (!userInput) {
-        return { isError: true, error: 'not found' };
+        return { isError: true, error: context.translate(readerTerms).notFound };
     }
     return {
         isError: false,
@@ -32,14 +33,14 @@ export const remainingTextReader: ArgumentReader<string> = userInput => {
  */
 export const keywordReader = <W extends string>(...keywords: W[]): ArgumentReader<W> => {
     if (keywords.some(w => w.includes(' '))) {
-        throw new Error('keyword in keywordReader should not include spaces');
+        throw new Error(`keyword in ${keywordReader.name} should not include spaces`);
     }
     return (userInput, context) => {
         const wordResult = wordReader(userInput, context) as Failable<ArgumentString<W>, string>;
         if (wordResult.isError || !(keywords as string[]).includes(wordResult.value.parsedValue)) {
             return {
                 isError: true,
-                error: `one of keywords expected: ${keywords.join(', ')}`,
+                error: context.translate(readerTerms).keywordExpected({ keywordList: keywords.join(', ') }),
             };
         }
         return wordResult;
