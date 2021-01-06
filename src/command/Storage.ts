@@ -1,5 +1,5 @@
 import { Bot } from "../bot";
-import { requireFolder } from "../utils";
+import { importFolder } from "../utils";
 import { AnyCommand, Command } from "./Command";
 import { helpCommand } from "./help";
 
@@ -34,12 +34,12 @@ export class CommandStorage implements Iterable<AnyCommand> {
             });
         }
 
-        this.bot.loadingSequence.stage('require commands', () => {
+        this.bot.loadingSequence.stage('require commands', async () => {
             if (this.bot.options.useBuiltInHelpCommand) {
                 addCommand(helpCommand as unknown as AnyCommand);
             }
 
-            requireFolder<AnyCommand>(Command, this.bot.options.loadingPaths.commands).forEach(([path, command]) => {
+            (await importFolder<AnyCommand>(Command, this.bot.options.loadingPaths.commands)).forEach(({ path, item: command }) => {
                 addCommand(command);
                 this.bot.logger.log(path);
             });

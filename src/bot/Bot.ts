@@ -1,6 +1,6 @@
 import { Client, ClientEvents } from "discord.js";
 import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Options";
-import { ClientEventNames, GuildMessage, isGuildMessage, requireFolder, StageSequenceBuilder } from "../utils";
+import { ClientEventNames, GuildMessage, isGuildMessage, importFolder, StageSequenceBuilder } from "../utils";
 import { CommandContext, CommandStorage } from "../command";
 import { BotEventListener, createEventStorage, EmitOf, createNodeEmitterLink } from "../event";
 import { BotDatabase } from "../database";
@@ -98,8 +98,8 @@ export class Bot {
             });
         }));
 
-        this.loadingSequence.stage('require events', () => {
-            requireFolder(BotEventListener, this.options.loadingPaths.events).forEach(([path, listener]) => {
+        this.loadingSequence.stage('require events', async () => {
+            (await importFolder(BotEventListener, this.options.loadingPaths.events)).forEach(({ path, item: listener }) => {
                 listener.connect(this);
                 this.logger.log(path);
             });

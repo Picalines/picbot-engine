@@ -5,5 +5,5 @@ export * from "./Logic";
 export * from "./Message";
 export * from "./cache";
 export * from "./Constants";
-export * from "./RequireFolder";
+export * from "./ImportFolder";
 export * from "./StageSequence";

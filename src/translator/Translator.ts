@@ -1,6 +1,6 @@
 import { Bot } from "../bot";
 import { argumentReaderTerms, argumentReaderTermTranslationRU, helpCommand, helpEmbedTerms, helpEmbedTranslationsRU, helpInfoTranslationRU } from "../command";
-import { assert, requireFolder } from "../utils";
+import { assert, importFolder } from "../utils";
 import { TermContexts } from "./Term";
 import { TermCollection } from "./TermCollection";
 import { TranslationCollection } from "./TranslationCollection";
@@ -12,12 +12,12 @@ export class Translator {
     readonly #translations = new WeakMap<TermCollection<any>, Map<string, TranslationCollection<any>>>();
 
     constructor(readonly bot: Bot) {
-        this.bot.loadingSequence.after('require commands', 'require translations', () => {
+        this.bot.loadingSequence.after('require commands', 'require translations', async () => {
             this.termsMap(helpCommand.terms).set('ru', helpInfoTranslationRU);
             this.termsMap(helpEmbedTerms).set('ru', helpEmbedTranslationsRU);
             this.termsMap(argumentReaderTerms).set('ru', argumentReaderTermTranslationRU);
 
-            requireFolder(TranslationCollection, this.bot.options.loadingPaths.translations).forEach(([path, translations]) => {
+            (await importFolder(TranslationCollection, this.bot.options.loadingPaths.translations)).forEach(({ path, item: translations }) => {
                 this.bot.logger.log(path);
 
                 const map = this.termsMap(translations.terms);

@@ -1,6 +1,6 @@
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
 import { createEventStorage, EmitOf } from "../event";
-import { AnyConstructor, assert, createGroupedCache, filterIterable, requireFolder } from "../utils";
+import { AnyConstructor, assert, createGroupedCache, filterIterable, importFolder } from "../utils";
 import { PropertyAccessConstructor, Property, PropertyAccess, DatabaseValueStorage as ValueStorage, AnyProperty } from "./property";
 import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector";
 import { EntityType, Entity } from "./Entity";
@@ -38,9 +38,7 @@ export class BotDatabase {
      * @param bot ссылка на бота
      * @param handler обработчик базы данных
      */
-    constructor(
-        readonly bot: Bot,
-    ) {
+    constructor(readonly bot: Bot) {
         this.handler = this.bot.options.databaseHandler;
 
         const [events, emit] = createEventStorage(this as BotDatabase, {
@@ -60,15 +58,19 @@ export class BotDatabase {
 
         this.cache = caches;
 
-        this.bot.loadingSequence.stage('require properties', () => requireFolder(Property, this.bot.options.loadingPaths.properties).forEach(([path, p]) => {
-            addToCache.properties(p);
-            this.bot.logger.log(path);
-        }));
+        this.bot.loadingSequence.stage('require properties', async () => {
+            (await importFolder(Property, this.bot.options.loadingPaths.properties)).forEach(({ path, item: property }) => {
+                addToCache.properties(property);
+                this.bot.logger.log(path);
+            })
+        });
 
-        this.bot.loadingSequence.stage('require selectors', () => requireFolder(EntitySelector, this.bot.options.loadingPaths.selectors).forEach(([path, s]) => {
-            addToCache.selectors(s);
-            this.bot.logger.log(path);
-        }));
+        this.bot.loadingSequence.stage('require selectors', async () => {
+            (await importFolder(EntitySelector, this.bot.options.loadingPaths.selectors)).forEach(({ path, item: selector }) => {
+                addToCache.selectors(selector);
+                this.bot.logger.log(path);
+            })
+        });
 
         this.bot.loadingSequence.after('login', 'load database', async () => {
             await this.load();
