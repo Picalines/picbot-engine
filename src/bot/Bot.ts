@@ -157,13 +157,13 @@ export class Bot {
                 await task();
             }
             catch (error) {
-                this.logger.endTask('error', error instanceof Error ? error.message : String(error));
+                this.logger.done('error', error instanceof Error ? error.message : String(error));
                 throw error;
             }
 
-            this.logger.endTask('success', '');
+            this.logger.done('success', '');
         }
 
-        this.logger.endTask('success', `bot '${this.username}' successfully ${doneState}`);
+        this.logger.done('success', `bot '${this.username}' successfully ${doneState}`);
     }
 }

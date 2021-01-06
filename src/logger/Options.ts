@@ -1,16 +1,32 @@
-import { LogType } from "./Log";
+import { LogType } from "./Logger";
 
-export interface LoggerConsoleTheme {
+interface ThemeContext {
     /**
-     * @param taskLevel increases in task(), decreases in endTask()
-     * @param taskCompleted true in endTask()
+     * increases in task(), decreases in done()
+     */
+    readonly taskLevel: number;
+
+    /**
+     * true in done()
+     */
+    readonly taskCompleted: boolean;
+}
+
+export interface LoggerTheme {
+    /**
      * @returns edited log
      */
-    (logType: LogType, log: string, taskLevel: number, taskCompleted: boolean): string;
+    (log: string, logType: LogType, context: ThemeContext): string;
 }
 
 export interface LoggerOptions {
-    readonly hideInConsole: boolean;
-    readonly ignoreWarnings: boolean;
-    readonly consoleTheme?: LoggerConsoleTheme;
+    /**
+     * @default false
+     */
+    readonly hide: boolean;
+
+    /**
+     * @default pipeLoggerTheme
+     */
+    readonly theme: LoggerTheme;
 }

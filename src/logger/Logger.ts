@@ -1,53 +1,42 @@
-import { createEventStorage } from "../event";
-import { LoggerConsoleTheme, LoggerOptions } from "./Options";
-import { LogType } from "./Log";
+import { LoggerTheme, LoggerOptions } from "./Options";
+
+export type LogType =
+    | "log"
+    | "warning"
+    | "error"
+    | "task"
+    | "success";
 
 export interface Logger extends LoggerOptions { }
 
 export class Logger {
-    readonly events;
-    readonly #emit;
+    private taskLevel = 0;
 
-    private taskLevel: number;
-
-    constructor(options?: Partial<LoggerOptions>) {
-        const [events, emit] = createEventStorage(this, {
-            log(logType: LogType, log: string) { },
-        });
-
-        this.events = events;
-        this.#emit = emit;
-
+    constructor(options: Partial<LoggerOptions>) {
         Object.assign(this, {
-            ...options,
-            hideInConsole: options?.hideInConsole ?? false,
-            ignoreWarnings: options?.ignoreWarnings ?? false,
+            hide: options.hide ?? false,
+            theme: options.theme ?? ((_, log) => log)
         });
 
-        this.taskLevel = 0;
+        if (this.hide) {
+            this._log = () => { };
+        }
     }
 
-    private _log(logType: LogType, log: any, taskCompleted = false) {
-        if (this.ignoreWarnings && logType == 'warning') {
-            return;
-        }
+    private _log = (logType: LogType, log: any, taskCompleted = false) => {
+        const strLog = this.theme(String(log), logType, { taskLevel: this.taskLevel, taskCompleted });
 
-        let strLog = String(log);
-        this.#emit('log', logType, strLog);
+        console.log(strLog);
 
-        if (!this.hideInConsole) {
-            strLog = this.consoleTheme?.(logType, strLog, this.taskLevel, taskCompleted) ?? strLog;
-            console.log(strLog);
-            if (log instanceof Error) {
-                console.log(log.stack);
-            }
+        if (log instanceof Error) {
+            console.log(log.stack);
         }
     }
 
     /**
      * type hint
      */
-    static theme(themeFunction: LoggerConsoleTheme) {
+    static theme(themeFunction: LoggerTheme) {
         return themeFunction;
     }
 
@@ -62,10 +51,13 @@ export class Logger {
         return this;
     }
 
-    endTask(result: LogType, log: any) {
+    done(result: LogType, log: any) {
         this._log(result, log, true);
         if (this.taskLevel > 0) {
             this.taskLevel -= 1;
+        }
+        else {
+            this.warning(`${this.done.name} called before ${this.task.name}`);
         }
         return this;
     }

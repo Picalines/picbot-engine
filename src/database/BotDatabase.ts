@@ -174,7 +174,7 @@ export class BotDatabase {
         if (this.handler.prepareForLoading) {
             this.bot.logger.task('preparing');
             await this.handler.prepareForLoading(this);
-            this.bot.logger.endTask('success', 'prepared');
+            this.bot.logger.done('success', 'prepared');
         }
 
         if (this.handler.loadGuild) {
@@ -192,7 +192,7 @@ export class BotDatabase {
                 this.bot.logger.log(guild.name);
             }
 
-            this.bot.logger.endTask('success', '')
+            this.bot.logger.done('success', '')
         }
 
         this.#emit('loaded');
@@ -204,7 +204,7 @@ export class BotDatabase {
         if (this.handler.prepareForSaving) {
             this.bot.logger.task('preparing');
             await this.handler.prepareForSaving(this);
-            this.bot.logger.endTask('success', 'prepared');
+            this.bot.logger.done('success', 'prepared');
         }
 
         if (this.handler.saveGuild) {
@@ -221,7 +221,7 @@ export class BotDatabase {
                 this.bot.logger.log(guild.name);
             }
 
-            this.bot.logger.endTask('success', '');
+            this.bot.logger.done('success', '');
         }
 
         this.#emit('saved');

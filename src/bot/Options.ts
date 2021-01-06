@@ -87,9 +87,8 @@ export const DefaultBotOptions: BotOptions = {
     fetchLocale: () => 'en-US',
     useBuiltInHelpCommand: true,
     loggerOptions: {
-        hideInConsole: false,
-        ignoreWarnings: false,
-        consoleTheme: pipeLoggerTheme,
+        hide: false,
+        theme: pipeLoggerTheme,
     },
     databaseHandler: new JsonDatabaseHandler({
         databasePath: '/database/',

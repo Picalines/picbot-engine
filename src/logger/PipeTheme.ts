@@ -1,5 +1,4 @@
-import { LogType } from "./Log";
-import { Logger } from "./Logger";
+import { Logger, LogType } from "./Logger";
 
 const prefixes: Partial<Record<LogType, string>> = {
     warning: '\x1b[33m⚠',
@@ -8,7 +7,7 @@ const prefixes: Partial<Record<LogType, string>> = {
     success: '\x1b[32m√',
 };
 
-export const pipeLoggerTheme = Logger.theme((type, log, level, completed) => {
+export const pipeLoggerTheme = Logger.theme((log, type, { taskLevel: level, taskCompleted: completed }) => {
     if (prefixes[type]) {
         log = prefixes[type] + '\x1b[0m ' + log;
     }
