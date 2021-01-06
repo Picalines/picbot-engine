@@ -2,69 +2,26 @@ import { Client, ClientEvents } from "discord.js";
 import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Options";
 import { ClientEventNames, GuildMessage, isGuildMessage, importFolder, StageSequenceBuilder } from "../utils";
 import { CommandContext, CommandStorage } from "../command";
-import { BotEventListener, createEventStorage, EmitOf, createNodeEmitterLink } from "../event";
+import { BotEventListener, createEventStorage, createNodeEmitterLink } from "../event";
 import { BotDatabase } from "../database";
 import { Logger } from "../logger/Logger";
 import { Translator } from "../translator";
 
-/**
- * Класс бота
- */
 export class Bot {
-    /**
-     * Настройки бота
-     */
     readonly options: BotOptions;
 
-    /**
-     * Хранилище команд бота
-     */
     readonly commands: CommandStorage;
-
-    /**
-     * База данных бота
-     */
     readonly database: BotDatabase;
-
-    /**
-     * Переводчик
-     */
     readonly translator: Translator;
-
-    /**
-     * Логгер
-     */
     readonly logger: Logger;
 
-    /**
-     * События клиента API
-     */
     readonly clientEvents = createNodeEmitterLink<Client, { [E in keyof ClientEvents]: (...args: ClientEvents[E]) => void }>(this.client, ClientEventNames);
-
-    /**
-     * События бота
-     */
     readonly events;
+    readonly #emit;
 
-    /**
-     * Приватная функция вызова событий
-     */
-    readonly #emit: EmitOf<Bot['events']>;
-
-    /**
-     * Стадии загрузки бота
-     */
     readonly loadingSequence = new StageSequenceBuilder();
-
-    /**
-     * Стадии выключения бота
-     */
     readonly shutdownSequence = new StageSequenceBuilder();
 
-    /**
-     * @param client Клиент API discord.js
-     * @param options настройки бота
-     */
     constructor(readonly client: Client, options: BotOptionsArgument) {
         const [events, emitEvent] = createEventStorage(this as Bot, {
             guildMemberMessage(message: GuildMessage) { },
@@ -122,17 +79,10 @@ export class Bot {
         });
     }
 
-    /**
-     * @returns юзернейм бота. Если [[Client.user]] равно `undefined`, вернёт `bot`
-     */
     get username(): string {
         return this.client.user?.username ?? 'bot';
     }
 
-    /**
-     * Обрабатывает команду в сообщении, если оно начинается с префикса команд
-     * @param message сообщение пользователя
-     */
     private async handleGuildMessage(message: GuildMessage): Promise<void> {
         if (message.author.bot) {
             if (message.member.id == message.guild.me.id) {
@@ -187,24 +137,14 @@ export class Bot {
         return;
     }
 
-    /**
-     * Загружает бота
-     */
     load() {
         return this.executeStages(this.loadingSequence, 'loading', 'loaded');
     }
 
-    /**
-     * Выключает бота
-     */
     shutdown() {
         return this.executeStages(this.shutdownSequence, 'shutting down', 'shutted down');
     }
 
-    /**
-     * Выполняет стадии из StageSequenceBuilder
-     * @ignore
-     */
     private async executeStages(stagesBuilder: StageSequenceBuilder, gerund: string, doneState: string) {
         this.logger.task(`${gerund} bot...`);
 

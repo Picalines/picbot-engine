@@ -2,14 +2,8 @@ import { Property } from "../property";
 import { EntityType } from "../Entity";
 import { AnyExpression, BooleanExpression, ExpressionVariable, UnaryExpression } from "../selector";
 
-/**
- * Выражение селектора в виде функции
- */
 export type CompiledExpression = (props: Record<string, any>, vars: Record<string, any>) => boolean;
 
-/**
- * 'Компилирует' выражение селектора к виду функции
- */
 export function compileExpression<E extends EntityType>(expression: AnyExpression<E>, usedPropsCache: Set<string>): CompiledExpression {
     if (expression instanceof UnaryExpression) {
         if (expression.operator == 'not') {

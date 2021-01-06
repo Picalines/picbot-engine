@@ -7,13 +7,10 @@ type CompiledExpressionData = { arrow: CompiledExpression, usedKeys: string[] };
 
 export class JsonDatabaseValueStorage extends DatabaseValueStorage<EntityType> {
     /**
-     * Map<ключ свойства, Map<id сущности, значение свойства>>
+     * Map<property key, Map<entity id, property value>>
      */
     private readonly propertyMaps = new Map<string, Map<string, any>>();
 
-    /**
-     * 'Скомпилированные' выражения селекторов
-     */
     private readonly compiledExpressions = new WeakMap<EntitySelector<EntityType>, CompiledExpressionData>();
 
     storeValue(entity: AnyEntity, key: string, value: any) {

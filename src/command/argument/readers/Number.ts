@@ -2,9 +2,6 @@ import { ArgumentReader } from "../Argument";
 import { parsedRegexReader } from "./Regex";
 import { argumentReaderTerms as readerTerms } from "./Terms";
 
-/**
- * Читает число (целое / дробное, положительное / отрицательное)
- */
 export const numberReader = (type: 'int' | 'float', range?: [min: number, max: number]): ArgumentReader<number> => {
     const parseNumber = type == 'int' ? parseInt : parseFloat;
 

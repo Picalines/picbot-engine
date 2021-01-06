@@ -1,31 +1,15 @@
-import { createEventStorage, EmitOf } from "../event";
+import { createEventStorage } from "../event";
 import { LoggerConsoleTheme, LoggerOptions } from "./Options";
 import { LogType } from "./Log";
 
 export interface Logger extends LoggerOptions { }
 
-/**
- * Класс логгера
- */
 export class Logger {
-    /**
-     * Уровень вложенности логов
-     */
+    readonly events;
+    readonly #emit;
+
     private taskLevel: number;
 
-    /**
-     * События логгера
-     */
-    readonly events;
-
-    /**
-     * Приватная функция вызова событий
-     */
-    readonly #emit: EmitOf<Logger['events']>;
-
-    /**
-     * @param options настройки логгера
-     */
     constructor(options?: Partial<LoggerOptions>) {
         const [events, emit] = createEventStorage(this, {
             log(logType: LogType, log: string) { },
@@ -61,8 +45,7 @@ export class Logger {
     }
 
     /**
-     * Функция-подсказка анализатору кода для создания темы логгера
-     * @param themeFunction функция-тема
+     * type hint
      */
     static theme(themeFunction: LoggerConsoleTheme) {
         return themeFunction;

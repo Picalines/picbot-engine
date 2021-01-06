@@ -3,10 +3,6 @@ import { ArgumentReader } from "../Argument";
 import { CommandContext } from "../../Context";
 import { argumentReaderTerms as readerTerms } from "./Terms";
 
-/**
- * Читает аргумент по регулярному выражению
- * @param regex регулярное выражение
- */
 export const regexReader = (regex: RegExp): ArgumentReader<string> => {
     if (!regex.source.startsWith('^')) {
         regex = new RegExp('^' + regex.source);
@@ -23,11 +19,6 @@ export const regexReader = (regex: RegExp): ArgumentReader<string> => {
     };
 }
 
-/**
- * Читает аргумент по регулярному выражению, а затем переводит его с помощью парсера
- * @param regex регулярное выражение
- * @param parser функция парсер
- */
 export const parsedRegexReader = <T>(regex: RegExp, parser: ValueParser<string, T, CommandContext<unknown[]>, string>): ArgumentReader<T> => {
     const reader = regexReader(regex);
     return (userInput, context) => {

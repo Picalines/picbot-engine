@@ -3,18 +3,8 @@ import { importFolder } from "../utils";
 import { AnyCommand, Command } from "./Command";
 import { helpCommand } from "./help";
 
-/**
- * Хранилище команд
- */
 export class CommandStorage implements Iterable<AnyCommand> {
-    /**
-     * Map команд по их именам
-     */
     private readonly nameMap = new Map<string, AnyCommand>();
-
-    /**
-     * Map команд по алиасам
-     */
     private readonly aliasMap = new Map<string, AnyCommand>();
 
     constructor(readonly bot: Bot) {
@@ -46,28 +36,15 @@ export class CommandStorage implements Iterable<AnyCommand> {
         });
     }
 
-    /**
-     * Возвращает данные команды по её имени или алиасу
-     * @param name имя или алиас команды
-     * @param nameOnly нужно ли ингорировать алиасы
-     */
     get(name: string, nameOnly = false): AnyCommand | undefined {
         return this.nameMap.get(name) ?? (!nameOnly ? this.aliasMap.get(name) : undefined);
     }
 
-    /**
-     * @returns true, если в хранилище есть команда с таким именем или алиасом
-     * @param name имя или алиас команды
-     * @param nameOnly нужно ли игнорировать алиасы
-     */
     has(name: string, nameOnly = false): boolean {
         name = name.toLowerCase();
         return this.nameMap.has(name) || (!nameOnly && this.aliasMap.has(name));
     }
 
-    /**
-     * Количество команд в хранилище
-     */
     get size(): number {
         return this.nameMap.size;
     }

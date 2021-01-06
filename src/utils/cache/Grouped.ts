@@ -22,7 +22,3 @@ export function createGroupedCache<Groups extends CacheGroups>(groups: Groups): 
 
     return [caches, adds];
 }
-
-export type GroupsOfCache<Cache extends GroupedCache<any>> = Cache extends GroupedCache<infer Groups> ? Groups : never;
-
-export type AddOfGroupedCache<Cache extends GroupedCache<any>> = AddToGroupedCache<GroupsOfCache<Cache>>;

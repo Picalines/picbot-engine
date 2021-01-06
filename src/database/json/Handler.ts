@@ -8,29 +8,13 @@ import { Entity, EntityType } from "../Entity";
 import { Property, PropertyAccess } from "../property";
 
 interface JsonHandlerOptions {
-    /**
-     * Путь до папки базы данных бота
-     */
     databasePath: string,
-    /**
-     * Количество отступов в json файлах
-     * @default 0
-     */
     jsonIndent?: number,
 }
 
-/**
- * Обработчик json базы данных
- */
 export class JsonDatabaseHandler extends BotDatabaseHandler {
-    /**
-     * Путь до папки с данными серверов в папке базы данных бота
-     */
     private readonly guildsPath: string;
 
-    /**
-     * @param options настройки базы данных
-     */
     constructor(readonly options: JsonHandlerOptions) {
         super(JsonDatabaseValueStorage);
         this.guildsPath = './' + join(options.databasePath, 'guilds/');

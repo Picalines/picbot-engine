@@ -1,43 +1,23 @@
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
-import { createEventStorage, EmitOf } from "../event";
+import { createEventStorage } from "../event";
 import { AnyConstructor, assert, createGroupedCache, filterIterable, importFolder } from "../utils";
 import { PropertyAccessConstructor, Property, PropertyAccess, DatabaseValueStorage as ValueStorage, AnyProperty } from "./property";
-import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector";
+import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector";
 import { EntityType, Entity } from "./Entity";
 import { BotDatabaseHandler } from "./Handler";
 import { Bot } from "../bot";
 
-/**
- * Класс базы данных бота
- */
 export class BotDatabase {
-    /**
-     * Обработчик базы данных
-     */
     readonly handler: BotDatabaseHandler;
 
-    /**
-     * Кэш базы данных
-     */
     readonly cache;
+
+    readonly events;
+    readonly #emit;
 
     #guildsStorage: ValueStorage<'guild'>;
     #memberStorages: Map<string, ValueStorage<'member'>>;
 
-    /**
-     * События базы данных
-     */
-    readonly events;
-
-    /**
-     * Приватная функция вызова события
-     */
-    readonly #emit: EmitOf<BotDatabase['events']>;
-
-    /**
-     * @param bot ссылка на бота
-     * @param handler обработчик базы данных
-     */
     constructor(readonly bot: Bot) {
         this.handler = this.bot.options.databaseHandler;
 
@@ -103,11 +83,6 @@ export class BotDatabase {
         });
     }
 
-    /**
-     * Возвращает объект, дающий доступ к чтению / изменению значения свойства
-     * @param entity сущность (сервер / участник сервера)
-     * @param property свойство сущности
-     */
     accessProperty<E extends EntityType, T, A extends PropertyAccess<T>>(entity: Entity<E>, property: Property<E, T, A>): A {
         assert(this.cache.properties.has(property), `unknown ${property.entityType} property '${property.key}'`);
 
@@ -148,18 +123,13 @@ export class BotDatabase {
         });
     }
 
-    /**
-     * @returns список сущностей, которые база данных нашла по селектору ([[EntitySelector]])
-     * @param selector селектор сущностей
-     * @param options настройки селектора
-     */
-    async selectEntities<E extends EntityType, Vars extends SelectorVars>(selector: EntitySelector<E, Vars>, options: EntitySelectorOptions<E, Vars>): Promise<Entity<E>[]> {
+    async selectEntities<E extends EntityType, Vars extends SelectorVarsDefinition>(selector: EntitySelector<E, Vars>, options: EntitySelectorOptions<E, Vars>): Promise<Entity<E>[]> {
         assert(this.cache.selectors.has(selector as any), `unknown ${selector.entityType} selector`);
 
         const { maxCount = Infinity } = options;
         if (maxCount <= 0) return [];
 
-        const expression = selector.expression(OperatorExpressions as QueryOperators<E, Vars>);
+        const expression = selector.expression(OperatorExpressions as unknown as QueryOperators<E, Vars>);
         let storage: ValueStorage<any>;
 
         if (selector.entityType == 'guild') {
@@ -198,11 +168,6 @@ export class BotDatabase {
         return selected;
     }
 
-    /**
-     * Загружает базу данных
-     * @emits beforeLoading
-     * @emits loaded
-     */
     private async load(): Promise<void> {
         this.#emit('beforeLoading');
 
@@ -233,11 +198,6 @@ export class BotDatabase {
         this.#emit('loaded');
     }
 
-    /**
-     * Сохраняет базу данных
-     * @emits beforeSaving
-     * @emits saved
-     */
     private async save(): Promise<void> {
         this.#emit('beforeSaving');
 

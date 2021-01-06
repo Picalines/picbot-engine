@@ -7,7 +7,7 @@ import { TranslationCollection } from "./TranslationCollection";
 
 export class Translator {
     /**
-     * WeakMap<Коллекция терминов, Map<Язык, Переводы терминов на Язык>>
+     * WeakMap<terms, Map<locale, translations to this locale>>
      */
     readonly #translations = new WeakMap<TermCollection<any>, Map<string, TranslationCollection<any>>>();
 
@@ -33,9 +33,6 @@ export class Translator {
         });
     }
 
-    /**
-     * @returns карта переводов для нужной коллекции терминов
-     */
     private termsMap(terms: TermCollection<any>): Map<string, TranslationCollection<any>> {
         let map = this.#translations.get(terms);
         if (!map) {
@@ -45,11 +42,6 @@ export class Translator {
         return map;
     }
 
-    /**
-     * @returns коллекцию переводов терминов на нужную локаль
-     * @param terms коллекция терминов
-     * @param toLocale локаль, на которую нужно перевести термины
-     */
     collection<Contexts extends TermContexts>(terms: TermCollection<Contexts>, toLocale: string): TranslationCollection<Contexts> {
         assert(toLocale, 'invalid locale');
         return (this.termsMap(terms).get(toLocale) ?? terms.defaultTranslations) as TranslationCollection<Contexts>;

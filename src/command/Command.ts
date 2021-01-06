@@ -1,5 +1,5 @@
 import { BitFieldResolvable, GuildMember, Permissions, PermissionString } from "discord.js";
-import { assert, GuildMessage, NonEmptyReadonly, Overwrite, PromiseVoid, Indexes } from "../utils";
+import { assert, GuildMessage, Overwrite, PromiseVoid, Indexes, NonEmpty } from "../utils";
 import { CommandContext } from "./Context";
 import { Bot } from "../bot";
 import { constTerm, TermCollection } from "../translator";
@@ -18,7 +18,7 @@ export interface CommandInfo<Args extends unknown[]> {
      * Алиасы ("другие имена команды"). На алиасы распространяются те же
      * правила, что и на [[CommandInfo.name]]
      */
-    readonly aliases?: NonEmptyReadonly<string[]>;
+    readonly aliases?: Readonly<NonEmpty<string[]>>;
 
     /**
      * Аргументы команды

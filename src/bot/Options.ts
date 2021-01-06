@@ -5,104 +5,73 @@ import { LoggerOptions, pipeLoggerTheme } from "../logger";
 import { Bot } from "./Bot";
 import { readFileSync } from "fs";
 
-/**
- * Объект с настройками бота
- */
 export type BotOptions = Readonly<{
-    /**
-     * Токен бота
-     */
     token: string;
 
     /**
-     * Тип токена
+     * - 'string' does nothing
+     * - 'file' reads file (path is options.token)
+     * - 'env' gets key from process.env (key is options.token)
      * @default 'string'
      */
     tokenType: 'string' | 'file' | 'env';
 
-    /**
-     * Пути для загрузчика
-     */
     loadingPaths: Readonly<{
-        /**
-         * @default 'src/properties'
-         */
+        /** @default 'src/properties' */
         properties: string;
 
-        /**
-         * @default 'src/selectors'
-         */
+        /** @default 'src/selectors' */
         selectors: string;
 
-        /**
-         * @default 'src/events'
-         */
+        /** @default 'src/events' */
         events: string;
 
-        /**
-         * @default 'src/commands'
-         */
+        /** @default 'src/commands' */
         commands: string;
 
-        /**
-         * @default 'src/translations'
-         */
+        /** @default 'src/translations' */
         translations: string;
     }>;
 
     /**
-     * Могут ли другие боты использовать команды
      * @default false
      */
     canBotsRunCommands: boolean;
 
     /**
-     * @returns список префиксов бота на сервере
      * @default () => ['!']
      */
     fetchPrefixes: Fetcher<string[]>;
 
     /**
-     * @returns локаль сервера
      * @default () => 'en-US'
      */
     fetchLocale: Fetcher<string>;
 
     /**
-     * Использовать ли встроенную команду help
      * @default true
      */
     useBuiltInHelpCommand: boolean;
 
-    /**
-     * Настройки логгера
-     */
     loggerOptions: Partial<LoggerOptions>;
 
     /**
-     * Обработчик базы данных (объект, хранящий функции для загрузки / сохранения данных серверов)
      * @default new JsonDatabaseHandler({ rootFolderPath: '/database/', guildsPath: '/guilds/' })
      */
     databaseHandler: BotDatabaseHandler;
 }>;
 
-/**
- * Аргумент настроек бота в его конструкторе
- */
 export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'>, Partial<{
     /**
-     * Список стандартных префиксов / свойство префиксов в базе данных / функция, возвращающая список префиксов на сервере
+     * @example (() => ['!']) | ['!'] | prefixesDbProperty
      */
     fetchPrefixes: ArgumentFetcher<string[]>;
     /**
-     * Локаль бота / свойство локали в базе данных / функция, возвращающая локаль сервера
+     * @example (() => 'en-US') | 'en-US' | localeDbProperty
      */
     fetchLocale: ArgumentFetcher<string>;
 }>>;
 
-/**
- * Стандартные настройки бота
- */
 export const DefaultBotOptions: BotOptions = {
     token: '',
     tokenType: 'string',
@@ -132,10 +101,6 @@ type Fetcher<T> = (bot: Bot, guild: Guild) => PromiseOrSync<T>;
 
 type ArgumentFetcher<T> = T | Property<'guild', T> | Fetcher<T>;
 
-/**
- * Обрабатывает аргумент настроек бота (вспомогательная функция)
- * @param options аргумент настроек бота
- */
 export function parseBotOptionsArgument(options: BotOptionsArgument): BotOptions {
     let { fetchPrefixes, fetchLocale, token } = options;
 

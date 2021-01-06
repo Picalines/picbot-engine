@@ -1,10 +1,6 @@
 import { assert } from "../utils";
 import { EmitEvent, EventListener, EventStorage, PublicEventStorage } from "./EventStorage";
 
-/**
- * Создаёт хранилище событий
- * @param events объявление событий
- */
 export function createEventStorage<Emitter, Events>(emitter: Emitter, events: Events): [storage: EventStorage<Emitter, Events>, emit: EmitEvent<Emitter, Events>] {
     const eventNames = Object.keys(events) as (keyof Events)[];
 
@@ -64,10 +60,6 @@ export function createEventStorage<Emitter, Events>(emitter: Emitter, events: Ev
     return [storage, emit];
 }
 
-/**
- * Создаёт публичное хранилище событий
- * @param events объявление событий
- */
 export function createPublicEventStorage<Events>(events: Events): PublicEventStorage<Events> {
     const [storage, emit] = createEventStorage(globalThis as any, events);
     return {

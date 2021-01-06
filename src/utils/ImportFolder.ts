@@ -8,11 +8,6 @@ interface ExportItem<T> {
     readonly item: T;
 }
 
-/**
- * Рекурсивно импортирует все js файлы в папке (поддерживает только export default)
- * @param constructor класс
- * @param folder путь до папки
- */
 export async function importFolder<T>(constructor: AnyConstructor<T>, folder: string): Promise<ExportItem<T>[]> {
     let dir: Dirent[];
 

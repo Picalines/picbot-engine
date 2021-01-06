@@ -3,10 +3,6 @@ import { ArgumentReader } from "../Argument";
 import { spaceReader } from "./String";
 import { argumentReaderTerms as readerTerms } from "./Terms";
 
-/**
- * @returns функцию, которая либо читает аргумент, либо возвращает стандартное значение, если аргумент не найден
- * @param reader функция, читающая аргумент
- */
 export const optionalReader = <T, D extends T | null | undefined>(reader: ArgumentReader<T>, defaultValue: D): ArgumentReader<T | D> => (userInput, context) => {
     const result = reader(userInput, context);
     if (result.isError && !userInput.length) {
@@ -15,10 +11,6 @@ export const optionalReader = <T, D extends T | null | undefined>(reader: Argume
     return result;
 }
 
-/**
- * Соединяет несколько функций чтения в одну
- * @param readers функции чтения
- */
 export const mergeReaders = <T extends any[]>(...readers: { [K in keyof T]: ArgumentReader<T[K]> }): ArgumentReader<T> => (userInput, context) => {
     const values: T = [] as any;
     let length = 0;
@@ -44,20 +36,11 @@ export const mergeReaders = <T extends any[]>(...readers: { [K in keyof T]: Argu
     return { isError: false, value: { length, parsedValue: values } };
 }
 
-/**
- * Использует функцию чтения аргумента конечное кол-во раз
- * @param reader функция чтения
- * @param count кол-во повторов
- */
 export const repeatReader = <T, L extends number>(reader: ArgumentReader<T>, count: L): ArgumentReader<TupleOf<T, L>> => {
     const readers = new Array(count).fill(reader) as TupleOf<ArgumentReader<T>, L>;
     return mergeReaders(...readers) as any;
 }
 
-/**
- * Использует функцию чтения до конца сообщения
- * @param reader функция чтения
- */
 export const restReader = <T, L extends number>(reader: ArgumentReader<T>, atLeast?: L): ArgumentReader<TupleOf<T, L> & T[]> => {
     return (userInput, context) => {
         const values = [];

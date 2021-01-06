@@ -1,6 +1,3 @@
-/**
- * Тип лога
- */
 export type LogType =
     | "log"
     | "warning"

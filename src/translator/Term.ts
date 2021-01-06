@@ -1,41 +1,19 @@
 import { PrimitiveConstructor, PrimitiveInstanceType } from "../utils";
 
-/**
- * Объявление контекста термина
- */
-export type TermContext = { readonly [key: string]: PrimitiveConstructor };
+export type TermContextDefinition = { readonly [key: string]: PrimitiveConstructor };
 
-/**
- * Объект со значениями контекста термина
- */
-export type TermContextValues<C extends TermContext> = { readonly [key in keyof C]: PrimitiveInstanceType<C[key]> };
+export type TermContext<C extends TermContextDefinition> = { readonly [key in keyof C]: PrimitiveInstanceType<C[key]> };
 
-/**
- * Функция-переводчик термина
- */
-export type TermTranslation<C extends TermContext> = {} extends C ? string : ((context: TermContextValues<C>) => string);
+export type TermTranslation<C extends TermContextDefinition> = {} extends C ? string : ((context: TermContext<C>) => string);
 
-/**
- * Термин переводчика
- */
-export interface TermDefinition<C extends TermContext> {
-    /**
-     * Контекст термина (данные из вне, которые нужны для составления строки)
-     */
+export interface TermDefinition<C extends TermContextDefinition> {
     readonly context: C;
-
-    /**
-     * Стандартный перевод термина
-     */
     readonly translation: TermTranslation<C>;
 }
 
-export type TermContexts = Readonly<Record<string, TermContext>>;
+export type TermContexts = Readonly<Record<string, TermContextDefinition>>;
 
 /**
- * Сокращение для терминов, которым не нужны данные из вне (контекст - пустой объект)
- * @param translation перевод термина
+ * @example constTerm('error') -> { context: {}, translation: 'error' }
  */
-export function constTerm(translation: string): TermDefinition<{}> {
-    return { context: {}, translation }
-}
+export const constTerm = (translation: string): TermDefinition<{}> => ({ context: {}, translation });

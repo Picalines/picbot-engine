@@ -1,23 +1,13 @@
 import { EntityType } from "../Entity";
-import { Property } from "../property/Property";
-import { ComparisonExpression, BooleanExpression, UnaryExpression, AnyExpression, Constant, ExpressionVariable } from "./Expression";
-import { SelectorVars } from "./Selector";
+import { ComparisonExpression, BooleanExpression, UnaryExpression, AnyExpression, ExpressionConstant, ExpressionVariable, BinaryExpression } from "./Expression";
+import { SelectorVarsDefinition } from "./Selector";
 
-/**
- * Унарный оператор
- */
 export type UnaryOperator = 'not'
 
-/**
- * Бинарный оператор булевой логики
- */
 export type BinaryLogicOperator =
     | 'and'
     | 'or'
 
-/**
- * Бинарный оператор сравнения
- */
 export type BinaryCompareOperator =
     | 'gt'
     | 'gte'
@@ -25,63 +15,46 @@ export type BinaryCompareOperator =
     | 'lte'
     | 'eq'
 
-/**
- * Бинарный оператор
- */
 export type BinaryOperator =
     | BinaryCompareOperator
     | BinaryLogicOperator
 
-type NumberExpression<E extends EntityType, O extends BinaryCompareOperator, Vars extends SelectorVars> = ComparisonExpression<E, O, number, Vars>;
+type NumberExpression<E extends EntityType, O extends BinaryCompareOperator, Vars extends SelectorVarsDefinition> = ComparisonExpression<E, O, number, Vars>;
+
+type ExpressionMethod<E extends EntityType, Vars extends SelectorVarsDefinition, Ex extends BinaryExpression<E, Vars>> = (l: Ex['left'], r: Ex['right']) => Ex;
+
+type NumberExpressionMethod<E extends EntityType, O extends BinaryCompareOperator, Vars extends SelectorVarsDefinition> = ExpressionMethod<E, Vars, NumberExpression<E, O, Vars>>;
 
 /**
  * Операторы выражения для поиска по базе данных
  */
-export interface QueryOperators<E extends EntityType, Vars extends SelectorVars> {
-    /**
-     * @example xpProperty > 0
-     */
-    gt(l: NumberExpression<E, 'gt', Vars>['left'], r: NumberExpression<E, 'gt', Vars>['right']): NumberExpression<E, 'gt', Vars>;
+export interface QueryOperators<E extends EntityType, Vars extends SelectorVarsDefinition> {
+    /** @example xpProperty > 0 */
+    readonly gt: NumberExpressionMethod<E, 'gt', Vars>;
 
-    /**
-     * @example xpProperty >= 0
-     */
-    gte(l: NumberExpression<E, 'gte', Vars>['left'], r: NumberExpression<E, 'gte', Vars>['right']): NumberExpression<E, 'gte', Vars>;
+    /** @example xpProperty >= 0 */
+    readonly gte: NumberExpressionMethod<E, 'gte', Vars>;
 
-    /**
-     * @example xpProperty < 0
-     */
-    lt(l: NumberExpression<E, 'lt', Vars>['left'], r: NumberExpression<E, 'lt', Vars>['right']): NumberExpression<E, 'lt', Vars>;
+    /** @example xpProperty < 0 */
+    readonly lt: NumberExpressionMethod<E, 'lt', Vars>;
 
-    /**
-     * @example xpProperty <= 0
-     */
-    lte(l: NumberExpression<E, 'lte', Vars>['left'], r: NumberExpression<E, 'lte', Vars>['right']): NumberExpression<E, 'lte', Vars>;
+    /** @example xpProperty <= 0 */
+    readonly lte: NumberExpressionMethod<E, 'lte', Vars>;
 
-    /**
-     * @example xpProperty == 0
-     */
-    eq<T extends Constant>(l: ComparisonExpression<E, 'eq', T, Vars>['left'], r: ComparisonExpression<E, 'eq', T, Vars>['right']): ComparisonExpression<E, 'eq', T, Vars>;
+    /** @example xpProperty == 0 */
+    readonly eq: ExpressionMethod<E, Vars, ComparisonExpression<E, 'eq', ExpressionConstant, Vars>>;
 
-    /**
-     * @example (...) && (...)
-     */
-    and(l: AnyExpression<E>, r: AnyExpression<E>): BooleanExpression<E, 'and'>;
+    /** @example (...) && (...) */
+    readonly and: (l: AnyExpression<E>, r: AnyExpression<E>) => BooleanExpression<E, 'and'>;
 
-    /**
-     * @example (...) || (...)
-     */
-    or(l: AnyExpression<E>, r: AnyExpression<E>): BooleanExpression<E, 'or'>;
+    /** @example (...) || (...) */
+    readonly or: (l: AnyExpression<E>, r: AnyExpression<E>) => BooleanExpression<E, 'or'>;
 
-    /**
-     * @example !(...)
-     */
-    not(r: AnyExpression<E>): UnaryExpression<E, 'not', Vars>;
+    /** @example !(...) */
+    readonly not: (r: AnyExpression<E>) => UnaryExpression<E, 'not', Vars>;
 
-    /**
-     * @example q.var('minXp')
-     */
-    var(name: ExpressionVariable<Vars>['name']): ExpressionVariable<Vars>;
+    /** @example q.var('minXp') */
+    readonly var: (name: keyof Vars) => ExpressionVariable<Vars>;
 }
 
 export const OperatorExpressions: QueryOperators<EntityType, any> = {

@@ -3,28 +3,11 @@ import { Command } from "./Command";
 import { Bot } from "../bot";
 import { TermCollection, TermContexts, TranslationCollection } from "../translator";
 
-/**
- * Контекст выполнения запущенной команды
- */
 export class CommandContext<Args extends unknown[]> {
-    /**
-     * Объект аргументов команды (содержит данные, если у команды прописан синтаксис. Иначе undefined)
-     */
     readonly args: Args;
 
-    /**
-     * @returns переводчик коллекции терминов (учитывает локаль сервера)
-     * @param terms коллекция терминов
-     * @param defaultLocale локаль, которую нужно использовать, если для локали сервера нет нужного перевода
-     */
     readonly translate: <Contexts extends TermContexts>(terms: TermCollection<Contexts>) => TranslationCollection<Contexts>['translations'];
 
-    /**
-     * @param command команда
-     * @param bot ссылка на бота
-     * @param message сообщение с командой
-     * @param locale локаль сервера, полученная из [[BotOptions.fetchLocale]]
-     */
     constructor(
         readonly command: Command<Args>,
         readonly bot: Bot,
@@ -42,23 +25,14 @@ export class CommandContext<Args extends unknown[]> {
         }
     }
 
-    /**
-     * Участник сервера, который запустил команду
-     */
     get executor() {
         return this.message.member;
     }
 
-    /**
-     * Ссылка на базу данных бота
-     */
     get database() {
         return this.bot.database;
     }
 
-    /**
-     * Ссылка на логгер бота
-     */
     get logger() {
         return this.bot.logger;
     }

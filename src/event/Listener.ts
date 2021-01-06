@@ -1,9 +1,6 @@
-import { DefinitionToListener, EventStorage } from "./EventStorage";
+import { ListenerOf, EventStorage } from "./EventStorage";
 import { Bot } from "../bot";
 
-/**
- * Хранилище слушателя события
- */
 export class BotEventListener<
     ES extends EventStorage<any, any>,
     Emitter extends ES extends EventStorage<infer E, any> ? E : never,
@@ -11,7 +8,7 @@ export class BotEventListener<
     Event extends keyof Events>
 {
     /**
-     * Подключает слушатель события к хранилищу
+     * calls .on
      */
     readonly connect: (bot: Bot) => void;
 
@@ -20,11 +17,7 @@ export class BotEventListener<
     * @param event имя события
     * @param listener слушатель события
     */
-    constructor(
-        emitter: (bot: Bot) => ES,
-        event: Event,
-        listener: DefinitionToListener<Emitter, Events, Event>,
-    ) {
+    constructor(emitter: (bot: Bot) => ES, event: Event, listener: ListenerOf<Emitter, Events, Event>) {
         this.connect = bot => emitter(bot).on(event, listener as any);
     }
 }

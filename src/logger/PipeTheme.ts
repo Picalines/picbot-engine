@@ -1,9 +1,6 @@
 import { LogType } from "./Log";
 import { Logger } from "./Logger";
 
-/**
- * Цветные префиксы для разных типов лога
- */
 const prefixes: Partial<Record<LogType, string>> = {
     warning: '\x1b[33m⚠',
     error: '\x1b[31m✘',
@@ -11,9 +8,6 @@ const prefixes: Partial<Record<LogType, string>> = {
     success: '\x1b[32m√',
 };
 
-/**
- * Стандартная тема логгера
- */
 export const pipeLoggerTheme = Logger.theme((type, log, level, completed) => {
     if (prefixes[type]) {
         log = prefixes[type] + '\x1b[0m ' + log;

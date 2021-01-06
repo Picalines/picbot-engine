@@ -1,9 +1,6 @@
 import { constTerm, TermCollection, TranslationCollection } from "../../../translator";
 import { parseInterval } from "../../../utils";
 
-/**
- * Термины встроенных читателей аргументов
- */
 export const argumentReaderTerms = new TermCollection({
     notFound: constTerm('not found'),
 

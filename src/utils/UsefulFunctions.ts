@@ -1,27 +1,9 @@
-import { FilterFunction } from "./UsefulTypes";
-
-/**
- * @returns true, если строка не пустая и не содержит пробелов
- * @param string строка
- */
-export function validateIdentifier(string: string): boolean {
-    return string.length > 0 && !string.includes(' ');
-}
-
-/**
- * Является ли объект литералом (скорее всего)
- * @param obj объект
- */
 function isPlainObject(obj: any): boolean {
     return typeof obj === 'object' && obj !== null
         && obj.constructor === Object
         && Object.prototype.toString.call(obj) === '[object Object]';
 }
 
-/**
- * @param origin оригинальный объект
- * @param override объект со значениями для переписывания оригинала
- */
 export function deepMerge<T>(origin: T, override: Partial<T>): T {
     const copy: T = {} as any;
 
@@ -41,12 +23,7 @@ export function deepMerge<T>(origin: T, override: Partial<T>): T {
     return copy;
 }
 
-/**
- * Функция фильтрации, используящая генератор
- * @param iterable итерируемый объект
- * @param filter функция фильтрации
- */
-export function* filterIterable<T>(iterable: IterableIterator<T>, filter: FilterFunction<T>): IterableIterator<T> {
+export function* filterIterable<T>(iterable: IterableIterator<T>, filter: (item: T) => boolean): IterableIterator<T> {
     for (const value of iterable) {
         if (filter(value)) {
             yield value;
@@ -88,13 +65,8 @@ export const parseInterval = (min: number, max: number) => {
     return left + '; ' + right;
 }
 
-/**
- * Кидает `Error`, если условие равно false
- * @param condition условие для проверки
- * @param message сообщение ошибки
- */
-export function assert(condition: any, message?: string): asserts condition {
+export function assert(condition: any, message = "assertion failed"): asserts condition {
     if (!condition) {
-        throw new Error(message || "assertion failed");
+        throw new Error(message);
     }
 }
