@@ -1,105 +1,110 @@
 import { join } from "path";
 import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
 import { Guild } from "discord.js";
-import { JsonDatabaseValueStorage } from "./ValueStorage";
-import { BotDatabaseHandler } from "../Handler";
-import { BotDatabase } from "../BotDatabase";
+import { createJsonStateStorage } from "./StateStorage";
 import { Entity, EntityType } from "../Entity";
-import { Property, PropertyAccess } from "../property";
+import { State, StateAccess, StateStorage } from "../state";
+import { CreateDatabaseHandler } from "../Handler";
 
 interface JsonHandlerOptions {
     databasePath: string,
     jsonIndent?: number,
 }
 
-export class JsonDatabaseHandler extends BotDatabaseHandler {
-    private readonly guildsPath: string;
+export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDatabaseHandler => database => {
+    const guildsDir = './' + join(options.databasePath, 'guilds/');
 
-    constructor(readonly options: JsonHandlerOptions) {
-        super(JsonDatabaseValueStorage);
-        this.guildsPath = './' + join(options.databasePath, 'guilds/');
-    }
+    const guildPath = (guild: Guild) => join(guildsDir, guild.id + '.json');
 
-    prepareForLoading() { mkdirSync(this.guildsPath, { recursive: true }); }
-    prepareForSaving() { this.prepareForLoading(); }
+    const prepareGuildDir = () => mkdirSync(guildsDir, { recursive: true });
 
-    async loadGuild(database: BotDatabase, guild: Guild) {
-        const path = this.guildPath(guild);
-        if (!existsSync(path)) return;
+    let guildDbStates: State<'guild', any>[];
+    let memberDbStates: State<'member', any>[];
 
-        const dataObject = JSON.parse(readFileSync(path).toString());
+    database.bot.loadingSequence.after('require states', 'json database: receive states', () => {
+        const dbStates = [...database.cache.states.values()];
+        guildDbStates = dbStates.filter(s => s.entityType == 'guild') as any;
+        memberDbStates = dbStates.filter(s => s.entityType == 'member') as any;
+    });
 
-        if (dataObject.properties === undefined) {
-            dataObject.properties = {};
-        }
-
-        if (dataObject.prefixes instanceof Array) {
-            dataObject.properties.prefixes = dataObject.prefixes;
-        }
-
-        const properties = [...database.cache.properties.values()];
-
-        const setPropsObject = async <E extends EntityType>(entityType: E, entity: Entity<E>, obj: any) => {
-            const entityProps = properties.filter(p => p.entityType == entityType && p.key in obj);
-            await Promise.all(entityProps.map(p => database.accessProperty(entity, p).set(obj[p.key])));
-        }
-
-        if (typeof dataObject.properties == 'object') {
-            await setPropsObject('guild', guild, dataObject.properties);
-        }
-
-        if (typeof dataObject.members == 'object') {
-            const members = Object.keys(dataObject.members).map(id => guild.member(id)!).filter(m => m != null);
-            await Promise.all(members.map(m => setPropsObject('member', m, dataObject.members[m.id])));
-        }
-    }
-
-    async saveGuild(database: BotDatabase, guild: Guild) {
-        const jsonObject = {
-            properties: {} as Record<string, any>,
-            members: {} as Record<string, Record<string, any>>,
-        };
-
-        const getValues = async <E extends EntityType>(props: Property<E, any, PropertyAccess<any>>[], entity: Entity<E>) => {
-            const vPromises = props.map<Promise<[string, any]>>(async p => [
-                p.key, await database.accessProperty(entity, p).rawValue(),
-            ]);
-            return (await Promise.all(vPromises)).filter(v => v[1] != undefined);
-        }
-
-        const saveValues = async <E extends EntityType>(entityType: E, props: Property<E, any, PropertyAccess<any>>[], entity: Entity<E>) => {
-            const values = await getValues(props, entity);
-            if (!values.length) return;
-            if (entityType == 'guild') {
-                values.forEach(([key, value]) => jsonObject.properties[key] = value);
-            }
-            else {
-                jsonObject.members[entity.id] = {};
-                values.forEach(([key, value]) => jsonObject.members[entity.id][key] = value);
-            }
-        }
-
-        const properties = [...database.cache.properties.values()];
-
-        const guildDefinedProps = properties.filter(p => p.entityType == 'guild');
-        await saveValues('guild', guildDefinedProps, guild);
-
-        const memberDefinedProps = properties.filter(p => p.entityType == 'member');
-        const { cache: members } = guild.members;
-        await Promise.all(members.map(member => saveValues('member', memberDefinedProps, member)));
-
-        const json = JSON.stringify(jsonObject, null, this.options.jsonIndent);
-        writeFileSync(this.guildPath(guild), json);
-    }
-
-    onGuildDelete(_: BotDatabase, guild: Guild) {
-        const path = this.guildPath(guild);
+    database.bot.client.on('guildDelete', guild => {
+        const path = guildPath(guild);
         if (existsSync(path)) {
             unlinkSync(path);
         }
-    }
+    });
 
-    private guildPath(guild: Guild) {
-        return join(this.guildsPath, guild.id + '.json');
+    return {
+        createStateStorage: createJsonStateStorage(database),
+
+        prepareForLoading() { prepareGuildDir() },
+        prepareForSaving() { prepareGuildDir() },
+
+        loadGuild(guild, guildState, membersState) {
+            const path = guildPath(guild);
+            if (!existsSync(path)) return;
+
+            const dataObject = JSON.parse(readFileSync(path).toString());
+
+            if (typeof dataObject.properties != 'object') {
+                dataObject.properties = {};
+            }
+
+            if (typeof dataObject.members != 'object') {
+                dataObject.members = {};
+            }
+
+            const setStateObject = <E extends EntityType>(entity: Entity<E>, entityStates: State<E, any>[], stateStorage: StateStorage<E>, stateObj: any) => {
+                entityStates.forEach(state => {
+                    if (state.key in stateObj) {
+                        (stateStorage.store as any)(entity, state, stateObj[state.key]);
+                    }
+                });
+            }
+
+            setStateObject(guild, guildDbStates, guildState, dataObject.properties);
+
+            for (const id in dataObject.members) {
+                const member = guild.member(id);
+                if (!member) {
+                    continue;
+                }
+
+                setStateObject(member, memberDbStates, membersState, dataObject.members[id]);
+            }
+        },
+
+        async saveGuild(guild, guildStateStorage, membersStateStorage) {
+            const jsonObject = {
+                properties: {} as Record<string, any>,
+                members: {} as Record<string, Record<string, any>>,
+            };
+
+            const saveStates = <E extends EntityType>(target: any, key: string, entity: Entity<E>, states: State<E, any>[], stateStorage: StateStorage<E>) => {
+                target[key] = {};
+                let changes = 0;
+
+                states.forEach(state => {
+                    const value = stateStorage.restore(entity, state);
+                    if (value !== undefined) {
+                        target[key][state.key] = value;
+                        changes++;
+                    }
+                });
+
+                if (!changes) {
+                    delete target[key];
+                }
+            };
+
+            saveStates(jsonObject, 'properties', guild, guildDbStates, guildStateStorage);
+
+            (await guild.members.fetch()).forEach(member => {
+                saveStates(jsonObject.members, member.id, member, memberDbStates, membersStateStorage);
+            });
+
+            const json = JSON.stringify(jsonObject, null, options.jsonIndent);
+            writeFileSync(guildPath(guild), json);
+        },
     }
-}
+};

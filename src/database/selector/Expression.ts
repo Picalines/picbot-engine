@@ -1,4 +1,4 @@
-import { Property } from "../property";
+import { State } from "../state";
 import { EntityType } from "../Entity";
 import { BinaryCompareOperator, BinaryLogicOperator, UnaryOperator } from "./Operator";
 import { SelectorVarsDefinition } from "./Selector";
@@ -22,8 +22,8 @@ export class UnaryExpression<E extends EntityType, O extends UnaryOperator, Vars
 export class ComparisonExpression<E extends EntityType, O extends BinaryCompareOperator, T extends ExpressionConstant, Vars extends SelectorVarsDefinition> {
     constructor(
         readonly operator: O,
-        readonly left: Property<E, T>,
-        readonly right: Property<E, T> | T | ExpressionVariable<Vars>,
+        readonly left: State<E, T>,
+        readonly right: State<E, T> | T | ExpressionVariable<Vars>,
     ) { }
 }
 

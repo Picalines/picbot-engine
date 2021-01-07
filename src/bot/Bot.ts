@@ -3,7 +3,7 @@ import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Optio
 import { ClientEventNames, GuildMessage, isGuildMessage, importFolder, StageSequenceBuilder } from "../utils";
 import { CommandContext, CommandStorage } from "../command";
 import { BotEventListener, createEventStorage, createNodeEmitterLink } from "../event";
-import { BotDatabase } from "../database";
+import { Database } from "../database";
 import { Logger } from "../logger/Logger";
 import { Translator } from "../translator";
 
@@ -11,7 +11,7 @@ export class Bot {
     readonly options: BotOptions;
 
     readonly commands: CommandStorage;
-    readonly database: BotDatabase;
+    readonly database: Database;
     readonly translator: Translator;
     readonly logger: Logger;
 
@@ -43,7 +43,14 @@ export class Bot {
 
         this.translator = new Translator(this);
 
-        this.database = new BotDatabase(this);
+        this.database = new Database(this);
+
+        this.loadingSequence.stage('require events', async () => {
+            (await importFolder(BotEventListener, this.options.loadingPaths.events)).forEach(({ path, item: listener }) => {
+                listener.connect(this);
+                this.logger.log(path);
+            });
+        });
 
         this.loadingSequence.stage('login', () => new Promise((resolve, reject) => {
             this.client.once('ready', () => {
@@ -54,13 +61,6 @@ export class Bot {
                 this.logger.log(`logged in as ${this.username}`)
             });
         }));
-
-        this.loadingSequence.stage('require events', async () => {
-            (await importFolder(BotEventListener, this.options.loadingPaths.events)).forEach(({ path, item: listener }) => {
-                listener.connect(this);
-                this.logger.log(path);
-            });
-        });
 
         this.shutdownSequence.stage('logout', () => {
             this.client.destroy();

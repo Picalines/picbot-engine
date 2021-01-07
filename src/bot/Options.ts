@@ -1,6 +1,6 @@
 import { Guild } from "discord.js";
 import { assert, deepMerge, DeepPartialExcept, Overwrite, PromiseOrSync } from "../utils";
-import { BotDatabaseHandler, Property, JsonDatabaseHandler } from "../database";
+import { State, CreateDatabaseHandler, createJsonDatabaseHandler } from "../database";
 import { LoggerOptions, pipeLoggerTheme } from "../logger";
 import { Bot } from "./Bot";
 import { readFileSync } from "fs";
@@ -17,8 +17,8 @@ export type BotOptions = Readonly<{
     tokenType: 'string' | 'file' | 'env';
 
     loadingPaths: Readonly<{
-        /** @default 'src/properties' */
-        properties: string;
+        /** @default 'src/states' */
+        states: string;
 
         /** @default 'src/selectors' */
         selectors: string;
@@ -56,9 +56,9 @@ export type BotOptions = Readonly<{
     loggerOptions: Partial<LoggerOptions>;
 
     /**
-     * @default new JsonDatabaseHandler({ rootFolderPath: '/database/', guildsPath: '/guilds/' })
+     * @default createJsonDatabaseHandler({ databasePath: '/database/' })
      */
-    databaseHandler: BotDatabaseHandler;
+    databaseHandler: CreateDatabaseHandler;
 }>;
 
 export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'>, Partial<{
@@ -78,7 +78,7 @@ export const DefaultBotOptions: BotOptions = {
     loadingPaths: {
         commands: 'src/commands',
         events: 'src/events',
-        properties: 'src/properties',
+        states: 'src/states',
         selectors: 'src/selectors',
         translations: 'src/translations',
     },
@@ -90,15 +90,12 @@ export const DefaultBotOptions: BotOptions = {
         hide: false,
         theme: pipeLoggerTheme,
     },
-    databaseHandler: new JsonDatabaseHandler({
-        databasePath: '/database/',
-        jsonIndent: 0,
-    }),
+    databaseHandler: createJsonDatabaseHandler({ databasePath: '/database/' }),
 };
 
 type Fetcher<T> = (bot: Bot, guild: Guild) => PromiseOrSync<T>;
 
-type ArgumentFetcher<T> = T | Property<'guild', T> | Fetcher<T>;
+type ArgumentFetcher<T> = T | State<'guild', T> | Fetcher<T>;
 
 export function parseBotOptionsArgument(options: BotOptionsArgument): BotOptions {
     let { fetchPrefixes, fetchLocale, token } = options;
@@ -142,9 +139,9 @@ function parseFetcher<T>(fetcher: ArgumentFetcher<T> | undefined, isValue: (fetc
         const value = fetcher;
         fetcher = () => value;
     }
-    else if (fetcher instanceof Property) {
+    else if (fetcher instanceof State) {
         const property = fetcher;
-        fetcher = (bot, guild) => bot.database.accessProperty(guild, property).value();
+        fetcher = (bot, guild) => bot.database.accessState(guild, property).value();
     }
 
     return fetcher as Fetcher<T>;

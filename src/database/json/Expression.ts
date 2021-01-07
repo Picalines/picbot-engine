@@ -1,13 +1,13 @@
-import { Property } from "../property";
+import { State } from "../state";
 import { EntityType } from "../Entity";
 import { AnyExpression, BooleanExpression, ExpressionVariable, UnaryExpression } from "../selector";
 
 export type CompiledExpression = (props: Record<string, any>, vars: Record<string, any>) => boolean;
 
-export function compileExpression<E extends EntityType>(expression: AnyExpression<E>, usedPropsCache: Set<string>): CompiledExpression {
+export function compileExpression<E extends EntityType>(expression: AnyExpression<E>): CompiledExpression {
     if (expression instanceof UnaryExpression) {
         if (expression.operator == 'not') {
-            const compiled = compileExpression(expression.right, usedPropsCache);
+            const compiled = compileExpression(expression.right);
             return (ps, vars) => !compiled(ps, vars);
         }
 
@@ -15,8 +15,8 @@ export function compileExpression<E extends EntityType>(expression: AnyExpressio
     }
 
     if (expression instanceof BooleanExpression) {
-        const left = compileExpression(expression.left, usedPropsCache);
-        const right = compileExpression(expression.right, usedPropsCache);
+        const left = compileExpression(expression.left);
+        const right = compileExpression(expression.right);
 
         if (expression.operator == 'and') {
             return (ps, vars) => left(ps, vars) && right(ps, vars);
@@ -26,11 +26,9 @@ export function compileExpression<E extends EntityType>(expression: AnyExpressio
     }
 
     const leftProp = expression.left.key;
-    usedPropsCache.add(leftProp);
 
-    if (expression.right instanceof Property) {
+    if (expression.right instanceof State) {
         const rightProp = expression.right.key;
-        usedPropsCache.add(rightProp);
 
         switch (expression.operator) {
             case 'eq': return ps => ps[leftProp] === ps[rightProp];
