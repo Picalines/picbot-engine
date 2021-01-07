@@ -56,8 +56,8 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
 
             const setStateObject = <E extends EntityType>(entity: Entity<E>, entityStates: State<E, any>[], stateStorage: StateStorage<E>, stateObj: any) => {
                 entityStates.forEach(state => {
-                    if (state.key in stateObj) {
-                        (stateStorage.store as any)(entity, state, stateObj[state.key]);
+                    if (state.name in stateObj) {
+                        (stateStorage.store as any)(entity, state, stateObj[state.name]);
                     }
                 });
             }
@@ -87,7 +87,7 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
                 states.forEach(state => {
                     const value = stateStorage.restore(entity, state);
                     if (value !== undefined) {
-                        target[key][state.key] = value;
+                        target[key][state.name] = value;
                         changes++;
                     }
                 });

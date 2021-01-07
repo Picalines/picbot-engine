@@ -2,7 +2,7 @@ import { State } from "../state";
 import { EntityType } from "../Entity";
 import { AnyExpression, BooleanExpression, ExpressionVariable, UnaryExpression } from "../selector";
 
-export type CompiledExpression = (props: Record<string, any>, vars: Record<string, any>) => boolean;
+export type CompiledExpression = (state: Record<string, any>, vars: Record<string, any>) => boolean;
 
 export function compileExpression<E extends EntityType>(expression: AnyExpression<E>): CompiledExpression {
     if (expression instanceof UnaryExpression) {
@@ -25,10 +25,10 @@ export function compileExpression<E extends EntityType>(expression: AnyExpressio
         return (ps, vars) => left(ps, vars) || right(ps, vars);
     }
 
-    const leftProp = expression.left.key;
+    const leftProp = expression.left.name;
 
     if (expression.right instanceof State) {
-        const rightProp = expression.right.key;
+        const rightProp = expression.right.name;
 
         switch (expression.operator) {
             case 'eq': return ps => ps[leftProp] === ps[rightProp];

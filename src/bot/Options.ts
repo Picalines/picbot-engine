@@ -63,11 +63,11 @@ export type BotOptions = Readonly<{
 
 export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'>, Partial<{
     /**
-     * @example (() => ['!']) | ['!'] | prefixesDbProperty
+     * @example (() => ['!']) | ['!'] | prefixesDbState
      */
     fetchPrefixes: ArgumentFetcher<string[]>;
     /**
-     * @example (() => 'en-US') | 'en-US' | localeDbProperty
+     * @example (() => 'en-US') | 'en-US' | localeDbState
      */
     fetchLocale: ArgumentFetcher<string>;
 }>>;
@@ -140,8 +140,8 @@ function parseFetcher<T>(fetcher: ArgumentFetcher<T> | undefined, isValue: (fetc
         fetcher = () => value;
     }
     else if (fetcher instanceof State) {
-        const property = fetcher;
-        fetcher = (bot, guild) => bot.database.accessState(guild, property).value();
+        const state = fetcher;
+        fetcher = (bot, guild) => bot.database.accessState(guild, state).value();
     }
 
     return fetcher as Fetcher<T>;

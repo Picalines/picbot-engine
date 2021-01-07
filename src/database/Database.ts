@@ -1,7 +1,7 @@
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
 import { createEventStorage } from "../event";
 import { AnyConstructor, assert, createGroupedCache, filterIterable, importFolder } from "../utils";
-import { State, StateAccess, StateStorage, AnyState, createStateAccess } from "./state";
+import { State, StateAccess, StateStorage, AnyState, createStateBaseAccess } from "./state";
 import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector";
 import { EntityType, Entity, AnyEntity } from "./Entity";
 import { DatabaseHandler } from "./Handler";
@@ -57,7 +57,7 @@ export class Database {
 
             for (const entityType in groupedStates) {
                 groupedStates[entityType as EntityType].forEach(state => {
-                    this.#defaultEntityState![entityType as EntityType][state.key] = state.defaultValue;
+                    this.#defaultEntityState![entityType as EntityType][state.name] = state.defaultValue;
                 });
             }
         });
@@ -98,7 +98,7 @@ export class Database {
     }
 
     accessState<E extends EntityType, T, A extends StateAccess<T>>(entity: Entity<E>, state: State<E, T, A>): A {
-        assert(this.cache.states.has(state), `unknown ${state.entityType} property '${state.key}'`);
+        assert(this.cache.states.has(state), `unknown ${state.entityType} state '${state.name}'`);
 
         let storage: StateStorage<any>;
 
@@ -111,9 +111,9 @@ export class Database {
             storage = this.membersStateStorage(guildId)
         }
 
-        let access = createStateAccess(state, storage, entity) as A;
+        let access = createStateBaseAccess(state, storage, entity) as A;
         if (state.accessFabric) {
-            access = state.accessFabric(access);
+            access = state.accessFabric(access, entity);
         }
 
         return access;

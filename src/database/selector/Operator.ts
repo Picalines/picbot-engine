@@ -29,19 +29,19 @@ type NumberExpressionMethod<E extends EntityType, O extends BinaryCompareOperato
  * Операторы выражения для поиска по базе данных
  */
 export interface QueryOperators<E extends EntityType, Vars extends SelectorVarsDefinition> {
-    /** @example xpProperty > 0 */
+    /** @example xpState > 0 */
     readonly gt: NumberExpressionMethod<E, 'gt', Vars>;
 
-    /** @example xpProperty >= 0 */
+    /** @example xpState >= 0 */
     readonly gte: NumberExpressionMethod<E, 'gte', Vars>;
 
-    /** @example xpProperty < 0 */
+    /** @example xpState < 0 */
     readonly lt: NumberExpressionMethod<E, 'lt', Vars>;
 
-    /** @example xpProperty <= 0 */
+    /** @example xpState <= 0 */
     readonly lte: NumberExpressionMethod<E, 'lte', Vars>;
 
-    /** @example xpProperty == 0 */
+    /** @example xpState == 0 */
     readonly eq: ExpressionMethod<E, Vars, ComparisonExpression<E, 'eq', ExpressionConstant, Vars>>;
 
     /** @example (...) && (...) */

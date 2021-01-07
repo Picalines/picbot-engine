@@ -10,7 +10,7 @@ export const createJsonStateStorage = (database: Database) => <E extends EntityT
     const compiledExpressions = new WeakMap<AnyEntitySelector, CompiledExpression>();
 
     return {
-        store({ id }, { key }, value) {
+        store({ id }, { name: key }, value) {
             let state = entityMap.get(id);
 
             if (!state) {
@@ -21,11 +21,11 @@ export const createJsonStateStorage = (database: Database) => <E extends EntityT
             state[key] = value;
         },
 
-        restore({ id }, { key }) {
+        restore({ id }, { name: key }) {
             return entityMap.get(id)?.[key];
         },
 
-        delete({ id }, { key }) {
+        delete({ id }, { name: key }) {
             const state = entityMap.get(id);
             if (state) {
                 delete state[key];
