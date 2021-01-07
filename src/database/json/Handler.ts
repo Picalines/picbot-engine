@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "
 import { Guild } from "discord.js";
 import { createJsonStateStorage } from "./StateStorage";
 import { Entity, EntityType } from "../Entity";
-import { State, StateAccess, StateStorage } from "../state";
+import { State, StateStorage } from "../state";
 import { CreateDatabaseHandler } from "../Handler";
 
 interface JsonHandlerOptions {
