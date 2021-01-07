@@ -25,9 +25,11 @@ export async function importFolder<T>(constructor: AnyConstructor<T>, folder: st
 
     const projectRoot = process.argv[1];
 
+    const globalPathPrefix = isESM() ? 'file://' : '';
+
     const handleJsFile = async (file: Dirent): Promise<void> => {
         const localPath = join(folder, file.name);
-        const globalPath = join(projectRoot, localPath);
+        const globalPath = globalPathPrefix + join(projectRoot, localPath);
 
         const moduleExports = await import(globalPath);
 
@@ -56,4 +58,14 @@ export async function importFolder<T>(constructor: AnyConstructor<T>, folder: st
     await Promise.all(promises);
 
     return exports;
+}
+
+function isESM() {
+    try {
+        __dirname
+    }
+    catch {
+        return true;
+    }
+    return false;
 }
