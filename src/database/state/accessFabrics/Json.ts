@@ -22,6 +22,6 @@ export const jsonAccess = (access: StateAccess<string>) => ({
     },
 
     async assignJson(source: any) {
-        await access.set(Object.assign(await this.parsed(), source));
+        await this.setJson(Object.assign(await this.parsed(), source));
     },
 });
