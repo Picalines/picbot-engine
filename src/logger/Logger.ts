@@ -1,4 +1,4 @@
-import { LoggerTheme, LoggerOptions } from "./Options";
+import { LoggerTheme, LoggerOptions } from "./Options.js";
 
 export type LogType =
     | "log"

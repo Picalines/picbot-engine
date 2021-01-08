@@ -1,5 +1,5 @@
-import { ValueParser } from "../../utils";
-import { CommandContext } from "../Context";
+import { ValueParser } from "../../utils/index.js";
+import { CommandContext } from "../Context.js";
 
 export interface ArgumentString<T> {
     readonly length: number;

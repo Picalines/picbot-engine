@@ -1,8 +1,8 @@
-import { AnyEntitySelector } from "../selector";
-import { CompiledExpression, compileExpression } from "./Expression";
-import { Database } from "../Database";
-import { StateStorage } from "../state";
-import { EntityType } from "../Entity";
+import { AnyEntitySelector } from "../selector/index.js";
+import { CompiledExpression, compileExpression } from "./Expression.js";
+import { Database } from "../Database.js";
+import { StateStorage } from "../state/index.js";
+import { EntityType } from "../Entity.js";
 
 export const createJsonStateStorage = (database: Database) => <E extends EntityType>(entityType: E): StateStorage<E> => {
     const entityMap = new Map<string, Record<string, any>>();

@@ -1,5 +1,5 @@
-import { PromiseVoid } from "./UsefulTypes";
-import { assert } from "./UsefulFunctions";
+import { PromiseVoid } from "./UsefulTypes.js";
+import { assert } from "./UsefulFunctions.js";
 
 interface Stage {
     readonly name: string;

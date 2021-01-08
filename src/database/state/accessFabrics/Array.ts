@@ -1,4 +1,4 @@
-import { StateAccess } from '../Access';
+import { StateAccess } from "../Access.js";
 
 export const arrayAccess = <T>(access: StateAccess<readonly T[]>) => ({
     ...access,

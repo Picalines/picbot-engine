@@ -1,10 +1,10 @@
-import { Command } from "../Command";
-import { ArgumentSequence, optionalReader, wordReader } from "../argument";
+import { Command } from "../Command.js";
+import { ArgumentSequence, optionalReader, wordReader } from "../argument/index.js";
 import { MessageEmbed } from "discord.js";
-import { assert, unorderedList } from "../../utils";
-import { embedCommandList } from "./CommandList";
-import { embedCommandInfo } from "./CommandInfo";
-import { TranslationCollection } from "../../translator";
+import { assert, unorderedList } from "../../utils/index.js";
+import { embedCommandList } from "./CommandList.js";
+import { embedCommandInfo } from "./CommandInfo.js";
+import { TranslationCollection } from "../../translator/index.js";
 
 export const helpCommand = new Command({
     name: 'help',

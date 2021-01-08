@@ -1,7 +1,7 @@
 import { Dirent, readdirSync } from "fs";
 import { join } from "path";
-import { assert } from "./UsefulFunctions";
-import { AnyConstructor } from "./UsefulTypes";
+import { assert } from "./UsefulFunctions.js";
+import { AnyConstructor } from "./UsefulTypes.js";
 
 interface ExportItem<T> {
     readonly path: string;

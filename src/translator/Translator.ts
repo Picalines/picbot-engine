@@ -1,9 +1,9 @@
-import { Bot } from "../bot";
-import { argumentReaderTerms, argumentReaderTermTranslationRU, helpCommand, helpEmbedTerms, helpEmbedTranslationsRU, helpInfoTranslationRU } from "../command";
-import { assert, importFolder } from "../utils";
-import { TermContexts } from "./Term";
-import { TermCollection } from "./TermCollection";
-import { TranslationCollection } from "./TranslationCollection";
+import { Bot } from "../bot/index.js";
+import { argumentReaderTerms, argumentReaderTermTranslationRU, helpCommand, helpEmbedTerms, helpEmbedTranslationsRU, helpInfoTranslationRU } from "../command/index.js";
+import { assert, importFolder } from "../utils/index.js";
+import { TermContexts } from "./Term.js";
+import { TermCollection } from "./TermCollection.js";
+import { TranslationCollection } from "./TranslationCollection.js";
 
 export class Translator {
     /**

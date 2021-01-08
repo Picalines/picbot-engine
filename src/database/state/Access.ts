@@ -1,6 +1,6 @@
-import { State } from "./State";
-import { EntityType, Entity } from "../Entity";
-import { StateStorage } from "./Storage";
+import { State } from "./State.js";
+import { EntityType, Entity } from "../Entity.js";
+import { StateStorage } from "./Storage.js";
 
 export interface StateAccess<T> {
     set(value: T): Promise<void>;

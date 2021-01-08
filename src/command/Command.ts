@@ -1,9 +1,9 @@
 import { BitFieldResolvable, GuildMember, Permissions, PermissionString } from "discord.js";
-import { assert, GuildMessage, Overwrite, PromiseVoid, Indexes, NonEmpty } from "../utils";
-import { CommandContext } from "./Context";
-import { Bot } from "../bot";
-import { constTerm, TermCollection } from "../translator";
-import { ArgumentSequence } from "./argument";
+import { assert, GuildMessage, Overwrite, PromiseVoid, Indexes, NonEmpty } from "../utils/index.js";
+import { CommandContext } from "./Context.js";
+import { Bot } from "../bot/index.js";
+import { constTerm, TermCollection } from "../translator/index.js";
+import { ArgumentSequence } from "./argument/index.js";
 
 /**
  * Информация о команде

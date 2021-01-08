@@ -1,5 +1,5 @@
-import { ListenerOf, EventStorage } from "./EventStorage";
-import { Bot } from "../bot";
+import { ListenerOf, EventStorage } from "./EventStorage.js";
+import { Bot } from "../bot/index.js";
 
 export class BotEventListener<
     ES extends EventStorage<any, any>,

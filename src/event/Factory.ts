@@ -1,5 +1,5 @@
-import { assert } from "../utils";
-import { EmitEvent, EventListener, EventStorage, PublicEventStorage } from "./EventStorage";
+import { assert } from "../utils/index.js";
+import { EmitEvent, EventListener, EventStorage, PublicEventStorage } from "./EventStorage.js";
 
 export function createEventStorage<Emitter, Events>(emitter: Emitter, events: Events): [storage: EventStorage<Emitter, Events>, emit: EmitEvent<Emitter, Events>] {
     const eventNames = Object.keys(events) as (keyof Events)[];

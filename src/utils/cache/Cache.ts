@@ -1,4 +1,4 @@
-import { EventStorage } from "../../event";
+import { EventStorage } from "../../event/index.js";
 
 export interface Cache<T> {
     readonly size: number;

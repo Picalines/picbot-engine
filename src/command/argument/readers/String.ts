@@ -1,7 +1,7 @@
-import { Failable } from "../../../utils";
-import { ArgumentReader, ArgumentString } from "../Argument";
-import { parsedRegexReader, regexReader } from "./Regex";
-import { argumentReaderTerms as readerTerms } from "./Terms";
+import { Failable } from "../../../utils/index.js";
+import { ArgumentReader, ArgumentString } from "../Argument.js";
+import { parsedRegexReader, regexReader } from "./Regex.js";
+import { argumentReaderTerms as readerTerms } from "./Terms.js";
 
 export const spaceReader = regexReader(/\s*/);
 

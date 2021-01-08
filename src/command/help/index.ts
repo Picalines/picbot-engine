@@ -1,2 +1,2 @@
-export * from "./EmbedTerms";
-export * from "./Help";
+export * from "./EmbedTerms.js";
+export * from "./Help.js";

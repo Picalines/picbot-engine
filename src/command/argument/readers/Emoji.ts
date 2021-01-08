@@ -1,5 +1,5 @@
-import { mentionReader } from "./Mention";
-import { regexReader } from "./Regex";
+import { mentionReader } from "./Mention.js";
+import { regexReader } from "./Regex.js";
 
 /**
  * @author https://stackoverflow.com/a/41164587

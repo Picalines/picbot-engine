@@ -1,5 +1,5 @@
-import { constTerm, TermCollection, TranslationCollection } from "../../../translator";
-import { parseInterval } from "../../../utils";
+import { constTerm, TermCollection, TranslationCollection } from "../../../translator/index.js";
+import { parseInterval } from "../../../utils/index.js";
 
 export const argumentReaderTerms = new TermCollection({
     notFound: constTerm('not found'),

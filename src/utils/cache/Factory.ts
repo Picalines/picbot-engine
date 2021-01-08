@@ -1,5 +1,5 @@
-import { createEventStorage } from "../../event";
-import { Cache, PublicCache } from "./Cache";
+import { createEventStorage } from "../../event/index.js";
+import { Cache, PublicCache } from "./Cache.js";
 
 export function createCache<T>(): [chache: Cache<T>, add: PublicCache<T>['add']] {
     const items = new Set<T>();

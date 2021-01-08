@@ -3,5 +3,7 @@
     "compilerOptions": {
         "module": "commonjs",
         "outDir": "./dist/commonjs",
+        "declaration": true,
+        "declarationDir": "./dist/types",
     },
 }

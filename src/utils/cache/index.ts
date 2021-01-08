@@ -1,3 +1,3 @@
-export * from "./Cache";
-export * from "./Factory";
-export * from "./Grouped";
+export * from "./Cache.js";
+export * from "./Factory.js";
+export * from "./Grouped.js";

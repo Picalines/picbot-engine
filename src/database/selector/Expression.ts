@@ -1,7 +1,7 @@
-import { State } from "../state";
-import { EntityType } from "../Entity";
-import { BinaryCompareOperator, BinaryLogicOperator, UnaryOperator } from "./Operator";
-import { SelectorVarsDefinition } from "./Selector";
+import { State } from "../state/index.js";
+import { EntityType } from "../Entity.js";
+import { BinaryCompareOperator, BinaryLogicOperator, UnaryOperator } from "./Operator.js";
+import { SelectorVarsDefinition } from "./Selector.js";
 
 export type ExpressionConstant =
     | number

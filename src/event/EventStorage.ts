@@ -1,4 +1,4 @@
-import { Disposable } from "../utils";
+import { Disposable } from "../utils/index.js";
 
 export interface EventListener<Emitter, Args extends any[]> {
     (this: Emitter, ...args: Args): any;

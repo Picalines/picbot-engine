@@ -1,11 +1,11 @@
 import { Guild, GuildMember, GuildMemberManager } from "discord.js";
-import { createEventStorage } from "../event";
-import { AnyConstructor, assert, createGroupedCache, filterIterable, importFolder } from "../utils";
-import { State, StateAccess, StateStorage, AnyState, createStateBaseAccess } from "./state";
-import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector";
-import { EntityType, Entity, AnyEntity } from "./Entity";
-import { DatabaseHandler } from "./Handler";
-import { Bot } from "../bot";
+import { createEventStorage } from "../event/index.js";
+import { AnyConstructor, assert, createGroupedCache, filterIterable, importFolder } from "../utils/index.js";
+import { State, StateAccess, StateStorage, AnyState, createStateBaseAccess } from "./state/index.js";
+import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector/index.js";
+import { EntityType, Entity, AnyEntity } from "./Entity.js";
+import { DatabaseHandler } from "./Handler.js";
+import { Bot } from "../bot/index.js";
 
 export class Database {
     readonly handler: DatabaseHandler;

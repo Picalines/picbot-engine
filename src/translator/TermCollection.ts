@@ -1,6 +1,6 @@
-import { assert, Mutable } from "../utils";
-import { TermDefinition, TermContexts } from "./Term";
-import { TranslationCollection, TranslationCollectionDefinition } from "./TranslationCollection";
+import { assert, Mutable } from "../utils/index.js";
+import { TermDefinition, TermContexts } from "./Term.js";
+import { TranslationCollection, TranslationCollectionDefinition } from "./TranslationCollection.js";
 
 type TermCollectionDefinition<Contexts extends TermContexts> = { [K in keyof Contexts]: TermDefinition<Contexts[K]> }
 

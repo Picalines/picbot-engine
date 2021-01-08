@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { PublicEventStorage } from "./EventStorage";
+import { PublicEventStorage } from "./EventStorage.js";
 
 /**
  * NodeJS.EventEmitter -> EventStorage

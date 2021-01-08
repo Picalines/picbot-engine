@@ -1,5 +1,5 @@
-import { createCache } from '.';
-import { Cache, PublicCache } from './Cache';
+import { createCache } from "./Factory.js";
+import { Cache, PublicCache } from "./Cache.js";
 
 export type CacheGroups = Record<string, new (...args: any) => any>;
 

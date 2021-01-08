@@ -1,5 +1,5 @@
-import { Guild, GuildMember } from 'discord.js';
-import { StateAccess } from '../Access';
+import { Guild, GuildMember } from "discord.js";
+import { StateAccess } from "../Access.js";
 
 const idRegex = /\d+/;
 

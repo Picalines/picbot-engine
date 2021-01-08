@@ -1,6 +1,6 @@
-import { StateAccess } from "./Access";
-import { Entity, EntityType } from "../Entity";
-import { assert } from "../../utils";
+import { StateAccess } from "./Access.js";
+import { Entity, EntityType } from "../Entity.js";
+import { assert } from "../../utils/index.js";
 
 interface StateDefinition<E extends EntityType, T, A extends StateAccess<T>> {
     readonly name: string;

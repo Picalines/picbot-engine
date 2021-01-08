@@ -1,17 +1,4 @@
 {
-    "compilerOptions": {
-        "strict": true,
-        "noImplicitAny": true,
-        "strictBindCallApply": true,
-        "target": "ES6",
-        "module": "ES2020",
-        "outDir": "./dist/esm",
-        "incremental": true,
-        "removeComments": false,
-        "declaration": true,
-        "esModuleInterop": true,
-        "moduleResolution": "node",
-    },
     "include": [
         "./src/",
     ],
@@ -20,4 +7,22 @@
         "**/*.spec.ts",
         "**/*.test.ts",
     ],
+    "compilerOptions": {
+        "strict": true,
+        "noImplicitAny": true,
+        "strictBindCallApply": true,
+        "target": "ES2018",
+        "module": "ES2020",
+        "outDir": "./dist/esm",
+        "incremental": true,
+        "removeComments": false,
+        "declaration": false,
+        "esModuleInterop": true,
+        "moduleResolution": "classic",
+        "baseUrl": "./src/",
+        "paths": {
+            "discord.js": ["../node_modules/discord.js/typings/index.d.ts"],
+            "@discordjs/collection": ["../node_modules/@discordjs/collection/dist/index.d.ts"],
+        },
+    },
 }

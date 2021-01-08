@@ -1,6 +1,6 @@
 import { GuildMemberManager, GuildManager } from "discord.js";
-import { EntityType, Entity } from "../Entity";
-import { SelectorVarsDefinition, SelectorVars } from "./Selector";
+import { EntityType, Entity } from "../Entity.js";
+import { SelectorVarsDefinition, SelectorVars } from "./Selector.js";
 
 export type EntitySelectorOptions<E extends EntityType, Vars extends SelectorVarsDefinition> = {
     readonly manager: E extends 'member' ? GuildMemberManager : GuildManager;

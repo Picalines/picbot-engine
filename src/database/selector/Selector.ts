@@ -1,6 +1,6 @@
-import { EntityType } from "../Entity";
-import { AnyExpression, ExpressionConstant } from "./Expression";
-import { QueryOperators } from "./Operator";
+import { EntityType } from "../Entity.js";
+import { AnyExpression, ExpressionConstant } from "./Expression.js";
+import { QueryOperators } from "./Operator.js";
 
 export type SelectorVarsDefinition = { readonly [name: string]: (value?: any) => ExpressionConstant }
 

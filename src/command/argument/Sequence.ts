@@ -1,8 +1,8 @@
-import { spaceReader } from "../argument";
-import { ArgsDefinitions, CommandArgument } from "./Argument";
-import { CommandContext } from "../Context";
-import { assert } from "../../utils";
-import { argumentReaderTerms } from "./readers";
+import { spaceReader } from "../argument/index.js";
+import { ArgsDefinitions, CommandArgument } from "./Argument.js";
+import { CommandContext } from "../Context.js";
+import { assert } from "../../utils/index.js";
+import { argumentReaderTerms } from "./readers/index.js";
 
 export class ArgumentSequence<Args extends unknown[]> {
     /**

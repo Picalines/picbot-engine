@@ -1,4 +1,4 @@
-import { PrimitiveConstructor, PrimitiveInstanceType } from "../utils";
+import { PrimitiveConstructor, PrimitiveInstanceType } from "../utils/index.js";
 
 export type TermContextDefinition = { readonly [key: string]: PrimitiveConstructor };
 

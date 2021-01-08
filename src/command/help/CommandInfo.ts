@@ -1,8 +1,8 @@
 import { MessageEmbed } from "discord.js";
-import { helpEmbedTerms } from "./EmbedTerms";
-import { AnyCommand } from "../Command";
-import { CommandContext } from "../Context";
-import { capitalize, orderedList } from "../../utils";
+import { helpEmbedTerms } from "./EmbedTerms.js";
+import { AnyCommand } from "../Command.js";
+import { CommandContext } from "../Context.js";
+import { capitalize, orderedList } from "../../utils/index.js";
 
 const backtickList = (list: readonly string[]) => list.map(el => `\`${el}\``).join(', ');
 

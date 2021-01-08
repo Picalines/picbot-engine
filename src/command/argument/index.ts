@@ -1,3 +1,3 @@
-export * from "./Argument";
-export * from "./Sequence";
-export * from "./readers";
+export * from "./Argument.js";
+export * from "./Sequence.js";
+export * from "./readers/index.js";

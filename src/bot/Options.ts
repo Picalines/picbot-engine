@@ -1,8 +1,8 @@
 import { Guild } from "discord.js";
-import { assert, deepMerge, DeepPartialExcept, Overwrite, PromiseOrSync } from "../utils";
-import { State, CreateDatabaseHandler, createJsonDatabaseHandler } from "../database";
-import { LoggerOptions, pipeLoggerTheme } from "../logger";
-import { Bot } from "./Bot";
+import { assert, deepMerge, DeepPartialExcept, Overwrite, PromiseOrSync } from "../utils/index.js";
+import { State, CreateDatabaseHandler, createJsonDatabaseHandler } from "../database/index.js";
+import { LoggerOptions, pipeLoggerTheme } from "../logger/index.js";
+import { Bot } from "./Bot.js";
 import { readFileSync } from "fs";
 
 export type BotOptions = Readonly<{

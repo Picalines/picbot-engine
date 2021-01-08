@@ -1,11 +1,11 @@
 import { Client, ClientEvents } from "discord.js";
-import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Options";
-import { ClientEventNames, GuildMessage, isGuildMessage, importFolder, StageSequenceBuilder } from "../utils";
-import { CommandContext, CommandStorage } from "../command";
-import { BotEventListener, createEventStorage, createNodeEmitterLink } from "../event";
-import { Database } from "../database";
-import { Logger } from "../logger/Logger";
-import { Translator } from "../translator";
+import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Options.js";
+import { ClientEventNames, GuildMessage, isGuildMessage, importFolder, StageSequenceBuilder } from "../utils/index.js";
+import { CommandContext, CommandStorage } from "../command/index.js";
+import { BotEventListener, createEventStorage, createNodeEmitterLink } from "../event/index.js";
+import { Database } from "../database/index.js";
+import { Logger } from "../logger/Logger.js";
+import { Translator } from "../translator/index.js";
 
 export class Bot {
     readonly options: BotOptions;

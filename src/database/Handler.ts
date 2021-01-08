@@ -1,8 +1,8 @@
 import { Guild } from "discord.js";
-import { PromiseVoid } from "../utils";
-import { Database } from "./Database";
-import { EntityType } from "./Entity";
-import { StateStorage } from "./state";
+import { PromiseVoid } from "../utils/index.js";
+import { Database } from "./Database.js";
+import { EntityType } from "./Entity.js";
+import { StateStorage } from "./state/index.js";
 
 export interface DatabaseHandler {
     createStateStorage<E extends EntityType>(type: E): StateStorage<E>;

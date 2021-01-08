@@ -9,7 +9,7 @@
         "import": "./dist/esm/index.js",
         "default": "./dist/commonjs/index.js"
     },
-    "types": "./dist/esm/index.d.ts",
+    "types": "./dist/types/index.d.ts",
     "files": [
         "dist/"
     ],

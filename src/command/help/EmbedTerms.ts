@@ -1,4 +1,4 @@
-import { constTerm, TermCollection, TranslationCollection } from "../../translator";
+import { constTerm, TermCollection, TranslationCollection } from "../../translator/index.js";
 
 export const helpEmbedTerms = new TermCollection({
     botCommandsList: constTerm('List of commands'),

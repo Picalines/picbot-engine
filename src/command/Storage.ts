@@ -1,7 +1,7 @@
-import { Bot } from "../bot";
-import { importFolder } from "../utils";
-import { AnyCommand, Command } from "./Command";
-import { helpCommand } from "./help";
+import { Bot } from "../bot/index.js";
+import { importFolder } from "../utils/index.js";
+import { AnyCommand, Command } from "./Command.js";
+import { helpCommand } from "./help/index.js";
 
 export class CommandStorage implements Iterable<AnyCommand> {
     private readonly nameMap = new Map<string, AnyCommand>();

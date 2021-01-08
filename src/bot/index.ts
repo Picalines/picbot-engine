@@ -1,2 +1,2 @@
-export * from "./Bot";
-export * from "./Options";
+export * from "./Bot.js";
+export * from "./Options.js";

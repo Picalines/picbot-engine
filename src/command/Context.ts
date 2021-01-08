@@ -1,7 +1,7 @@
-import { GuildMessage } from "../utils";
-import { Command } from "./Command";
-import { Bot } from "../bot";
-import { TermCollection, TermContexts, TranslationCollection } from "../translator";
+import { GuildMessage } from "../utils/index.js";
+import { Command } from "./Command.js";
+import { Bot } from "../bot/index.js";
+import { TermCollection, TermContexts, TranslationCollection } from "../translator/index.js";
 
 export class CommandContext<Args extends unknown[]> {
     readonly args: Args;

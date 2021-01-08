@@ -1,6 +1,6 @@
-import { EntityType } from "../Entity";
-import { ComparisonExpression, BooleanExpression, UnaryExpression, AnyExpression, ExpressionConstant, ExpressionVariable, BinaryExpression } from "./Expression";
-import { SelectorVarsDefinition } from "./Selector";
+import { EntityType } from "../Entity.js";
+import { ComparisonExpression, BooleanExpression, UnaryExpression, AnyExpression, ExpressionConstant, ExpressionVariable, BinaryExpression } from "./Expression.js";
+import { SelectorVarsDefinition } from "./Selector.js";
 
 export type UnaryOperator = 'not'
 

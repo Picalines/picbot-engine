@@ -1,4 +1,4 @@
-import { LogType } from "./Logger";
+import { LogType } from "./Logger.js";
 
 interface ThemeContext {
     /**

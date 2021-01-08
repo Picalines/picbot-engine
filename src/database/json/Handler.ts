@@ -1,10 +1,10 @@
 import { join } from "path";
 import { mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
 import { Guild } from "discord.js";
-import { createJsonStateStorage } from "./StateStorage";
-import { Entity, EntityType } from "../Entity";
-import { State, StateStorage } from "../state";
-import { CreateDatabaseHandler } from "../Handler";
+import { createJsonStateStorage } from "./StateStorage.js";
+import { Entity, EntityType } from "../Entity.js";
+import { State, StateStorage } from "../state/index.js";
+import { CreateDatabaseHandler } from "../Handler.js";
 
 interface JsonHandlerOptions {
     databasePath: string,

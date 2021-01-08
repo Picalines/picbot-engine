@@ -1,7 +1,7 @@
-import { PromiseOrSync } from "../../utils";
-import { EntityType, Entity } from "../Entity";
-import { AnyExpression, EntitySelector, SelectorVarsDefinition, SelectorVars } from "../selector";
-import { State } from "./State";
+import { PromiseOrSync } from "../../utils/index.js";
+import { EntityType, Entity } from "../Entity.js";
+import { AnyExpression, EntitySelector, SelectorVarsDefinition, SelectorVars } from "../selector/index.js";
+import { State } from "./State.js";
 
 export interface StateStorage<E extends EntityType> {
     store<T>(entity: Entity<E>, state: State<E, T>, value: T): PromiseOrSync<void>;

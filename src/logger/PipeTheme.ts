@@ -1,4 +1,4 @@
-import { Logger, LogType } from "./Logger";
+import { Logger, LogType } from "./Logger.js";
 
 const prefixes: Partial<Record<LogType, string>> = {
     warning: '\x1b[33m⚠',

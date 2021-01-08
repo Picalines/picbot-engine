@@ -1,3 +1,3 @@
-export * from "./Options";
-export * from "./Logger";
-export * from "./PipeTheme";
+export * from "./Options.js";
+export * from "./Logger.js";
+export * from "./PipeTheme.js";

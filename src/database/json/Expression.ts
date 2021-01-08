@@ -1,6 +1,6 @@
-import { State } from "../state";
-import { EntityType } from "../Entity";
-import { AnyExpression, BooleanExpression, ExpressionVariable, UnaryExpression } from "../selector";
+import { State } from "../state/index.js";
+import { EntityType } from "../Entity.js";
+import { AnyExpression, BooleanExpression, ExpressionVariable, UnaryExpression } from "../selector/index.js";
 
 export type CompiledExpression = (state: Record<string, any>, vars: Record<string, any>) => boolean;
 

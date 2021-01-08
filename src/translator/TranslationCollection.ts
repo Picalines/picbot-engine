@@ -1,6 +1,6 @@
-import { assert } from "../utils";
-import { TermContexts, TermTranslation } from "./Term";
-import { TermCollection } from "./TermCollection";
+import { assert } from "../utils/index.js";
+import { TermContexts, TermTranslation } from "./Term.js";
+import { TermCollection } from "./TermCollection.js";
 
 export interface TranslationCollectionDefinition<Contexts extends TermContexts> {
     readonly terms: TermCollection<Contexts>;
