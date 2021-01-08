@@ -30,10 +30,10 @@ bot.load(); // начнёт загрузку бота
 
 Бот загружает команды и другие штуки из папок `src/{commands,...}`. Эти пути можно изменить в настройках бота (`loadingPaths`)
 
-## *Рекомендация*
+## *Рекомендации*
 
-Создайте `jsconfig.json` в корне проекта (либо добавьте эти настройки в `tsconfig.json`, если используете `TypeScript`):
-```json
+**1**. Создайте `jsconfig.json` в корне проекта (либо добавьте эти настройки в `tsconfig.json`, если используете `TypeScript`):
+```json5
 {
     "compilerOptions": {
         "strict": true,
@@ -43,6 +43,16 @@ bot.load(); // начнёт загрузку бота
 ```
 
 Это будет полезно, например, при написании команд - редактор будет проверять необязательные аргументы на значения `null` (подробнее об этом ниже)
+
+**2**. Все примеры в README написаны в стиле ESM (то есть с `import` и `export`). Для этого в `package.json` укажите тип пакета как `модуль`:
+```json5
+{
+    "type": "module",
+    "main": "./src/index.js" // путь до главного файла,
+}
+```
+
+Запустить проект можно через команду `node .`
 
 ## Примеры команд
 
@@ -137,7 +147,10 @@ export default new Command({
 
 `src/commands/ban.js`
 ```js
-import { Command, ArgumentSequence, memberReader, remainingTextReader, optionalReader, unorderedList } from "picbot-engine";
+import {
+    Command, ArgumentSequence, unorderedList,
+    memberReader, remainingTextReader, optionalReader,
+} from "picbot-engine";
 
 export default new Command({
     name: 'ban',
@@ -282,6 +295,8 @@ export const vectorReader = parsedRegexReader(/\d+(\.\d*)?\s+\d+(\.\d*)?/, userI
 
 `src/commands/vectorSum.js`
 ```js
+import { Command, ArgumentSequence, restReader } from "picbot-engine";
+
 import { vectorReader } from "../vector.js";
 
 module.exports = new Command({
@@ -519,6 +534,8 @@ export default new Command({
             reader: optionalReader(numberReader('int', [1, Infinity]), 1),
         }
     ),
+    
+    tutorial: '`!findwarned 2` напишет имена участников сервера с 2 варнами и больше',
 
     execute: async ({ message, database, args: [minWarns] }) => {
         const selected = await database.selectEntities(minWarnsSelector, {
