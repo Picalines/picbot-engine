@@ -46,12 +46,12 @@ export const helpInfoTranslationRU = new TranslationCollection({
     terms: helpCommand.terms,
     locale: 'ru',
     translations: {
-        description: 'Показывает список доступных команд или информацию о конретной команде',
         group: 'Информация',
+        description: 'Показывает список доступных команд или информацию о конретной команде',
+        argument_0_description: 'имя или алиас нужной команды',
         tutorial: unorderedList(
             '`!help` покажет список доступных команд',
             '`!help test` покажет информацию о команде `test`',
         ),
-        argument_0_description: 'имя или алиас нужной команды',
     },
 });
