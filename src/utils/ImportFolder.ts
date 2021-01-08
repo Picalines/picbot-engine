@@ -31,12 +31,11 @@ export async function importFolder<T>(constructor: AnyConstructor<T>, folder: st
         const localPath = join(folder, file.name);
         const globalPath = globalPathPrefix + join(projectRoot, localPath);
 
-        const moduleExports = await import(globalPath);
+        const { default: defaultExport } = await import(globalPath);
 
-        const isClass = moduleExports instanceof constructor;
-        assert(isClass || moduleExports.default instanceof constructor, `default export of type ${constructor.name} expected in module ${localPath}`);
+        assert(defaultExport instanceof constructor, `default export of type ${constructor.name} expected in module ${localPath}`);
 
-        exports.push({ path: './' + localPath, item: isClass ? moduleExports : moduleExports.default });
+        exports.push({ path: './' + localPath, item: defaultExport });
     }
 
     const handleSubFolder = async (subFolder: Dirent): Promise<void> => {
@@ -63,6 +62,7 @@ export async function importFolder<T>(constructor: AnyConstructor<T>, folder: st
 function isESM() {
     try {
         __dirname
+        __filename
     }
     catch {
         return true;
