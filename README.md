@@ -8,7 +8,9 @@
 
 Разрабатывалось это всё на `NodeJS` версии `14.15.4`. Более старые я не тестил, да и не вижу смысла.
 
-В README расписаны основные примеры работы с библиотекой. Также есть [документация по всему модулю](https://picalines.github.io/picbot-engine/)
+В библиотеку встроена только команда `help`, да и ту можно отключить. Примеры базовых команд расписаны в этом README и в [picbot-9](https://github.com/Picalines/picbot-9)
+
+[Документация](https://picalines.github.io/picbot-engine/)
 
 ## Главный файл
 
@@ -189,8 +191,6 @@ export default new Command({
 });
 ```
 
-В библиотеку встроена только команда `help` (*можно отключить*). Остальные примеры базовых команд смотрите в README и [picbot-9](https://github.com/Picalines/picbot-9)
-
 ## Система событий
 
 У бота есть свои события, обработчики которых можно писать в сторонних файлах
@@ -299,7 +299,7 @@ import { Command, ArgumentSequence, restReader } from "picbot-engine";
 
 import { vectorReader } from "../vector.js";
 
-module.exports = new Command({
+export default new Command({
     name: 'vectorsum',
     group: 'Геометрия',
     description: 'Пишет сумму введённых векторов',
@@ -335,7 +335,7 @@ import { State, numberAccess } from "picbot-engine";
 
 // счётчик warn'ов у каждого участника сервера
 
-export default new State({
+export const warnsState = new State({
     name: 'warns',        // уникальное название свойства в базе данных
     entityType: 'member', // тип сущности, у которой есть свойство ('member' / 'guild')
     defaultValue: 0,      // стандартное кол-во warn'ов
@@ -343,20 +343,24 @@ export default new State({
     // значение счётчика всегда больше или равно нулю. Подробнее об этом ниже
     accessFabric: numberAccess([0, Infinity]),
 });
+
+export default warnsState;
 ```
 
 `src/states/maxWarns.js`
 ```js
-import { Property, NumberPropertyAccess } from "picbot-engine";
+import { State, numberAccess } from "picbot-engine";
 
 // максимальное кол-во warn'ов у каждого сервера
 
-export default new State({
+export const maxWarnsState = new State({
     name: 'warns',
     entityType: 'member',
     defaultValue: 0,
     accessFabric: numberAccess([0, Infinity]),
 });
+
+export default maxWarnsState;
 ```
 
 Теперь сделаем команду warn: <br>
@@ -553,8 +557,19 @@ export default new Command({
 
 ```
 
-### Итог
+### Итог по БД
 
 А теперь главное. Весь код команд и свойств никак не зависит от базы данных, которую выберет пользователь.
 
 По стандарту в библиотеке реализована простая база данных на json, которая сохраняет и загружает все данные из локальной папки `database` (не забудьте добавить в `.gitignore`!). Однако кроме json вы можете реализовать свою базу данных. Для этого смотрите опцию `databaseHandler` в `./src/bot/Options.ts`. Json'овская БД прописана в `./src/database/json/Handler.ts`. Расписывать данный увлекательный процесс тут я не буду. Уж простите, *лень*.
+
+## Система перевода на другие языки
+
+В настройках есть параметр `fetchLocale`, который отвечает за язык (локаль) на конкретном сервере. По аналогии с `fetchPrefixes` туда можно поставить состояние сервера:
+
+`src/states/locale.js`
+```js
+import { State, validatedAccess } from "picbot-engine";
+
+WIP
+```
