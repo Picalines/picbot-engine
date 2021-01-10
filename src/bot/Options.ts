@@ -59,6 +59,16 @@ export type BotOptions = Readonly<{
      * @default createJsonDatabaseHandler({ databasePath: '/database/' })
      */
     databaseHandler: CreateDatabaseHandler;
+
+    /**
+     * @default true
+     */
+    cleanupMemberOnRemove: boolean;
+
+    /**
+     * @default true
+     */
+    cleanupGuildOnDelete: boolean;
 }>;
 
 export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'>, Partial<{
@@ -91,6 +101,8 @@ export const DefaultBotOptions: BotOptions = {
         theme: pipeLoggerTheme,
     },
     databaseHandler: createJsonDatabaseHandler({ databasePath: '/database/' }),
+    cleanupMemberOnRemove: true,
+    cleanupGuildOnDelete: true,
 };
 
 type Fetcher<T> = (bot: Bot, guild: Guild) => PromiseOrSync<T>;

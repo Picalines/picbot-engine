@@ -82,19 +82,23 @@ export class Database {
         this.#guildsStorage = this.handler.createStateStorage('guild');
         this.#memberStorage = new Map();
 
-        bot.client.on('guildDelete', async guild => {
-            await this.#memberStorage.get(guild.id)?.clear();
-            this.#memberStorage.delete(guild.id)
-            await this.#guildsStorage.deleteEntity(guild);
-        });
+        if (this.bot.options.cleanupGuildOnDelete) {
+            bot.client.on('guildDelete', async guild => {
+                await this.#memberStorage.get(guild.id)?.clear();
+                this.#memberStorage.delete(guild.id)
+                await this.#guildsStorage.deleteEntity(guild);
+            });
+        }
 
-        bot.client.on('guildMemberRemove', async member => {
-            const memberStorage = this.#memberStorage.get(member.guild.id);
-            if (memberStorage) {
-                member = member.partial ? await member.fetch() : member;
-                await memberStorage.deleteEntity(member);
-            }
-        });
+        if (this.bot.options.cleanupMemberOnRemove) {
+            bot.client.on('guildMemberRemove', async member => {
+                const memberStorage = this.#memberStorage.get(member.guild.id);
+                if (memberStorage) {
+                    member = member.partial ? await member.fetch() : member;
+                    await memberStorage.deleteEntity(member);
+                }
+            });
+        }
     }
 
     accessState<E extends EntityType, T, A extends StateAccess<T>>(entity: Entity<E>, state: State<E, T, A>): A {
