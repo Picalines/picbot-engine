@@ -8,16 +8,19 @@ export interface StateAccess<T> {
     value(): Promise<T>;
 }
 
-export const createStateBaseAccess = <E extends EntityType, T>(state: State<E, T>, storage: StateStorage<E>, entity: Entity<E>): StateAccess<T> => ({
-    async set(value) {
-        await storage.store(entity, state, value);
-    },
+export const createStateBaseAccess = <E extends EntityType, T>(state: State<E, T>, storage: StateStorage<E>, entity: Entity<E>): StateAccess<T> => {
+    const entityState = storage.entity(entity);
+    return {
+        async set(value) {
+            await entityState.store(state, value);
+        },
 
-    async reset() {
-        return await storage.delete(entity, state);
-    },
+        async reset() {
+            return await entityState.reset(state);
+        },
 
-    async value() {
-        return await storage.restore(entity, state) ?? state.defaultValue;
-    },
-});
+        async value() {
+            return await entityState.restore(state) ?? state.defaultValue;
+        },
+    };
+}

@@ -45,7 +45,7 @@ export class Bot {
 
         this.database = new Database(this);
 
-        this.loadingSequence.stage('require events', async () => {
+        this.loadingSequence.stage('import events', async () => {
             (await importFolder(BotEventListener, this.options.loadingPaths.events)).forEach(({ path, item: listener }) => {
                 listener.connect(this);
                 this.logger.log(path);

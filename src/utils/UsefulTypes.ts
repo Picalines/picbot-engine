@@ -52,3 +52,5 @@ export type TupleOf<T, N extends number> = number extends N ? T[] : {
 }[N]
 
 //#endregion
+
+export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;

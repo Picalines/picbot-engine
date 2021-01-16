@@ -20,4 +20,4 @@ export class EntitySelector<E extends EntityType, Vars extends SelectorVarsDefin
     }
 }
 
-export type AnyEntitySelector = EntitySelector<EntityType, any>;
+export type AnyEntitySelector = EntitySelector<any, any>;

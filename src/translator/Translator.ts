@@ -12,7 +12,7 @@ export class Translator {
     readonly #translations = new WeakMap<TermCollection<any>, Map<string, TranslationCollection<any>>>();
 
     constructor(readonly bot: Bot) {
-        this.bot.loadingSequence.after('require commands', 'require translations', async () => {
+        this.bot.loadingSequence.after('import commands', 'import translations', async () => {
             this.termsMap(helpCommand.terms).set('ru', helpInfoTranslationRU);
             this.termsMap(helpEmbedTerms).set('ru', helpEmbedTranslationsRU);
             this.termsMap(argumentReaderTerms).set('ru', argumentReaderTermTranslationRU);

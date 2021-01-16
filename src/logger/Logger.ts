@@ -51,7 +51,7 @@ export class Logger {
         return this;
     }
 
-    done(result: LogType, log: any) {
+    done(result: Exclude<LogType, 'task' | 'log'>, log: any) {
         this._log(result, log, true);
         if (this.taskLevel > 0) {
             this.taskLevel -= 1;
@@ -60,6 +60,19 @@ export class Logger {
             this.warning(`${this.done.name} called before ${this.task.name}`);
         }
         return this;
+    }
+
+    async promiseTask<T>(task: any, block: () => Promise<T>, successLog: any = ''): Promise<T> {
+        this.task(task);
+        try {
+            const result = await block();
+            this.done('success', successLog);
+            return result;
+        }
+        catch (error) {
+            this.done('error', error);
+            throw error;
+        }
     }
 
     log(log: any) {

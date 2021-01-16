@@ -24,7 +24,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
             });
         }
 
-        this.bot.loadingSequence.stage('require commands', async () => {
+        this.bot.loadingSequence.stage('import commands', async () => {
             if (this.bot.options.useBuiltInHelpCommand) {
                 addCommand(helpCommand as unknown as AnyCommand);
             }
