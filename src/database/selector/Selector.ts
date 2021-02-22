@@ -19,5 +19,3 @@ export class EntitySelector<E extends EntityType, Vars extends SelectorVarsDefin
         Object.assign(this, definition);
     }
 }
-
-export type AnyEntitySelector = EntitySelector<any, any>;

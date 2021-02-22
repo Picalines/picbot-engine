@@ -1,11 +1,14 @@
-import { Client, ClientEvents } from "discord.js";
+import { Client } from "discord.js";
 import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Options.js";
-import { ClientEventNames, GuildMessage, isGuildMessage, importFolder, StageSequenceBuilder } from "../utils/index.js";
+import { GuildMessage, isGuildMessage, importFolder } from "../utils/index.js";
 import { CommandContext, CommandStorage } from "../command/index.js";
-import { BotEventListener, createEventStorage, createNodeEmitterLink } from "../event/index.js";
+import { Event } from "../event/index.js";
 import { Database } from "../database/index.js";
 import { Logger } from "../logger/Logger.js";
 import { Translator } from "../translator/index.js";
+import { StageSequence } from "../sequence/index.js";
+import { BotInitializer } from "./Initializer.js";
+import { BotEventListener } from "./EventListener.js";
 
 export class Bot {
     readonly options: BotOptions;
@@ -15,29 +18,32 @@ export class Bot {
     readonly translator: Translator;
     readonly logger: Logger;
 
-    readonly clientEvents = createNodeEmitterLink<Client, { [E in keyof ClientEvents]: (...args: ClientEvents[E]) => void }>(this.client, ClientEventNames);
-    readonly events;
-    readonly #emit;
+    readonly events = Object.freeze({
+        guildMemberMessage: new Event<[message: GuildMessage]>(),
+        guildMyMessage: new Event<[message: GuildMessage]>(),
 
-    readonly loadingSequence = new StageSequenceBuilder();
-    readonly shutdownSequence = new StageSequenceBuilder();
+        commandNotFound: new Event<[message: GuildMessage, wrongName: string]>(),
+        commandError: new Event<[message: GuildMessage, error: Error]>(),
+        commandExecuted: new Event<[context: CommandContext<unknown[]>]>(),
+    });
+
+    readonly loadingSequence: StageSequence;
+    readonly shutdownSequence: StageSequence;
 
     constructor(readonly client: Client, options: BotOptionsArgument) {
-        const [events, emitEvent] = createEventStorage(this as Bot, {
-            guildMemberMessage(message: GuildMessage) { },
-            guildMyMessage(message: GuildMessage) { },
-
-            commandNotFound(message: GuildMessage, wrongName: string) { },
-            commandError(message: GuildMessage, error: Error) { },
-            commandExecuted(context: CommandContext<unknown[]>) { },
-        });
-
-        this.events = events;
-        this.#emit = emitEvent;
-
         this.options = parseBotOptionsArgument(options);
 
         this.logger = new Logger(this.options.loggerOptions);
+
+        this.loadingSequence = new StageSequence().useLogger(this.logger, {
+            startedLog: () => 'loding bot...',
+            finishedLog: () => `bot '${this.username}' successfully loaded`,
+        });
+
+        this.shutdownSequence = new StageSequence().useLogger(this.logger, {
+            startedLog: () => `shutting down bot '${this.username}'...`,
+            finishedLog: () => `bot '${this.username} successfully shutted down'`,
+        });
 
         this.commands = new CommandStorage(this);
 
@@ -45,25 +51,56 @@ export class Bot {
 
         this.database = new Database(this);
 
-        this.loadingSequence.stage('import events', async () => {
-            (await importFolder(BotEventListener, this.options.loadingPaths.events)).forEach(({ path, item: listener }) => {
-                listener.connect(this);
-                this.logger.log(path);
-            });
+        this.loadingSequence.add({
+            name: 'login',
+            task: () => new Promise((resolve, reject) => {
+                this.client.once('ready', () => {
+                    this.logger.log('ready');
+                    resolve();
+                });
+                this.client.login(this.options.token)
+                    .then(() => this.logger.log(`logged in as ${this.username}`))
+                    .catch(reject);
+            }),
         });
 
-        this.loadingSequence.stage('login', () => new Promise((resolve, reject) => {
-            this.client.once('ready', () => {
-                this.logger.log('ready');
-                resolve();
-            });
-            this.client.login(this.options.token).catch(reject).then(() => {
-                this.logger.log(`logged in as ${this.username}`)
-            });
-        }));
+        this.loadingSequence.add({
+            name: 'load events',
+            task: async () => {
+                (await importFolder(BotEventListener, this.options.loadingPaths.events)).forEach(({ item: listener, path }) => {
+                    const event = listener.event(this);
+                    event.on((...args) => listener.listener(this, ...args));
+                    this.logger.log(path);
+                });
+            },
+        });
 
-        this.shutdownSequence.stage('logout', () => {
-            this.client.destroy();
+        let initializers: { item: BotInitializer, path: string }[];
+
+        this.loadingSequence.add({
+            name: 'initialize',
+            task: async () => {
+                initializers = await importFolder(BotInitializer, this.options.loadingPaths.initializers);
+                for (const { item: initializer, path } of initializers) {
+                    this.logger.promiseTask(path, async () => await initializer.initialize(this));
+                }
+            },
+        });
+
+        this.shutdownSequence.add({
+            name: 'logout',
+            task: () => this.client.destroy(),
+        });
+
+        this.shutdownSequence.add({
+            name: 'deinitialize',
+            task: async () => {
+                for (const { item: initializer, path } of initializers) {
+                    if (initializer.deinitialize) {
+                        this.logger.promiseTask(path, async () => await initializer.deinitialize!(this));
+                    }
+                }
+            }
         });
 
         process.once('SIGINT', () => {
@@ -86,7 +123,7 @@ export class Bot {
     private async handleGuildMessage(message: GuildMessage): Promise<void> {
         if (message.author.bot) {
             if (message.member.id == message.guild.me.id) {
-                this.#emit('guildMyMessage', message);
+                this.events.guildMyMessage.emit(message);
                 return;
             }
             if (!this.options.canBotsRunCommands) {
@@ -104,19 +141,19 @@ export class Bot {
 
         const prefixLength = guildPrefixes.find(p => lowerCaseContent.startsWith(p))?.length ?? 0;
         if (prefixLength <= 0) {
-            this.#emit('guildMemberMessage', message);
+            this.events.guildMemberMessage.emit(message);
             return;
         }
 
         const commandName = lowerCaseContent.slice(prefixLength).replace(/\s.*$/, '');
         if (!commandName) {
-            this.#emit('guildMemberMessage', message);
+            this.events.guildMemberMessage.emit(message);
             return;
         }
 
         const command = this.commands.get(commandName);
         if (!command) {
-            this.#emit('commandNotFound', message, commandName);
+            this.events.commandNotFound.emit(message, commandName);
             return;
         }
 
@@ -126,44 +163,22 @@ export class Bot {
             context = await command.execute(this, message);
         }
         catch (error: unknown) {
-            this.#emit('commandError', message, error instanceof Error ? error : new Error(String(error)));
+            this.events.commandError.emit(message, error instanceof Error ? error : new Error(String(error)));
             return;
         }
         finally {
             message.channel.stopTyping(true);
         }
 
-        this.#emit('commandExecuted', context);
+        this.events.commandExecuted.emit(context);
         return;
     }
 
     load() {
-        return this.executeStages(this.loadingSequence, 'loading', 'loaded');
+        return this.loadingSequence.run();
     }
 
     shutdown() {
-        return this.executeStages(this.shutdownSequence, 'shutting down', 'shutted down');
-    }
-
-    private async executeStages(stagesBuilder: StageSequenceBuilder, gerund: string, doneState: string) {
-        this.logger.task(`${gerund} bot...`);
-
-        const stages = stagesBuilder.build();
-
-        for (const { name, task } of stages) {
-            this.logger.task(name);
-
-            try {
-                await task();
-            }
-            catch (error) {
-                this.logger.done('error', error instanceof Error ? error.message : String(error));
-                throw error;
-            }
-
-            this.logger.done('success', '');
-        }
-
-        this.logger.done('success', `bot '${this.username}' successfully ${doneState}`);
+        return this.shutdownSequence.run();
     }
 }

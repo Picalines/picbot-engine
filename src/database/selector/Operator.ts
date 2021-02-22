@@ -57,7 +57,7 @@ export interface QueryOperators<E extends EntityType, Vars extends SelectorVarsD
     readonly var: (name: keyof Vars) => ExpressionVariable<Vars>;
 }
 
-export const OperatorExpressions: QueryOperators<EntityType, any> = {
+export const OperatorExpressions: QueryOperators<EntityType, any> = Object.freeze({
     gt: (l, r) => new ComparisonExpression('gt', l, r),
     gte: (l, r) => new ComparisonExpression('gte', l, r),
     lt: (l, r) => new ComparisonExpression('lt', l, r),
@@ -71,4 +71,4 @@ export const OperatorExpressions: QueryOperators<EntityType, any> = {
     not: r => new UnaryExpression('not', r),
 
     var: name => new ExpressionVariable(name),
-};
+});

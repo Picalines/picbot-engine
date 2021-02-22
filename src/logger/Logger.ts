@@ -24,13 +24,14 @@ export class Logger {
     }
 
     private _log = (logType: LogType, log: any, taskCompleted = false) => {
-        const strLog = this.theme(String(log), logType, { taskLevel: this.taskLevel, taskCompleted });
-
-        console.log(strLog);
-
         if (log instanceof Error) {
+            console.log(this.theme('', logType, { taskLevel: this.taskLevel, taskCompleted }))
             console.log(log.stack);
+            return;
         }
+
+        const strLog = this.theme(String(log), logType, { taskLevel: this.taskLevel, taskCompleted });
+        console.log(strLog);
     }
 
     /**

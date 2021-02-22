@@ -31,6 +31,23 @@ export function* filterIterable<T>(iterable: IterableIterator<T>, filter: (item:
     }
 }
 
+export function deepFreeze<T>(obj: T): Readonly<T> {
+    Object.freeze(obj);
+    if (obj == undefined) {
+        return obj;
+    }
+
+    Object.getOwnPropertyNames(obj).forEach(<(value: string) => void>((key: keyof T) => {
+        if (obj[key] != undefined
+            && (typeof obj[key] == "object" || typeof obj[key] == "function")
+            && !Object.isFrozen(obj[key])) {
+            deepFreeze(obj[key]);
+        }
+    }));
+
+    return obj;
+}
+
 /**
  * @example capitalize('abc') === 'Abc'
  */

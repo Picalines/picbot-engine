@@ -12,24 +12,28 @@ export class Translator {
     readonly #translations = new WeakMap<TermCollection<any>, Map<string, TranslationCollection<any>>>();
 
     constructor(readonly bot: Bot) {
-        this.bot.loadingSequence.after('import commands', 'import translations', async () => {
-            this.termsMap(helpCommand.terms).set('ru', helpInfoTranslationRU);
-            this.termsMap(helpEmbedTerms).set('ru', helpEmbedTranslationsRU);
-            this.termsMap(argumentReaderTerms).set('ru', argumentReaderTermTranslationRU);
+        this.bot.loadingSequence.add({
+            name: 'import translations',
+            runsAfter: 'import commands',
+            task: async () => {
+                this.termsMap(helpCommand.terms).set('ru', helpInfoTranslationRU);
+                this.termsMap(helpEmbedTerms).set('ru', helpEmbedTranslationsRU);
+                this.termsMap(argumentReaderTerms).set('ru', argumentReaderTermTranslationRU);
 
-            (await importFolder(TranslationCollection, this.bot.options.loadingPaths.translations)).forEach(({ path, item: translations }) => {
-                this.bot.logger.log(path);
+                (await importFolder(TranslationCollection, this.bot.options.loadingPaths.translations)).forEach(({ path, item: translations }) => {
+                    this.bot.logger.log(path);
 
-                const map = this.termsMap(translations.terms);
-                const { locale } = translations;
+                    const map = this.termsMap(translations.terms);
+                    const { locale } = translations;
 
-                if (map.has(locale)) {
-                    map.set(locale, map.get(locale)!.override(translations));
-                }
-                else {
-                    map.set(locale, translations);
-                }
-            });
+                    if (map.has(locale)) {
+                        map.set(locale, map.get(locale)!.override(translations));
+                    }
+                    else {
+                        map.set(locale, translations);
+                    }
+                });
+            },
         });
     }
 

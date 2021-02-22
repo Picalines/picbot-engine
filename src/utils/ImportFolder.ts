@@ -1,12 +1,13 @@
 import { Dirent, readdirSync } from "fs";
 import { join } from "path";
 import { assert } from "./UsefulFunctions.js";
-import { AnyConstructor } from "./UsefulTypes.js";
 
 interface ExportItem<T> {
     readonly path: string;
     readonly item: T;
 }
+
+type AnyConstructor<T> = new (...args: any[]) => T;
 
 export async function importFolder<T>(constructor: AnyConstructor<T>, folder: string): Promise<ExportItem<T>[]> {
     let dir: Dirent[];

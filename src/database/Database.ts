@@ -1,17 +1,24 @@
-import { Guild, GuildMember, GuildMemberManager } from "discord.js";
-import { createEventStorage } from "../event/index.js";
-import { AnyConstructor, assert, createGroupedCache, filterIterable, importFolder } from "../utils/index.js";
-import { State, StateAccess, StateStorage, AnyState, createStateBaseAccess } from "./state/index.js";
-import { AnyEntitySelector, EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector/index.js";
-import { EntityType, Entity, AnyEntity, checkEntityType } from "./Entity.js";
+import { GuildMemberManager } from "discord.js";
+import { assert, filterIterable, importFolder } from "../utils/index.js";
+import { State, StateAccess, StateStorage, createStateBaseAccess } from "./state/index.js";
+import { EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector/index.js";
+import { EntityType, Entity, checkEntityType } from "./Entity.js";
 import { DatabaseHandler } from "./Handler.js";
 import { Bot } from "../bot/index.js";
+import { Event } from "../event/Event.js";
 
 export class Database {
-    readonly cache;
+    readonly events = Object.freeze({
+        beforeSaving: new Event(),
+        saved: new Event(),
+        beforeLoading: new Event(),
+        loaded: new Event(),
+    });
 
-    readonly events;
-    readonly #emit;
+    readonly cache = Object.freeze({
+        states: [] as readonly State<any, any>[],
+        selectors: [] as readonly EntitySelector<any, any>[],
+    });
 
     #handler!: DatabaseHandler;
 
@@ -22,105 +29,106 @@ export class Database {
     readonly defaultEntityState!: { [K in EntityType]: Readonly<Record<string, any>> };
 
     constructor(readonly bot: Bot) {
-        const [events, emit] = createEventStorage(this as Database, {
-            beforeSaving() { },
-            saved() { },
-            beforeLoading() { },
-            loaded() { },
-        });
+        this.bot.loadingSequence.add({
+            name: 'import states',
+            task: async () => {
+                const groupedStates: Record<EntityType, State<any, any>[]> = { user: [], guild: [], member: [] };
 
-        this.events = events;
-        this.#emit = emit;
-
-        const [caches, addToCache] = createGroupedCache({
-            states: State as AnyConstructor<AnyState>,
-            selectors: EntitySelector as AnyConstructor<AnyEntitySelector>,
-        });
-
-        this.cache = caches;
-
-        this.bot.loadingSequence.stage('import states', async () => {
-            const groupedStates: Record<EntityType, AnyState[]> = { user: [], guild: [], member: [] };
-
-            (await importFolder(State, this.bot.options.loadingPaths.states)).forEach(({ path, item: state }) => {
-                addToCache.states(state);
-                this.bot.logger.log(path);
-                groupedStates[state.entityType].push(state);
-            });
-
-            (this as any).defaultEntityState = { user: {}, guild: {}, member: {} };
-
-            for (const entityType in groupedStates) {
-                groupedStates[entityType as EntityType].forEach(state => {
-                    (this as any).defaultEntityState[entityType as EntityType][state.name] = state.defaultValue;
-                });
-            }
-        });
-
-        this.bot.loadingSequence.stage('import selectors', async () => {
-            (await importFolder(EntitySelector, this.bot.options.loadingPaths.selectors)).forEach(({ path, item: selector }) => {
-                addToCache.selectors(selector);
-                this.bot.logger.log(path);
-            });
-        });
-
-        this.bot.loadingSequence.after('login', 'load database', async () => {
-            this.#emit('beforeLoading');
-
-            this.#handler = this.bot.options.databaseHandler(this);
-
-            await this.#handler.prepareForLoading?.();
-
-            await this.bot.logger.promiseTask('users', async () => {
-                this.#usersStorage = await this.#handler.loadUsersState(this.bot.client.users);
-            });
-
-            await this.bot.logger.promiseTask('guilds', async () => {
-                this.#guildsStorage = await this.#handler.loadGuildsState(this.bot.client.guilds);
-            });
-
-            await this.bot.logger.promiseTask('members', async () => {
-                type LoadResult = [guildId: string, state: StateStorage<"member">];
-                const promises = this.bot.client.guilds.cache.map(async guild => {
-                    const state = await this.#handler.loadMembersState!(guild.members);
-                    return [guild.id, state] as LoadResult;
+                (await importFolder(State, this.bot.options.loadingPaths.states)).forEach(({ path, item: state }) => {
+                    (this.cache.states as State<any, any>[]).push(state);
+                    this.bot.logger.log(path);
+                    groupedStates[state.entityType].push(state);
                 });
 
-                for await (const [guildId, state] of promises) {
-                    this.#memberStorage.set(guildId, state);
-                }
-            });
+                (this as any).defaultEntityState = { user: {}, guild: {}, member: {} };
 
-            this.#emit('loaded');
-        });
-
-        this.bot.shutdownSequence.after('logout', 'save database', async () => {
-            this.#emit('beforeSaving');
-
-            await this.#handler.prepareForSaving?.();
-
-            if (this.#handler.saveUsersState) {
-                await this.bot.logger.promiseTask('users', async () => {
-                    await this.#handler.saveUsersState!(this.bot.client.users);
-                });
-            }
-
-            if (this.#handler.saveGuildsState) {
-                await this.bot.logger.promiseTask('guilds', async () => {
-                    await this.#handler.saveGuildsState!(this.bot.client.guilds);
-                });
-            }
-
-            if (this.#handler.saveMembersState) {
-                await this.bot.logger.promiseTask('members', async () => {
-                    const promises = this.bot.client.guilds.cache.map(guild => {
-                        return this.#handler.saveMembersState!(guild.members);
+                for (const entityType in groupedStates) {
+                    groupedStates[entityType as EntityType].forEach(state => {
+                        (this as any).defaultEntityState[entityType as EntityType][state.name] = state.defaultValue;
                     });
-                    await Promise.all(promises);
-                });
-            }
+                }
+            },
+        });
 
-            this.#emit('saved');
+        this.bot.loadingSequence.add({
+            name: 'import selectors',
+            task: async () => {
+                (await importFolder(EntitySelector, this.bot.options.loadingPaths.selectors)).forEach(({ path, item: selector }) => {
+                    (this.cache.selectors as EntitySelector<any, any>[]).push(selector);
+                    this.bot.logger.log(path);
+                });
+            },
+        });
+
+        this.bot.loadingSequence.add({
+            name: 'load database',
+            runsAfter: 'login',
+            task: async () => {
+                for (const key in this.cache) {
+                    Object.freeze(this.cache[key as keyof Database['cache']]);
+                }
+
+                this.events.beforeLoading.emit();
+
+                this.#handler = this.bot.options.databaseHandler(this);
+
+                await this.#handler.prepareForLoading?.();
+
+                await this.bot.logger.promiseTask('users', async () => {
+                    this.#usersStorage = await this.#handler.loadUsersState(this.bot.client.users);
+                });
+
+                await this.bot.logger.promiseTask('guilds', async () => {
+                    this.#guildsStorage = await this.#handler.loadGuildsState(this.bot.client.guilds);
+                });
+
+                await this.bot.logger.promiseTask('members', async () => {
+                    type LoadResult = [guildId: string, state: StateStorage<"member">];
+                    const promises = this.bot.client.guilds.cache.map(async guild => {
+                        const state = await this.#handler.loadMembersState!(guild.members);
+                        return [guild.id, state] as LoadResult;
+                    });
+
+                    for await (const [guildId, state] of promises) {
+                        this.#memberStorage.set(guildId, state);
+                    }
+                });
+
+                this.events.loaded.emit();
+            },
+        });
+
+        this.bot.shutdownSequence.add({
+            name: 'save database',
+            runsAfter: 'logout',
+            task: async () => {
+                this.events.beforeSaving.emit();
+
+                await this.#handler.prepareForSaving?.();
+
+                if (this.#handler.saveUsersState) {
+                    await this.bot.logger.promiseTask('users', async () => {
+                        await this.#handler.saveUsersState!(this.bot.client.users);
+                    });
+                }
+
+                if (this.#handler.saveGuildsState) {
+                    await this.bot.logger.promiseTask('guilds', async () => {
+                        await this.#handler.saveGuildsState!(this.bot.client.guilds);
+                    });
+                }
+
+                if (this.#handler.saveMembersState) {
+                    await this.bot.logger.promiseTask('members', async () => {
+                        const promises = this.bot.client.guilds.cache.map(guild => {
+                            return this.#handler.saveMembersState!(guild.members);
+                        });
+                        await Promise.all(promises);
+                    });
+                }
+
+                this.events.saved.emit();
+            },
         });
 
         this.bot.client.on('guildCreate', async guild => {
@@ -148,7 +156,7 @@ export class Database {
     }
 
     accessState<E extends EntityType, T, A extends StateAccess<T>>(entity: Entity<E>, state: State<E, T, A>): A {
-        assert(this.cache.states.has(state), `unknown ${state.entityType} state '${state.name}'`);
+        assert(this.cache.states.includes(state), `unknown ${state.entityType} state '${state.name}'`);
 
         let storage: StateStorage<any>;
 
@@ -168,7 +176,7 @@ export class Database {
     }
 
     async selectEntities<E extends EntityType, Vars extends SelectorVarsDefinition>(selector: EntitySelector<E, Vars>, options: EntitySelectorOptions<E, Vars>): Promise<Entity<E>[]> {
-        assert(this.cache.selectors.has(selector as any), `unknown ${selector.entityType} selector`);
+        assert(this.cache.selectors.includes(selector as any), `unknown ${selector.entityType} selector`);
 
         const { maxCount = Infinity } = options;
         if (maxCount <= 0) return [];
@@ -192,12 +200,12 @@ export class Database {
         }
 
         const selectedGen = storage.select(entities, selector as any, expression, options.variables as any);
-        const selected: AnyEntity[] = [];
+        const selected: Entity<E>[] = [];
 
         const checkBreak = maxCount == Infinity ? (() => false) : (() => selected.length >= maxCount);
 
         for await (const entity of selectedGen) {
-            selected.push(entity);
+            selected.push(entity as Entity<E>);
             if (checkBreak()) {
                 break;
             }
@@ -207,6 +215,6 @@ export class Database {
             throw options.throwOnNotFound;
         }
 
-        return selected as Entity<E>[];
+        return selected;
     }
 }

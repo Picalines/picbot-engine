@@ -8,15 +8,13 @@ export type Entity<E extends EntityType>
     : E extends "member" ? GuildMember
     : never;
 
-export type AnyEntity = Entity<EntityType>;
-
 export type EntityManager<E extends EntityType>
     = E extends "user" ? UserManager
     : E extends "guild" ? GuildManager
     : E extends "member" ? GuildMemberManager
     : never;
 
-export function checkEntityType<E extends EntityType>(entity: AnyEntity, expectedType: E): entity is Entity<E> {
+export function checkEntityType<E extends EntityType>(entity: Entity<any>, expectedType: E): entity is Entity<E> {
     switch (expectedType) {
         case 'user': return 'username' in entity;
         case 'member': return 'nickname' in entity;

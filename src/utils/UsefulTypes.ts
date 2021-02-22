@@ -2,12 +2,6 @@ export type PromiseOrSync<T> = Promise<T> | T;
 
 export type PromiseVoid = PromiseOrSync<void>;
 
-export interface Disposable {
-    dispose(): void;
-}
-
-export type AnyConstructor<T> = new (...args: any[]) => T;
-
 export type PartialExcept<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
 
 /**

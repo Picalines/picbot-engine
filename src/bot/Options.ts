@@ -1,5 +1,5 @@
 import { Guild } from "discord.js";
-import { assert, deepMerge, DeepPartialExcept, Overwrite, PromiseOrSync } from "../utils/index.js";
+import { assert, deepFreeze, deepMerge, DeepPartialExcept, Overwrite, PromiseOrSync } from "../utils/index.js";
 import { State, CreateDatabaseHandler, createJsonDatabaseHandler } from "../database/index.js";
 import { LoggerOptions, pipeLoggerTheme } from "../logger/index.js";
 import { Bot } from "./Bot.js";
@@ -25,6 +25,9 @@ export type BotOptions = Readonly<{
 
         /** @default 'src/events' */
         events: string;
+
+        /** @default 'src/initializers' */
+        initializers: string,
 
         /** @default 'src/commands' */
         commands: string;
@@ -82,12 +85,13 @@ export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'
     fetchLocale: ArgumentFetcher<string>;
 }>>;
 
-export const DefaultBotOptions: BotOptions = {
+export const DefaultBotOptions: BotOptions = deepFreeze({
     token: '',
     tokenType: 'string',
     loadingPaths: {
         commands: 'src/commands',
         events: 'src/events',
+        initializers: 'src/initializers',
         states: 'src/states',
         selectors: 'src/selectors',
         translations: 'src/translations',
@@ -103,7 +107,7 @@ export const DefaultBotOptions: BotOptions = {
     databaseHandler: createJsonDatabaseHandler({ databasePath: '/database/' }),
     cleanupMemberOnRemove: true,
     cleanupGuildOnDelete: true,
-};
+});
 
 type Fetcher<T> = (bot: Bot, guild: Guild) => PromiseOrSync<T>;
 

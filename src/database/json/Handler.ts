@@ -3,8 +3,8 @@ import { CreateDatabaseHandler } from "../Handler.js";
 import { promises as fs } from "fs";
 import { StateStorage } from "../state/index.js";
 import { CompiledExpression, compileExpression } from "./Expression.js";
-import { AnyEntitySelector } from "../selector/index.js";
 import { EntityManager, EntityType } from "../Entity.js";
+import { EntitySelector } from "../selector/index.js";
 
 interface JsonHandlerOptions {
     databasePath: string,
@@ -22,7 +22,7 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
         await Promise.all([usersDir, guildsDir, ...memberDirs].map(async dir => fs.mkdir(dir, { recursive: true })))
     };
 
-    const compiledExpressions = new WeakMap<AnyEntitySelector, CompiledExpression>();
+    const compiledExpressions = new WeakMap<EntitySelector<any, any>, CompiledExpression>();
 
     const usersStateMap = new Map<string, any>();
     const guildsStateMap = new Map<string, any>();

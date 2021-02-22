@@ -153,5 +153,3 @@ export class Command<Args extends unknown[]> {
         return !name.includes(' ') && name.toLowerCase() == name;
     }
 }
-
-export type AnyCommand = Command<any[]>;

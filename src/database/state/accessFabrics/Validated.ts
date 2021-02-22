@@ -1,8 +1,8 @@
 import { assert } from "../../../utils/index.js";
-import { AnyEntity } from "../../Entity.js";
+import { Entity } from "../../Entity.js";
 import { StateAccess } from "../Access.js";
 
-export const validatedAccess = <T>(validator: (value: T) => boolean) => (access: StateAccess<T>, entity: AnyEntity) => ({
+export const validatedAccess = <T>(validator: (value: T) => boolean) => (access: StateAccess<T>, entity: Entity<any>) => ({
     ...access,
 
     async set(value: T) {

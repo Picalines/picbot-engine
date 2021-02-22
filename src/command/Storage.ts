@@ -1,7 +1,9 @@
 import { Bot } from "../bot/index.js";
 import { importFolder } from "../utils/index.js";
-import { AnyCommand, Command } from "./Command.js";
+import { Command } from "./Command.js";
 import { helpCommand } from "./help/index.js";
+
+type AnyCommand = Command<any>;
 
 export class CommandStorage implements Iterable<AnyCommand> {
     private readonly nameMap = new Map<string, AnyCommand>();
@@ -24,15 +26,18 @@ export class CommandStorage implements Iterable<AnyCommand> {
             });
         }
 
-        this.bot.loadingSequence.stage('import commands', async () => {
-            if (this.bot.options.useBuiltInHelpCommand) {
-                addCommand(helpCommand as unknown as AnyCommand);
-            }
+        this.bot.loadingSequence.add({
+            name: 'import commands',
+            task: async () => {
+                if (this.bot.options.useBuiltInHelpCommand) {
+                    addCommand(helpCommand as unknown as AnyCommand);
+                }
 
-            (await importFolder<AnyCommand>(Command, this.bot.options.loadingPaths.commands)).forEach(({ path, item: command }) => {
-                addCommand(command);
-                this.bot.logger.log(path);
-            });
+                (await importFolder<AnyCommand>(Command, this.bot.options.loadingPaths.commands)).forEach(({ path, item: command }) => {
+                    addCommand(command);
+                    this.bot.logger.log(path);
+                });
+            },
         });
     }
 

@@ -11,8 +11,6 @@ interface StateDefinition<E extends EntityType, T, A extends StateAccess<T>> {
 
 export interface State<E extends EntityType, T, A extends StateAccess<T> = StateAccess<T>> extends StateDefinition<E, T, A> { }
 
-export type AnyState<E extends EntityType = EntityType> = State<E, any>;
-
 export class State<E extends EntityType, T, A extends StateAccess<T> = StateAccess<T>> {
     constructor(definition: StateDefinition<E, T, A>) {
         Object.assign(this, definition);
