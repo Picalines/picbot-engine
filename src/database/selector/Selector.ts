@@ -17,5 +17,6 @@ export interface EntitySelector<E extends EntityType, Vars extends SelectorVarsD
 export class EntitySelector<E extends EntityType, Vars extends SelectorVarsDefinition = {}> {
     constructor(definition: EntitySelectorDefinition<E, Vars>) {
         Object.assign(this, definition);
+        Object.freeze(this);
     }
 }

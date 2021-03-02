@@ -3,7 +3,7 @@ import { assert, GuildMessage, Overwrite, PromiseVoid, Indexes, NonEmpty } from 
 import { CommandContext } from "./Context.js";
 import { Bot } from "../bot/index.js";
 import { constTerm, TermCollection } from "../translator/index.js";
-import { ArgumentSequence } from "./argument/index.js";
+import { ArgumentSequence, memberReader } from "./argument/index.js";
 
 /**
  * Информация о команде
@@ -119,6 +119,8 @@ export class Command<Args extends unknown[]> {
         for (const name of [this.name, ...(this.aliases ?? [])]) {
             assert(Command.validateName(name), `invalid command name or alias '${name}'`);
         }
+
+        Object.freeze(this);
     }
 
     /**

@@ -14,6 +14,7 @@ export class TranslationCollection<Contexts extends TermContexts> {
     constructor(definition: TranslationCollectionDefinition<Contexts>) {
         Object.assign(this, definition);
         assert(this.locale, `invalid ${TranslationCollection.name} locale`);
+        Object.freeze(this);
     }
 
     override(otherTranslations: TranslationCollection<Contexts>): TranslationCollection<Contexts> {

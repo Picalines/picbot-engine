@@ -65,7 +65,7 @@ export class Bot {
         });
 
         this.loadingSequence.add({
-            name: 'load events',
+            name: 'import events',
             task: async () => {
                 (await importFolder(BotEventListener, this.options.loadingPaths.events)).forEach(({ item: listener, path }) => {
                     const event = listener.event(this);

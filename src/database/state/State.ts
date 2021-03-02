@@ -15,5 +15,6 @@ export class State<E extends EntityType, T, A extends StateAccess<T> = StateAcce
     constructor(definition: StateDefinition<E, T, A>) {
         Object.assign(this, definition);
         assert(this.name && !this.name.includes(' '), `state name '${this.name}' is invalid (empty or includes spaces)`);
+        Object.freeze(this);
     }
 }
