@@ -4,7 +4,6 @@ import { MessageEmbed } from "discord.js";
 import { assert, unorderedList } from "../../utils/index.js";
 import { embedCommandList } from "./CommandList.js";
 import { embedCommandInfo } from "./CommandInfo.js";
-import { TranslationCollection } from "../../translator/index.js";
 
 export const helpCommand = new Command({
     name: 'help',
@@ -40,18 +39,4 @@ export const helpCommand = new Command({
 
         await message.reply({ embed });
     }
-});
-
-export const helpInfoTranslationRU = new TranslationCollection({
-    terms: helpCommand.terms,
-    locale: 'ru',
-    translations: {
-        group: 'Информация',
-        description: 'Показывает список доступных команд или информацию о конретной команде',
-        argument_0_description: 'имя или алиас нужной команды',
-        tutorial: unorderedList(
-            '`!help` покажет список доступных команд',
-            '`!help test` покажет информацию о команде `test`',
-        ),
-    },
 });

@@ -42,7 +42,7 @@ export class Bot {
 
         this.shutdownSequence = new StageSequence().useLogger(this.logger, {
             startedLog: () => `shutting down bot '${this.username}'...`,
-            finishedLog: () => `bot '${this.username} successfully shutted down'`,
+            finishedLog: () => `bot '${this.username}' successfully shutted down`,
         });
 
         this.commands = new CommandStorage(this);

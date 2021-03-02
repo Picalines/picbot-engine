@@ -1,2 +1,2 @@
-export * from "./EmbedTerms.js";
-export * from "./Help.js";
+export { helpCommand } from "./Help.js";
+export { helpEmbedTerms } from "./embedTerms/Terms.js";

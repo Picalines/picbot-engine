@@ -1,13 +1,13 @@
 import { MessageEmbed } from "discord.js";
-import { helpEmbedTerms } from "./EmbedTerms.js";
 import { CommandContext } from "../Context.js";
 import { capitalize, orderedList } from "../../utils/index.js";
 import { Command } from "../Command.js";
+import { helpEmbedTerms } from "./embedTerms/Terms.js";
 
 const backtickList = (list: readonly string[]) => list.map(el => `\`${el}\``).join(', ');
 
 export const embedCommandInfo = (embed: MessageEmbed, command: Command<any>, helpContext: CommandContext<any>) => {
-    const commandInfo = helpContext.translate(command.terms);
+    const commandInfo = helpContext.translate(command.infoTerms);
     const embedLabel = helpContext.translate(helpEmbedTerms);
 
     embed.setTitle(embedLabel.infoAboutCommand({ command: command.name }));

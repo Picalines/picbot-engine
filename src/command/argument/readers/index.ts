@@ -1,4 +1,4 @@
-export * from "./Terms.js";
+export * from "./terms/Terms.js";
 export * from "./Logic.js";
 export * from "./Regex.js";
 export * from "./String.js";

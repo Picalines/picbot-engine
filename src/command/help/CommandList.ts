@@ -1,7 +1,7 @@
 import { MessageEmbed, GuildMember, EmbedField } from "discord.js";
-import { helpEmbedTerms } from "./EmbedTerms.js";
 import { CommandContext } from "../Context.js";
 import { Bot } from "../../bot/index.js";
+import { helpEmbedTerms } from "./embedTerms/Terms.js";
 
 export const embedCommandList = (bot: Bot, embed: MessageEmbed, requester: GuildMember, context: CommandContext<any>) => {
     const embedLabel = context.translate(helpEmbedTerms);
@@ -15,7 +15,7 @@ export const embedCommandList = (bot: Bot, embed: MessageEmbed, requester: Guild
             continue;
         }
 
-        const { group } = context.translate(command.terms);
+        const { group } = context.translate(command.infoTerms);
 
         let field = groupFields.get(group);
         if (!field) {

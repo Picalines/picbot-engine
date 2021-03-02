@@ -2,8 +2,8 @@ import { BitFieldResolvable, GuildMember, Permissions, PermissionString } from "
 import { assert, GuildMessage, Overwrite, PromiseVoid, Indexes, NonEmpty } from "../utils/index.js";
 import { CommandContext } from "./Context.js";
 import { Bot } from "../bot/index.js";
-import { constTerm, TermCollection } from "../translator/index.js";
-import { ArgumentSequence, memberReader } from "./argument/index.js";
+import { TermCollection } from "../translator/index.js";
+import { ArgumentSequence } from "./argument/index.js";
 
 /**
  * Информация о команде
@@ -82,8 +82,8 @@ export class Command<Args extends unknown[]> {
     /**
      * Термины команды для переводчика
      */
-    readonly terms: TermCollection<{
-        [I in "description" | "group" | "tutorial" | `argument_${Indexes<Args>}_description`]: {}
+    readonly infoTerms: TermCollection<{
+        readonly [I in "description" | "group" | "tutorial" | `argument_${Indexes<Args>}_description`]: []
     }>;
 
     /**
@@ -106,18 +106,18 @@ export class Command<Args extends unknown[]> {
 
         const argTerms = {} as any;
         this.arguments?.definitions.forEach(({ description }, index) => {
-            argTerms[`argument_${index}_description`] = constTerm(description);
+            argTerms[`argument_${index}_description`] = [[], description];
         });
 
-        this.terms = new TermCollection({
-            description: constTerm(info.description),
-            group: constTerm(info.group),
-            tutorial: constTerm(info.tutorial),
+        this.infoTerms = new TermCollection({
+            description: [[], info.description],
+            group: [[], info.group],
+            tutorial: [[], info.tutorial],
             ...argTerms,
         });
 
         for (const name of [this.name, ...(this.aliases ?? [])]) {
-            assert(Command.validateName(name), `invalid command name or alias '${name}'`);
+            assert(name && !name.includes(' ') && name == name.toLowerCase(), `invalid command name or alias '${name}'`);
         }
 
         Object.freeze(this);
@@ -144,14 +144,5 @@ export class Command<Args extends unknown[]> {
         await this.executeable.call(this, context);
 
         return context;
-    }
-
-    /**
-     * Функция валидации имени или алиаса команды
-     * @returns true, если имя команды не содержит пробелов, и все буквы в нём строчные
-     * @param name имя или алиас команды
-     */
-    static validateName(name: string): boolean {
-        return !name.includes(' ') && name.toLowerCase() == name;
     }
 }

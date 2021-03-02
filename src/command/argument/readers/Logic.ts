@@ -1,7 +1,7 @@
 import { TupleOf } from "../../../utils/index.js";
 import { ArgumentReader } from "../Argument.js";
 import { spaceReader } from "./String.js";
-import { argumentReaderTerms as readerTerms } from "./Terms.js";
+import { argumentReaderTerms as readerTerms } from "./terms/Terms.js";
 
 export const optionalReader = <T, D extends T | null | undefined>(reader: ArgumentReader<T>, defaultValue: D): ArgumentReader<T | D> => (userInput, context) => {
     const result = reader(userInput, context);

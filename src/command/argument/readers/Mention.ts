@@ -1,7 +1,7 @@
 import { CommandContext } from "../../Context.js";
 import { ArgumentReader } from "../Argument.js";
 import { parsedRegexReader } from "./Regex.js";
-import { argumentReaderTerms as readerTerms } from "./Terms.js";
+import { argumentReaderTerms as readerTerms } from "./terms/Terms.js";
 
 type MentionGetter<T> = (context: CommandContext<unknown[]>, id: string) => T | null | undefined;
 

@@ -1,12 +1,12 @@
 import { GuildMessage } from "../utils/index.js";
 import { Command } from "./Command.js";
 import { Bot } from "../bot/index.js";
-import { TermCollection, TermContexts, TranslationCollection } from "../translator/index.js";
+import { TermCollection, TermsDefinition, TranslationCollection } from "../translator/index.js";
 
 export class CommandContext<Args extends unknown[]> {
     readonly args: Args;
 
-    readonly translate: <Contexts extends TermContexts>(terms: TermCollection<Contexts>) => TranslationCollection<Contexts>['translations'];
+    readonly translate: <Contexts extends TermsDefinition>(terms: TermCollection<Contexts>) => TranslationCollection<Contexts>['translations'];
 
     constructor(
         readonly command: Command<Args>,

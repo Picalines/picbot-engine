@@ -1,46 +1,28 @@
-import { assert, Mutable } from "../utils/index.js";
-import { TermDefinition, TermContexts } from "./Term.js";
-import { TranslationCollection, TranslationCollectionDefinition } from "./TranslationCollection.js";
+import { TranslationCollection } from "./TranslationCollection.js";
 
-type TermCollectionDefinition<Contexts extends TermContexts> = { [K in keyof Contexts]: TermDefinition<Contexts[K]> }
+export type TermsDefinition = Readonly<Record<string, readonly string[]>>;
 
-export class TermCollection<Contexts extends TermContexts> {
-    readonly contexts: Contexts;
-    readonly defaultTranslations: TranslationCollection<Contexts>;
+export class TermCollection<Terms extends TermsDefinition> {
+    readonly terms: Terms;
+    readonly defaultTranslations: TranslationCollection<Terms>['translations'];
 
-    constructor(terms: TermCollectionDefinition<Contexts>) {
-        const contexts: Mutable<Contexts> = {} as any;
-        const translations: Mutable<TranslationCollectionDefinition<Contexts>['translations']> = {} as any;
+    constructor(terms: {
+        readonly [ID in keyof Terms]: readonly [
+            [...Terms[ID]],
+            [] extends Terms[ID] ? string : (context: { [C in Terms[ID][number]]: any }) => string
+        ]
+    }) {
+        this.terms = {} as any;
+        this.defaultTranslations = {} as any;
 
-        for (const term in terms) {
-            const { context, translation } = terms[term];
-            contexts[term] = context;
-            translations[term] = translation;
+        for (const id in terms) {
+            const termDef = terms[id];
+            (this.terms as any)[id] = termDef[0];
+            (this.defaultTranslations as any)[id] = termDef[1];
         }
 
-        this.contexts = contexts;
-
-        this.defaultTranslations = new TranslationCollection({
-            locale: '__default',
-            terms: this,
-            translations,
-        });
-    }
-
-    names(): (keyof Contexts)[] {
-        return Object.keys(this.contexts);
-    }
-
-    has(term: string | number | symbol): term is keyof Contexts {
-        return term in this.contexts;
-    }
-
-    assertHas(term: string | number | symbol): asserts term is keyof Contexts {
-        assert(this.has(term), `unkown term '${String(term)}'`)
-    }
-
-    context<K extends keyof Contexts>(term: K): Contexts[K] {
-        this.assertHas(term);
-        return this.contexts[term];
+        Object.freeze(this.terms);
+        Object.freeze(this.defaultTranslations);
+        Object.freeze(this);
     }
 }

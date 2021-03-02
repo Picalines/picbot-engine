@@ -1,9 +1,11 @@
 import { Bot } from "../bot/index.js";
-import { argumentReaderTerms, argumentReaderTermTranslationRU, helpCommand, helpEmbedTerms, helpEmbedTranslationsRU, helpInfoTranslationRU } from "../command/index.js";
 import { assert, importFolder } from "../utils/index.js";
-import { TermContexts } from "./Term.js";
-import { TermCollection } from "./TermCollection.js";
+import { TermCollection, TermsDefinition } from "./TermCollection.js";
 import { TranslationCollection } from "./TranslationCollection.js";
+
+import helpInfoTranslationRu from "../command/help/InfoRu.js";
+import helpEmbedTranslationsRu from "../command/help/embedTerms/Ru.js";
+import argumentReaderTermTranslationRu from "../command/argument/readers/terms/Ru.js";
 
 export class Translator {
     /**
@@ -12,26 +14,22 @@ export class Translator {
     readonly #translations = new WeakMap<TermCollection<any>, Map<string, TranslationCollection<any>>>();
 
     constructor(readonly bot: Bot) {
+        const addTranslation = (translation: TranslationCollection<any>) => {
+            this.termsMap(translation.terms).set(translation.locale, translation);
+        }
+
         this.bot.loadingSequence.add({
             name: 'import translations',
             runsAfter: 'import commands',
             task: async () => {
-                this.termsMap(helpCommand.terms).set('ru', helpInfoTranslationRU);
-                this.termsMap(helpEmbedTerms).set('ru', helpEmbedTranslationsRU);
-                this.termsMap(argumentReaderTerms).set('ru', argumentReaderTermTranslationRU);
+                addTranslation(helpInfoTranslationRu);
 
-                (await importFolder(TranslationCollection, this.bot.options.loadingPaths.translations)).forEach(({ path, item: translations }) => {
+                addTranslation(helpEmbedTranslationsRu);
+                addTranslation(argumentReaderTermTranslationRu);
+
+                (await importFolder(TranslationCollection, this.bot.options.loadingPaths.translations)).forEach(({ path, item }) => {
                     this.bot.logger.log(path);
-
-                    const map = this.termsMap(translations.terms);
-                    const { locale } = translations;
-
-                    if (map.has(locale)) {
-                        map.set(locale, map.get(locale)!.override(translations));
-                    }
-                    else {
-                        map.set(locale, translations);
-                    }
+                    addTranslation(item);
                 });
             },
         });
@@ -46,12 +44,10 @@ export class Translator {
         return map;
     }
 
-    collection<Contexts extends TermContexts>(terms: TermCollection<Contexts>, toLocale: string): TranslationCollection<Contexts> {
-        assert(toLocale, 'invalid locale');
-        return (this.termsMap(terms).get(toLocale) ?? terms.defaultTranslations) as TranslationCollection<Contexts>;
-    }
-
-    translations<Contexts extends TermContexts>(terms: TermCollection<Contexts>, toLocale: string): TranslationCollection<Contexts>['translations'] {
-        return this.collection(terms, toLocale).translations;
+    translations<Terms extends TermsDefinition>(terms: TermCollection<Terms>, locale: string) {
+        const map = this.termsMap(terms);
+        const collection = map.get(locale) ?? { translations: terms.defaultTranslations };
+        assert(collection != null, `translation for ${TermCollection.name} object not found`);
+        return collection.translations as TranslationCollection<Terms>['translations'];
     }
 }

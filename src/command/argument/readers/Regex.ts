@@ -1,7 +1,7 @@
 import { ValueParser } from "../../../utils/index.js";
 import { ArgumentReader } from "../Argument.js";
 import { CommandContext } from "../../Context.js";
-import { argumentReaderTerms as readerTerms } from "./Terms.js";
+import { argumentReaderTerms as readerTerms } from "./terms/Terms.js";
 
 export const regexReader = (regex: RegExp): ArgumentReader<string> => {
     if (!regex.source.startsWith('^')) {
