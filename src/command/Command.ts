@@ -50,13 +50,13 @@ export class Command<Args extends unknown[]> {
 
         const argTerms = {} as any;
         this.arguments?.definitions.forEach(({ description }, index) => {
-            argTerms[`argument_${index}_description`] = [[], description];
+            argTerms[`argument_${index}_description`] = [description];
         });
 
         this.infoTerms = new TermCollection({
-            description: [[], info.description],
-            group: [[], info.group],
-            tutorial: [[], info.tutorial],
+            description: [info.description],
+            group: [info.group],
+            tutorial: [info.tutorial],
             ...argTerms,
         });
 

@@ -7,19 +7,27 @@ export class TermCollection<Terms extends TermsDefinition> {
     readonly defaultTranslations: TranslationCollection<Terms>['translations'];
 
     constructor(terms: {
-        readonly [ID in keyof Terms]: readonly [
-            [...Terms[ID]],
-            [] extends Terms[ID] ? string : (context: { [C in Terms[ID][number]]: any }) => string
-        ]
+        [ID in keyof Terms]: ([] extends Terms[ID]
+            ? readonly [string]
+            : readonly [...Terms[ID], (context: { [K in Terms[ID][number]]: any }) => string])
     }) {
         this.terms = {} as any;
         this.defaultTranslations = {} as any;
 
         for (const id in terms) {
-            const termDef = terms[id];
-            (this.terms as any)[id] = termDef[0];
-            (this.defaultTranslations as any)[id] = termDef[1];
+            const termDef = terms[id] as unknown as any[];
+
+            if (typeof termDef[termDef.length - 1] == 'function') {
+                (this.defaultTranslations as any)[id] = termDef.pop();
+                (this.terms as any)[id] = termDef;
+            }
+            else {
+                (this.defaultTranslations as any)[id] = termDef[0];
+                (this.terms as any)[id] = [];
+            }
         }
+
+        console.log(this.defaultTranslations);
 
         Object.freeze(this.terms);
         Object.freeze(this.defaultTranslations);
