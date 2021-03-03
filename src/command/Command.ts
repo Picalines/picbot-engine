@@ -76,7 +76,7 @@ export class Command<Args extends unknown[]> {
 
         const locale = await bot.options.fetchLocale(bot, message.guild);
 
-        const context = new CommandContext(this, bot, message, locale);
+        const context = new CommandContext(bot, this, message, locale);
         await this.executeable.call(this, context);
 
         return context;

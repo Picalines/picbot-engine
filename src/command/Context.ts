@@ -6,15 +6,15 @@ import { TermCollection, TermsDefinition, TranslationCollection } from "../trans
 export class CommandContext<Args extends unknown[]> {
     readonly args: Args;
 
-    readonly translate: <Contexts extends TermsDefinition>(terms: TermCollection<Contexts>) => TranslationCollection<Contexts>['translations'];
+    readonly translate: <Contexts extends TermsDefinition>(terms: TermCollection<Contexts>, locale?: string) => TranslationCollection<Contexts>['translations'];
 
     constructor(
-        readonly command: Command<Args>,
         readonly bot: Bot,
+        readonly command: Command<Args>,
         readonly message: GuildMessage,
         readonly locale: string,
     ) {
-        this.translate = terms => this.bot.translator.translations(terms, this.locale);
+        this.translate = (terms, locale) => this.bot.translator.translate(terms, locale ?? this.locale);
 
         if (this.command.arguments) {
             const userInput = message.content.replace(/^\S+\s*/, '');

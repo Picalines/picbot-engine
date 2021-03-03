@@ -44,7 +44,7 @@ export class Translator {
         return map;
     }
 
-    translations<Terms extends TermsDefinition>(terms: TermCollection<Terms>, locale: string) {
+    translate<Terms extends TermsDefinition>(terms: TermCollection<Terms>, locale: string) {
         const map = this.termsMap(terms);
         const collection = map.get(locale) ?? { translations: terms.defaultTranslations };
         assert(collection != null, `translation for ${TermCollection.name} object not found`);
