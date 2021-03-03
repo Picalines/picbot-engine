@@ -27,8 +27,6 @@ export class TermCollection<Terms extends TermsDefinition> {
             }
         }
 
-        console.log(this.defaultTranslations);
-
         Object.freeze(this.terms);
         Object.freeze(this.defaultTranslations);
         Object.freeze(this);
