@@ -157,17 +157,13 @@ export class Bot {
             return;
         }
 
-        let context: CommandContext<unknown[]>;
+        const [context, error] = await command.execute(this, message);
 
-        try {
-            context = await command.execute(this, message);
-        }
-        catch (error: unknown) {
-            this.events.commandError.emit(message, error instanceof Error ? error : new Error(String(error)));
+        message.channel.stopTyping(true);
+
+        if (error) {
+            this.events.commandError.emit(message, error);
             return;
-        }
-        finally {
-            message.channel.stopTyping(true);
         }
 
         this.events.commandExecuted.emit(context);

@@ -4,9 +4,10 @@ import { CommandContext } from "./Context.js";
 import { Bot } from "../bot/index.js";
 import { TermCollection } from "../translator/index.js";
 import { ArgumentSequence } from "./argument/index.js";
+import { commandErrorTerms } from "./errorTerms/Terms.js";
 
 interface CommandExecuteable<Args extends unknown[]> {
-    (context: CommandContext<Args>): PromiseVoid;
+    (this: Command<Args>, context: CommandContext<Args>): PromiseVoid;
 }
 
 export interface CommandInfo<Args extends unknown[]> {
@@ -71,14 +72,26 @@ export class Command<Args extends unknown[]> {
         return !member.permissions.missing(this.permissions.bitfield).length;
     }
 
-    async execute(bot: Bot, message: GuildMessage): Promise<CommandContext<Args>> {
-        assert(this.canBeExecutedBy(message.member), message.member.displayName + ` can\`t run command '${this.name}'`);
-
+    async execute(bot: Bot, message: GuildMessage): Promise<[CommandContext<Args>, Error?]> {
         const locale = await bot.options.fetchLocale(bot, message.guild);
 
         const context = new CommandContext(bot, this, message, locale);
-        await this.executeable.call(this, context);
 
-        return context;
+        let error: Error | undefined = undefined;
+
+        try {
+            assert(this.canBeExecutedBy(message.member), context.translate(commandErrorTerms).notEnoughPermissions({
+                command: this.name,
+                executor: context.executor.displayName,
+                requiredPermissions: this.permissions.toArray().join(', ')
+            }));
+
+            await this.executeable.call(this, context);
+        }
+        catch (thrown: unknown) {
+            error = thrown instanceof Error ? thrown : new Error(String(thrown));
+        }
+
+        return [context, error];
     }
 }

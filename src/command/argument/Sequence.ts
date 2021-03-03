@@ -22,8 +22,7 @@ export class ArgumentSequence<Args extends unknown[]> {
     private readArgument<T>(userInput: string, argument: CommandArgument<T>, index: number, context: CommandContext<unknown[]>): [slicedInput: string, parsedValue: T] {
         const readerResult = argument.reader(userInput, context);
         if (readerResult.isError) {
-            const error = readerResult.error ?? 'not found';
-            throw new Error(context.translate(argumentReaderTerms).errorInArgument({ index, error }));
+            throw new Error(context.translate(argumentReaderTerms).errorInArgument({ index, error: readerResult.error }));
         }
 
         const { length: argumentLength, parsedValue } = readerResult.value;

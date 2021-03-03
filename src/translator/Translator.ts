@@ -5,6 +5,7 @@ import { TranslationCollection } from "./TranslationCollection.js";
 
 import helpInfoTranslationRu from "../command/help/InfoRu.js";
 import helpEmbedTranslationsRu from "../command/help/embedTerms/Ru.js";
+import commandErrorTermTranslationRu from "../command/errorTerms/Ru.js";
 import argumentReaderTermTranslationRu from "../command/argument/readers/terms/Ru.js";
 
 export class Translator {
@@ -25,6 +26,7 @@ export class Translator {
                 addTranslation(helpInfoTranslationRu);
 
                 addTranslation(helpEmbedTranslationsRu);
+                addTranslation(commandErrorTermTranslationRu);
                 addTranslation(argumentReaderTermTranslationRu);
 
                 (await importFolder(TranslationCollection, this.bot.options.loadingPaths.translations)).forEach(({ path, item }) => {
