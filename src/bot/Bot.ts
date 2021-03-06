@@ -111,10 +111,14 @@ export class Bot {
                 .catch(() => process.exit(1));
         });
 
-        this.client.on('message', message => {
-            if (isGuildMessage(message)) {
-                this.handleGuildMessage(message);
-            }
+        this.loadingSequence.add({
+            name: 'listen to messages',
+            runsAfter: 'initialize',
+            task: () => void this.client.on('message', message => {
+                if (isGuildMessage(message)) {
+                    this.handleGuildMessage(message);
+                }
+            })
         });
     }
 
