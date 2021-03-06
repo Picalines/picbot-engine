@@ -1,8 +1,8 @@
-import { Client } from "discord.js";
+import { Client, ClientEvents } from "discord.js";
 import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Options.js";
-import { GuildMessage, isGuildMessage, importFolder } from "../utils/index.js";
+import { GuildMessage, isGuildMessage, importFolder, ClientEventNames } from "../utils/index.js";
 import { CommandContext, CommandStorage } from "../command/index.js";
-import { Event } from "../event/index.js";
+import { Event, nodeEmitterEvents } from "../event/index.js";
 import { Database } from "../database/index.js";
 import { Logger } from "../logger/Logger.js";
 import { Translator } from "../translator/index.js";
@@ -26,6 +26,8 @@ export class Bot {
         commandError: new Event<[message: GuildMessage, error: Error]>(),
         commandExecuted: new Event<[context: CommandContext<unknown[]>]>(),
     });
+
+    readonly clientEvents = <{ readonly [E in keyof ClientEvents]: Event<ClientEvents[E]> }>nodeEmitterEvents(this.client, ClientEventNames);
 
     readonly loadingSequence: StageSequence;
     readonly shutdownSequence: StageSequence;

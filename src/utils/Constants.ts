@@ -1,6 +1,6 @@
 import { ClientEvents } from "discord.js";
 
-export const ClientEventNames: (keyof ClientEvents)[] = [
+export const ClientEventNames: readonly (keyof ClientEvents)[] = Object.freeze([
     'channelCreate',
     'channelDelete',
     'channelPinsUpdate',
@@ -51,4 +51,4 @@ export const ClientEventNames: (keyof ClientEvents)[] = [
     'shardReady',
     'shardReconnecting',
     'shardResume',
-];
+]);

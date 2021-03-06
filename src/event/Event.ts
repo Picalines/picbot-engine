@@ -12,13 +12,9 @@ export class Event<Args extends any[] = []> {
 
     off(listener: (...args: Args) => void) {
         const index = this.listeners.indexOf(listener);
-
-        if (index < 0) {
-            return false;
+        if (index >= 0) {
+            this.listeners.splice(index, 1);
         }
-
-        this.listeners.splice(index, 1);
-        return true;
     }
 
     emit(...args: Args) {
