@@ -1,57 +1,14 @@
-function isPlainObject(obj: any): boolean {
-    return typeof obj === 'object' && obj !== null
-        && obj.constructor === Object
-        && Object.prototype.toString.call(obj) === '[object Object]';
-}
-
-export function deepMerge<T>(origin: T, override: Partial<T>): T {
-    const copy: T = {} as any;
-
-    for (const key in origin) {
-        if (override[key] === undefined) {
-            copy[key] = origin[key];
-            continue;
-        }
-        if (isPlainObject(origin[key]) && isPlainObject(override[key])) {
-            copy[key] = deepMerge(origin[key], override[key]!);
-        }
-        else {
-            copy[key] = override[key]!;
-        }
+export function assert(condition: any, message = "assertion failed"): asserts condition {
+    if (!condition) {
+        throw new Error(message);
     }
-
-    return copy;
-}
-
-export function* filterIterable<T>(iterable: IterableIterator<T>, filter: (item: T) => boolean): IterableIterator<T> {
-    for (const value of iterable) {
-        if (filter(value)) {
-            yield value;
-        }
-    }
-}
-
-export function deepFreeze<T>(obj: T): Readonly<T> {
-    Object.freeze(obj);
-    if (obj == undefined) {
-        return obj;
-    }
-
-    Object.getOwnPropertyNames(obj).forEach(<(value: string) => void>((key: keyof T) => {
-        if (obj[key] != undefined
-            && (typeof obj[key] == "object" || typeof obj[key] == "function")
-            && !Object.isFrozen(obj[key])) {
-            deepFreeze(obj[key]);
-        }
-    }));
-
-    return obj;
 }
 
 /**
  * @example capitalize('abc') === 'Abc'
+ * @example capitalize('') == ''
  */
-export const capitalize = (str: string) => str[0].toUpperCase() + str.slice(1);
+export const capitalize = (str: string) => (str.length > 0) ? str[0].toUpperCase() + str.slice(1) : '';
 
 /**
  * @example orderedList('a', 'b') === '1. a\n2. b'
@@ -72,7 +29,7 @@ export const unorderedList = (...elements: readonly string[]) => elements.map(el
  */
 export const parseInterval = (min: number, max: number) => {
     if (min == max) return `{${min}}`;
-    if (min > max) return '∅';
+    if (min > max || isNaN(min) || isNaN(max)) return '∅';
 
     const inf = (n: number) => (n < 0 ? '-' : '+') + '∞';
 
@@ -80,10 +37,4 @@ export const parseInterval = (min: number, max: number) => {
     const right = isFinite(max) ? `${max}]` : `${inf(max)})`;
 
     return left + '; ' + right;
-}
-
-export function assert(condition: any, message = "assertion failed"): asserts condition {
-    if (!condition) {
-        throw new Error(message);
-    }
 }

@@ -1,5 +1,5 @@
 import { GuildMemberManager } from "discord.js";
-import { assert, filterIterable, importFolder } from "../utils/index.js";
+import { assert, importFolder } from "../utils/index.js";
 import { State, StateAccess, StateStorage, createStateBaseAccess } from "./state/index.js";
 import { EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector/index.js";
 import { EntityType, Entity, checkEntityType } from "./Entity.js";
@@ -216,5 +216,11 @@ export class Database {
         }
 
         return selected;
+    }
+}
+
+function* filterIterable<T>(iterable: IterableIterator<T>, filter: (item: T) => boolean): IterableIterator<T> {
+    for (const value of iterable) {
+        if (filter(value)) yield value;
     }
 }

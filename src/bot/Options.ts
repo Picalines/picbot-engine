@@ -1,5 +1,5 @@
 import { Guild } from "discord.js";
-import { assert, deepFreeze, deepMerge, DeepPartialExcept, Overwrite, PromiseOrSync } from "../utils/index.js";
+import { assert, DeepPartialExcept, Overwrite, PromiseOrSync } from "../utils/index.js";
 import { State, CreateDatabaseHandler, createJsonDatabaseHandler } from "../database/index.js";
 import { LoggerOptions, pipeLoggerTheme } from "../logger/index.js";
 import { Bot } from "./Bot.js";
@@ -74,16 +74,16 @@ export type BotOptions = Readonly<{
     cleanupGuildOnDelete: boolean;
 }>;
 
-export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'>, Partial<{
+export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'>, {
     /**
      * @example (() => ['!']) | ['!'] | prefixesDbState
      */
-    fetchPrefixes: ArgumentFetcher<string[]>;
+    fetchPrefixes?: ArgumentFetcher<string[]>;
     /**
      * @example (() => 'en-US') | 'en-US' | localeDbState
      */
-    fetchLocale: ArgumentFetcher<string>;
-}>>;
+    fetchLocale?: ArgumentFetcher<string>;
+}>;
 
 export const DefaultBotOptions: BotOptions = deepFreeze({
     token: '',
@@ -160,5 +160,47 @@ function parseFetcher<T>(fetcher: ArgumentFetcher<T> | undefined, isValue: (fetc
         fetcher = (bot, guild) => bot.database.accessState(guild, state).value();
     }
 
-    return fetcher as Fetcher<T>;
+    return fetcher;
+}
+
+function isPlainObject(obj: any): boolean {
+    return typeof obj === 'object' && obj !== null
+        && obj.constructor === Object
+        && Object.prototype.toString.call(obj) === '[object Object]';
+}
+
+function deepMerge<T>(origin: T, override: Partial<T>): T {
+    const copy: T = {} as any;
+
+    for (const key in origin) {
+        if (override[key] === undefined) {
+            copy[key] = origin[key];
+            continue;
+        }
+        if (isPlainObject(origin[key]) && isPlainObject(override[key])) {
+            copy[key] = deepMerge(origin[key], override[key]!);
+        }
+        else {
+            copy[key] = override[key]!;
+        }
+    }
+
+    return copy;
+}
+
+function deepFreeze<T>(obj: T): Readonly<T> {
+    Object.freeze(obj);
+    if (obj == undefined) {
+        return obj;
+    }
+
+    Object.getOwnPropertyNames(obj).forEach(<(value: string) => void>((key: keyof T) => {
+        if (obj[key] != undefined
+            && (typeof obj[key] == "object" || typeof obj[key] == "function")
+            && !Object.isFrozen(obj[key])) {
+            deepFreeze(obj[key]);
+        }
+    }));
+
+    return obj;
 }
