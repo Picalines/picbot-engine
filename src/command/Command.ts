@@ -72,14 +72,12 @@ export class Command<Args extends unknown[]> {
         return !member.permissions.missing(this.permissions.bitfield).length;
     }
 
-    async execute(bot: Bot, message: GuildMessage): Promise<[CommandContext<Args>, Error?]> {
-        const locale = await bot.options.fetchLocale(bot, message.guild);
-
-        const context = new CommandContext(bot, this, message, locale);
-
-        let error: Error | undefined = undefined;
-
+    async execute(bot: Bot, message: GuildMessage): Promise<CommandContext<Args> | Error> {
         try {
+            const locale = await bot.options.fetchLocale(bot, message.guild);
+
+            const context = new CommandContext(bot, this, message, locale);
+
             assert(this.canBeExecutedBy(message.member), context.translate(commandErrorTerms).notEnoughPermissions({
                 command: this.name,
                 executor: context.executor.displayName,
@@ -87,11 +85,11 @@ export class Command<Args extends unknown[]> {
             }));
 
             await this.executeable.call(this, context);
+
+            return context;
         }
         catch (thrown: unknown) {
-            error = thrown instanceof Error ? thrown : new Error(String(thrown));
+            return thrown instanceof Error ? thrown : new Error(String(thrown));
         }
-
-        return [context, error];
     }
 }

@@ -163,16 +163,16 @@ export class Bot {
             return;
         }
 
-        const [context, error] = await command.execute(this, message);
+        const contextOrError = await command.execute(this, message);
 
         message.channel.stopTyping(true);
 
-        if (error) {
-            this.events.commandError.emit(message, error);
+        if (contextOrError instanceof Error) {
+            this.events.commandError.emit(message, contextOrError);
             return;
         }
 
-        this.events.commandExecuted.emit(context);
+        this.events.commandExecuted.emit(contextOrError);
         return;
     }
 
