@@ -1,22 +1,18 @@
 {
     "name": "picbot-engine",
-    "version": "1.1.1",
+    "version": "2.0",
     "description": "discord.js bot engine",
     "type": "module",
-    "module": "./dist/esm/index.js",
-    "main": "./dist/commonjs/index.js",
+    "module": "./dist/index.js",
     "exports": {
-        "import": "./dist/esm/index.js",
-        "default": "./dist/commonjs/index.js"
+        "import": "./dist/index.js"
     },
-    "types": "./dist/types/index.d.ts",
+    "types": "./dist/index.d.ts",
     "files": [
         "dist/"
     ],
     "scripts": {
-        "build:esm": "tsc -p tsconfig.json",
-        "build:commonjs": "tsc -p tsconfig-cjs.json && printf '{\"type\":\"commonjs\"}' > dist/commonjs/package.json",
-        "build": "npm run build:esm && npm run build:commonjs",
+        "build": "tsc -p tsconfig.json",
         "dev": "rm ./dist/ -r && npm link",
         "docs": "typedoc --options typedoc.json",
         "prepare": "npm run build"
@@ -32,10 +28,13 @@
         "type": "git",
         "url": "https://github.com/Picalines/picbot-engine"
     },
+    "bugs": {
+        "url": "https://github.com/Picalines/picbot-engine/issues"
+    },
     "author": "Picalines",
     "license": "ISC",
     "engines": {
-        "node": ">=14.0.0"
+        "node": ">=14.15.4"
     },
     "dependencies": {
         "discord.js": "^12.3.1"

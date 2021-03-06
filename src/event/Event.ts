@@ -1,4 +1,4 @@
-export class Event<Args extends any[] = []> {
+export class Event<Args extends any[]> {
     private listeners: ((...args: Args) => void)[] = [];
     private onceListeners: ((...args: Args) => void)[] = [];
 

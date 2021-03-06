@@ -12,13 +12,12 @@
 
 [Документация](https://picalines.github.io/picbot-engine/)
 
-Главный файл
-============
+## Главный файл
 
-`src/index.js`
 ```js
+// src/index.js
 import { Client } from "discord.js";
-import { Bot } from "picbot-engine"; // require тоже работает!
+import { Bot } from "picbot-engine";
 
 const client = new Client();
 
@@ -55,17 +54,18 @@ bot.load(); // начнёт загрузку бота
 }
 ```
 
+> ⚠ CommonJS (`require`) с этой библиотекой больше не работает.
+
 Запустить проект можно через команду `node .`
 
-Примеры команд
-==============
+## Примеры команд
 
 Все команды будем писать в папке `src/commands`
 
 ### Ping
 
-`src/commands/ping.js`
 ```js
+// src/commands/ping.js
 import { Command } from "picbot-engine";
 
 export default new Command({
@@ -79,15 +79,12 @@ export default new Command({
         message.reply('pong!');
     },
 });
-
-// Если вы пишете в CommonJS:
-// module.exports = new Command({ ... });
 ```
 
 ### Сложение двух чисел
 
-`src/commands/sum.js`
 ```js
+// src/commands/sum.js
 import { Command, ArgumentSequence, numberReader, unorderedList } from "picbot-engine";
 
 export default new Command({
@@ -119,8 +116,8 @@ export default new Command({
 
 ### Сложение N чисел
 
-`src/commands/sum.js`
 ```js
+// src/commands/sum.js
 import { Command, ArgumentSequence, restReader, numberReader, unorderedList } from 'picbot-engine';
 
 export default new Command({
@@ -149,8 +146,8 @@ export default new Command({
 
 ### Ban
 
-`src/commands/ban.js`
 ```js
+// src/commands/ban.js
 import {
     Command, ArgumentSequence, unorderedList,
     memberReader, remainingTextReader, optionalReader,
@@ -193,33 +190,32 @@ export default new Command({
 });
 ```
 
-Система событий
-===============
+## Система событий
 
-У бота есть свои события, обработчики которых можно писать в сторонних файлах
+Каждое событие в библиотеке представлено в виде отдельного объекта класса `Event`. Все события некоторой сущности обычно лежат в свойстве с именем `events` (например, события базы данных бота можно найти в `bot.database.events`)
 
-`src/events/guildMemberMessage.js`
+У самого бота есть два свойства с событиями:
+ - `clientEvents` - обычные события из `discord.js`
+ - `events` - некоторые полезные расширения, которые обычно разработчик прописывает самостоятельно
+
+Пример подключения события в файле:
+
 ```js
+// src/events/guildMemberMessage.js
 import { BotEventListener } from "picbot-engine";
 
-export default new BotEventListener(bot => bot.events, 'guildMemberMessage', message => {
-    /*
-    Первым аргументом мы указываем функцию, которая достаёт "хранилище событий"
-    Вместо bot.events можно указать, например, bot.clientEvents для событий discord.js
+export default new BotEventListener(
+    bot => bot.events.guildMemberMessage, // указываем путь до события в боте
 
-    Второй аргумент - имя события
-
-    Третий - слушатель события, обрабатывающий логику
-    Если объявить слушатель через function, вам будет доступно this
-    В данном случае this будет ботом, а для bot.clientEvents - клиент API
-    */
-
-    message.reply('pong!');
-});
+    // первым аргументом библиотека вставляет бота
+    // все последующие аргументы диктует выбранное выше событие
+    (bot, message) => {
+        message.reply('pong!');
+    }
+);
 ```
 
-Чтение аргументов
-=================
+## Чтение аргументов
 
 Для чтения аргументов библиотека использует специальные "функции чтения"
 
@@ -262,13 +258,12 @@ export default new BotEventListener(bot => bot.events, 'guildMemberMessage', mes
     - `restReader(memberReader)` - прочитает столько упоминаний, сколько введёт пользователь (вернёт пустой массив, если ничего не получено)
     - `restReader(memberReader, 3)` - кинет ошибку, если пользователь введёт меньше 3-х упоминаний
 
-Кастомные аргументы команд
-==========================
+### Кастомные аргументы команд
 
 Выше я описал концепцию функций чтения. Логично, что вы можете реализовать свои собственные функции чтения. Тут я приведу простой пример функции, которая прочитает кастомный класс `Vector`
 
-`src/vector.js`
 ```js
+// src/vector.js
 import { parsedRegexReader } from "picbot-engine";
 
 export class Vector {
@@ -298,8 +293,8 @@ export const vectorReader = parsedRegexReader(/\d+(\.\d*)?\s+\d+(\.\d*)?/, userI
 });
 ```
 
-`src/commands/vectorSum.js`
 ```js
+// src/commands/vectorSum.js
 import { Command, ArgumentSequence, restReader } from "picbot-engine";
 
 import { vectorReader } from "../vector.js";
@@ -326,25 +321,24 @@ export default new Command({
 });
 ```
 
-Работа с базой данных
-=====================
+## Работа с базой данных
 
-## Состояния
+### Состояния
 
 Представим, что вы делаете команду `warn`. Она должна увеличивать счётчик warn'ов у указанного участника. Как только этот счётчик достигнет некой отметки, которая, например, настраивается отдельной командой `setmaxwarns`, бот забанит этого участника.
 
 Сначала мы объявим `состояния` для базы данных:
 
-`src/states/warns.js`
 ```js
+// src/states/warns.js
 import { State, numberAccess } from "picbot-engine";
 
 // счётчик warn'ов у каждого участника сервера
 
 export const warnsState = new State({
     name: 'warns',        // уникальное название свойства в базе данных
-    entityType: 'member', // тип сущности, у которой есть свойство ('member' / 'guild')
-    defaultValue: 0,      // стандартное кол-во warn'ов
+    entityType: 'member', // тип сущности, у которой есть свойство ('user' / 'member' / 'guild')
+    defaultValue: 0,      // изначальное кол-во warn'ов
 
     // значение счётчика всегда больше или равно нулю. Подробнее об этом ниже
     accessFabric: numberAccess([0, Infinity]),
@@ -353,25 +347,25 @@ export const warnsState = new State({
 export default warnsState;
 ```
 
-`src/states/maxWarns.js`
 ```js
+// src/states/maxWarns.js
 import { State, numberAccess } from "picbot-engine";
 
 // максимальное кол-во warn'ов у каждого сервера
 
 export const maxWarnsState = new State({
     name: 'warns',
-    entityType: 'member',
-    defaultValue: 0,
-    accessFabric: numberAccess([0, Infinity]),
+    entityType: 'guild',
+    defaultValue: 3,
+    accessFabric: numberAccess([1, Infinity]),
 });
 
 export default maxWarnsState;
 ```
 
 Теперь сделаем команду warn: <br>
-`src/commands/warn.js`
 ```js
+// src/commands/warn.js
 import { Command, ArgumentSequence, memberReader } from "picbot-engine";
 
 import warnsState from "../states/warns.js";
@@ -430,8 +424,8 @@ export default new Command({
 ```
 
 и команда `setmaxwarns`: <br>
-`src/commands/setMaxWarns.js`
 ```js
+// src/commands/setMaxWarns.js
 import { Command, ArgumentSequence, numberReader } from "picbot-engine";
 
 import maxWarnsState from "../states/maxWarns.js";
@@ -455,15 +449,17 @@ export default new Command({
 
     execute: async ({ message, database, executor: { guild }, args: [newMaxWarns] }) => {
         // функция database.accessState синхронная, а await нам нужен для вызова set.
-        // это нужно await'ать, потому что set может выкинуть исключение!
+        // это нужно await'ать для совместимости с любыми типами базы данных! (об этом ниже)
         await database.accessState(guild, maxWarnsState).set(newMaxWarns);
+
+        // валидация аргумента сначала пройдёт в numberReader, а потом в numberAccess
 
         await message.reply(`Максимальное кол-во предупреждений на сервере теперь \`${newMaxWarns}\``);
     },
 });
 ```
 
-### *Полезный факт!*
+#### *Полезный факт!*
 
 Вы можете объявить состояние префиксов у сервера (`State<'guild', string[]>`), и вставить его в `fetchPrefixes` в настроках бота. Тогда библиотека будет доставать префиксы из БД!
 
@@ -482,12 +478,12 @@ export const bot = new Bot({
 });
 ```
 
-## Селекторы
+### Селекторы
 
 Потом мы резко захотели сделать поиск по предупреждённым участникам сервера. Для этого в библиотеке есть *селекторы*
 
-`src/selectors/minWarns.js`
 ```js
+// src/selectors/minWarns.js
 import { EntitySelector } from "picbot-engine";
 
 import warnsState from "../states/warns.js";
@@ -527,8 +523,8 @@ export default new EntitySelector({
 ```
 
 и используем селектор в команде: <br>
-`src/commands/findwarned.js`
 ```js
+// src/commands/findwarned.js
 import { Command, ArgumentSequence, optionalReader, numberReader } from "picbot-engine";
 
 import minWarnsSelector from "../selectors/minWarns.js";
@@ -549,7 +545,7 @@ export default new Command({
 
     execute: async ({ message, database, args: [minWarns] }) => {
         const selected = await database.selectEntities(minWarnsSelector, {
-            manager: message.guild.members, // если искать сервера, то нужно указать client.guilds
+            manager: message.guild.members, // если искать сервера, то нужно указать client.guilds (а если юзеров - client.users)
             throwOnNotFound: new Error('Ничего не найдено'), // если не указать, selected может быть пустым
             variables: { minWarns }, // переменные для селектора (не указываются, если переменных нет в самом селекторе)
             maxCount: 10, // максимальное кол-во результатов
@@ -563,16 +559,15 @@ export default new Command({
 
 ```
 
-## Итог по БД
+### Итог по БД
 
 А теперь главное. Весь код команд и свойств никак не зависит от базы данных, которую выберет пользователь.
 
 По стандарту в библиотеке реализована простая база данных на json, которая сохраняет и загружает все данные из локальной папки `database` (не забудьте добавить в `.gitignore`!). Однако кроме json вы можете реализовать свою базу данных. Для этого смотрите опцию `databaseHandler` в `./src/bot/Options.ts`. Json'овская БД прописана в `./src/database/json/Handler.ts`. Расписывать данный увлекательный процесс тут я не буду. Уж простите, *лень*.
 
-Система перевода на другие языки
-================================
+## Система перевода на другие языки
 
-## `options.fetchLocale`
+### `options.fetchLocale`
 
 В настройках есть параметр `fetchLocale`, который отвечает за язык (локаль) на конкретном сервере. По аналогии с `fetchPrefixes` туда можно поставить состояние сервера:
 
@@ -597,8 +592,8 @@ export const localeState = new State({
 export default localeState;
 ```
 
-`src/index.js`
 ```js
+// src/index.js
 import localeState from "./states/locale.js";
 
 const bot = new Bot({
@@ -612,35 +607,40 @@ const bot = new Bot({
 
 >  Cтандартная команда help уже переведена на русский! Просто убедитель, что строка locale - 'ru'
 
-## TermCollection
+### TermCollection
 
 А теперь я опишу концепт системы перевода. Допустим, что в какой-то команде у нас есть набор ключевых фраз (*терминов*). Сначала мы должны объявить *коллекцию терминов* в папке `./src/terms` (повторюсь, все пути к папкам можно настроить).
 
-`src/terms/prefix.js`
 ```js
-import { TermCollection, constTerm } from "picbot-engine";
+// src/terms/prefix.js
+import { TermCollection } from "picbot-engine";
 
 export const prefixTerms = new TermCollection({
-    unableToAddPrefix: { // ключевая фраза (термин)
-        context: { prefix: String }, // контекст термина (этой фразе из вне нужно передать сам префикс)
-        translation: ({ prefix }) => `Невозможно добавить префкис \`${prefix}\``, // стандартный перевод
-    },
-    prefixWasAdded: {
-        context: { prefix: String },
-        translation: ({ prefix }) => `Префикс \`${prefix}\` успешно добавлен`,
-    },
-    randomError: constTerm('Что-то пошло не так :/') // у этой фразы context равен {}, поэтому можно сократить с constTerm
+    prefixWasAdded: ['prefix', ({ prefix }) => `Префикс \`${prefix}\` успешно добавлен`],
+
+    // unableToAddPrefix - кодовое имя термина, которое мы будет использовать в коде команд
+    // строками в начале массива мы перечисляем "контекст" термина (переменные из вне нужные для формирования фразы)
+    // а в конце указываем функцию, которая использует контекст и выдаёт итоговую строку
+    unableToAddPrefix: ['prefix', ({ prefix }) => `Невозможно добавить префкис \`${prefix}\``],
+
+    // в контексте может быть сколько угодно строк!
+    test: ['a', 'b', 'c', ({ a, b, c }) => [a, b, c].join(', ')]
+
+    // если термин не требует данных из вне, то он определяется просто как строка
+    // (квадратные скобки всё ещё нужны для работы редактора :/)
+    randomError: ['Что-то пошло не так :/']
 });
 
+// Я пишу так, чтобы редактор мог автоматически импортировать prefixTerms
 export default prefixTerms;
 ```
 
-## TranslationCollection
+### TranslationCollection
 
 Теперь переведём эти фразы на *мой ломаный* английский:
 
-`src/translations/en/prefix.js`
 ```js
+// src/translations/en/prefix.js
 import { TranslationCollection } from "picbot-engine";
 
 import prefixTerms from "../../terms/prefix.js";
@@ -652,23 +652,27 @@ export default new TranslationCollection({
     terms: prefixTerms,
     locale: 'en',
     translations: {
+        // в переводе мы указываем те же фукнции, использующие контекст терминов для формирования фразы
         unableToAddPrefix: ({ prefix }) => `Unable to add prefix \`${prefix}\``,
+
         prefixWasAdded: ({ prefix }) => `Prefix \`${prefix}\` was successfully added`,
-        randomError: 'Something went wrong :/', // для constTerm нужно писать строку
+
+        // однако для 'константных' терминов нужна только строка
+        randomError: 'Something went wrong :/',
     },
 });
 ```
 
-> Если библиотека найдёт два перевода одной TermCollection на один язык, то они соединятся в один (что-то вроде `{ ...a, ...b }`).
+> Если библиотека найдёт два перевода одной TermCollection на один язык, то "победит" последний выбранный перевод
 
-> Также вы можете найти в библиотеке переводы help на русский и переопределить их!
+> Вы можете найти в библиотеке переводы help на русский и переопределить их!
 
-## Использование в коде команды
+### Использование в коде команды
 
-А теперь используем это в команде в воображаемой `prefix` (полностью прописывать её код не буду, сейчас важен только перевод фраз)
+А теперь используем это в команде в воображаемой `prefix` (полностью прописывать её код не буду, сейчас важен только перевод фраз. Полный пример есть в [picbot-9](https://github.com/Picalines/picbot-9))
 
-`src/commands/prefix.js`
 ```js
+// src/commands/prefix.js
 import { Command } from "picbot-engine";
 
 import prefixTerms from "../terms/prefix.js";
@@ -679,38 +683,38 @@ export default new Command({
     // ...
 
     execute: ({ message, translate }) => {
-        /*
-        translate переведёт термины prefixTerms на текущую локаль сервера.
-        tr - это переводы терминов из TranslationCollection
-        (либо стандартные переводы из TermCollection, если на текущую
-        локаль мы ничего не переводили)
-        */
+        // translate переведёт термины prefixTerms на текущую локаль сервера
+        // (либо вторым аргументом можно указать нужный язык)
+        // (текущий язык можно достать через аргумент locale)
+
+        // tr - это переводы терминов из TranslationCollection
+        // (либо стандартные переводы из TermCollection, если на текущую локаль мы ничего не переводили)
         const tr = translate(prefixTerms);
 
         // prefixWasAdded - метод tr, которому в аргументе нужно передать контекст термина
         message.reply(tr.prefixWasAdded({ prefix }));
 
-        // перевод constTerm - это просто строка
+        // 'константные' термины вызывать не нужно
         message.reply(tr.randomError);
 
-        // Библиотека не кидает ошибку, если перевода для термина на язык сервера нет.
-        // У каждого термина всегда есть стандартный перевод
+        // Библиотека не кидает ошибку, если перевода для термина на язык сервера нет,
+        // т.к. у каждого термина всегда есть стандартный перевод
     },
 });
 ```
 
-## Перевод описания команд
+### Перевод описания команд
 
-Класс `Command` генерирует термины и стандартные переводы в конструкторе. Т.е. для перевода нам нужно создать `TermCollection` с переводом `command.terms`
+Класс `Command` генерирует термины и стандартные переводы в конструкторе. Т.е. для перевода нам нужно создать `TermCollection` с переводом `command.infoTerms`
 
-`src/translations/en/commands/ban.js`
 ```js
+// src/translations/en/commands/ban.js
 import { TranslationCollection, unorderedList } from "picbot-engine";
 
 import banCommand from "../../../commands/ban.js";
 
 export default new TranslationCollection({
-    terms: banCommand.terms,
+    terms: banCommand.infoTerms,
     locale: 'en',
     translations: {
         group: 'Admin',

@@ -9,10 +9,10 @@ import { Event } from "../event/Event.js";
 
 export class Database {
     readonly events = Object.freeze({
-        beforeSaving: new Event(),
-        saved: new Event(),
-        beforeLoading: new Event(),
-        loaded: new Event(),
+        beforeSaving: new Event<[]>(),
+        saved: new Event<[]>(),
+        beforeLoading: new Event<[]>(),
+        loaded: new Event<[]>(),
     });
 
     readonly cache = Object.freeze({

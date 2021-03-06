@@ -8,8 +8,8 @@ export class StageSequence {
     private afters = new Map<string, Stage[]>();
 
     readonly events = Object.freeze({
-        started: new Event(),
-        finished: new Event(),
+        started: new Event<[]>(),
+        finished: new Event<[]>(),
 
         stageStarted: new Event<[name: string]>(),
         stageFinished: new Event<[name: string]>(),
