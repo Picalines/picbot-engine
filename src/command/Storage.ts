@@ -1,135 +1,60 @@
-import { EventEmitter } from "events";
-import { PathLike, readdirSync } from "fs";
-import { join } from "path";
-import { Bot } from "../Bot";
-import { TypedEventEmitter } from "../utils";
-import { AnyCommand, Command } from "./Command";
+import { Bot } from "../bot/index.js";
+import { importFolder } from "../utils/index.js";
+import { Command } from "./Command.js";
+import { helpCommand } from "./help/index.js";
 
-interface CommandStorageEvents {
-    added(command: AnyCommand): void;
-}
+type AnyCommand = Command<any>;
 
-/**
- * Хранилище команд
- */
-export class CommandStorage extends (EventEmitter as new () => TypedEventEmitter<CommandStorageEvents>) implements Iterable<AnyCommand> {
-    /**
-     * Map команд по их именам
-     */
+export class CommandStorage implements Iterable<AnyCommand> {
     private readonly nameMap = new Map<string, AnyCommand>();
-
-    /**
-     * Map команд по алиасам
-     */
     private readonly aliasMap = new Map<string, AnyCommand>();
 
-    /**
-     * @param bot ссылка на бота
-     */
     constructor(readonly bot: Bot) {
-        super();
-    }
-
-    /**
-     * Добавляет команду в память бота
-     * @param command команда
-     */
-    public add(command: AnyCommand): void {
-        const assertNameCollision = (name: string) => {
-            if (this.has(name)) {
-                throw new Error(`command name or alias '${name}' overlaps with another command`);
+        const addCommand = (command: AnyCommand) => {
+            const assertNameCollision = (name: string) => {
+                if (this.has(name)) {
+                    throw new Error(`command name or alias '${name}' overlaps with another command`);
+                }
             }
+
+            assertNameCollision(command.name);
+            this.nameMap.set(command.name, command);
+
+            command.aliases?.forEach(alias => {
+                assertNameCollision(alias);
+                this.aliasMap.set(alias, command);
+            });
         }
 
-        assertNameCollision(command.name);
-        this.nameMap.set(command.name, command);
+        this.bot.loadingSequence.add({
+            name: 'import commands',
+            task: async () => {
+                if (this.bot.options.useBuiltInHelpCommand) {
+                    addCommand(helpCommand as unknown as AnyCommand);
+                }
 
-        command.aliases?.forEach(alias => {
-            assertNameCollision(alias);
-            this.aliasMap.set(alias, command);
+                (await importFolder<AnyCommand>(Command, this.bot.options.loadingPaths.commands)).forEach(({ path, item: command }) => {
+                    addCommand(command);
+                    this.bot.logger.log(path);
+                });
+            },
         });
-
-        this.emit('added', command);
     }
 
-    /**
-     * Возвращает данные команды по её имени или алиасу
-     * @param name имя или алиас команды
-     * @param nameOnly нужно ли ингорировать алиасы
-     */
-    public get<Args extends unknown[]>(name: string, nameOnly = false): Command<Args> | undefined {
-        return (this.nameMap.get(name) ?? (!nameOnly ? this.aliasMap.get(name) : undefined)) as Command<Args> | undefined;
+    get(name: string, nameOnly = false): AnyCommand | undefined {
+        return this.nameMap.get(name) ?? (!nameOnly ? this.aliasMap.get(name) : undefined);
     }
 
-    /**
-     * @returns true, если в хранилище есть команда с таким именем или алиасом
-     * @param name имя или алиас команды
-     * @param nameOnly нужно ли игнорировать алиасы
-     */
-    public has(name: string, nameOnly = false): boolean {
+    has(name: string, nameOnly = false): boolean {
         name = name.toLowerCase();
         return this.nameMap.has(name) || (!nameOnly && this.aliasMap.has(name));
     }
 
-    /**
-     * Количество команд в хранилище
-     */
     get size(): number {
         return this.nameMap.size;
     }
 
-    /**
-     * @returns список всех команд в хранилище
-     */
-    array(): AnyCommand[] {
-        return [...this.nameMap.values()];
-    }
-
-    public [Symbol.iterator]() {
-        return new Set(this.nameMap.values()).values();
-    }
-
-    /**
-     * Возвращает словарь с командами, сгруппированными по свойству [[CommandInfo.group]]
-     * @param defaultGroup группа команд, у которой не прописано свойство [[CommandInfo.group]]
-     */
-    public grouped(defaultGroup: string): Map<string, AnyCommand[]> {
-        const map = new Map<string, AnyCommand[]>();
-
-        for (const command of this) {
-            const group = command.group || defaultGroup;
-            const array = map.get(group);
-            array ? array.push(command) : map.set(group, [command]);
-        }
-
-        return map;
-    }
-
-    /**
-     * Вызывает require на все .js файлы из папки, и добавляет все экпортированные команды в хранилище.
-     * Команда должна быть экспортирована как `module.exports = new Command({ ... });`
-     * @param path путь до папки с командами
-     */
-    public requireFolder(path: PathLike) {
-        this.bot.logger.task(`loading commands from '${path}'`);
-
-        const jsFiles = readdirSync(path).filter(file => file.endsWith('.js'));
-
-        const _require = require.main?.require ?? require;
-        path = String(path);
-
-        const modules = jsFiles.map(file => {
-            const mPath = './' + join(path as string, file);
-            return [mPath, _require(mPath)];
-        });
-
-        const commands = modules.filter(exports => exports[1] instanceof Command) as [path: string, command: AnyCommand][];
-
-        commands.forEach(command => {
-            this.add(command[1]);
-            this.bot.logger.log(command[0]);
-        });
-
-        this.bot.logger.endTask('success', 'commands successfully loaded');
+    [Symbol.iterator]() {
+        return this.nameMap.values();
     }
 }

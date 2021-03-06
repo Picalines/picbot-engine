@@ -1,10 +1,9 @@
 {
     "inputFiles": [ "./src" ],
-    "mode": "modules",
+    "mode": "file",
     "out": "docs",
-    "ignoreCompilerErrors": true,
     "disableOutputCheck": true,
     "excludeExternals": true,
-    "excludePrivate": true,
-    "excludeNotExported": true
+    "excludeNotExported": true,
+    "theme": "./node_modules/typedoc-thunder-theme/bin/default/"
 }

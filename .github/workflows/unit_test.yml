@@ -1,4 +1,4 @@
-name: Master Branch Unit Testing
+name: master building test
 
 on:
   pull_request:
@@ -14,9 +14,8 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: 12
-      - name: npm ci
+      - name: versions
         run: |
           npm -v
-          npm ci
-      - name: npm test
-        run: npm test
+          tsc -v
+      - run: npm ci

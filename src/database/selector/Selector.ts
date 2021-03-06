@@ -1,51 +1,22 @@
-import { GuildManager, GuildMemberManager } from "discord.js";
-import { EntityType, Entity } from "../Entity";
-import { AnyExpression } from "./Expression";
-import { QueryOperators } from "./Operator";
+import { EntityType } from "../Entity.js";
+import { AnyExpression, ExpressionConstant } from "./Expression.js";
+import { QueryOperators } from "./Operator.js";
 
-export interface EntitySelectorDefinition<E extends EntityType> {
-    /**
-     * Тип сущностей, которые ищет селектор
-     */
+export type SelectorVarsDefinition = { readonly [name: string]: (value?: any) => ExpressionConstant }
+
+export type SelectorVars<Vars extends SelectorVarsDefinition> = { readonly [K in keyof Vars]: Vars[K] extends (value?: any) => infer T ? T : never };
+
+interface EntitySelectorDefinition<E extends EntityType, Vars extends SelectorVarsDefinition = {}> {
     readonly entityType: E;
-    /**
-     * Выражение, по которому селектор ищет сущностей
-     */
-    readonly expression: (q: QueryOperators<E>) => AnyExpression<E>;
+    readonly variables?: Vars;
+    readonly expression: (q: QueryOperators<E, Vars>) => AnyExpression<E>;
 }
 
-export interface EntitySelector<E extends EntityType> extends EntitySelectorDefinition<E> { }
+export interface EntitySelector<E extends EntityType, Vars extends SelectorVarsDefinition = {}> extends EntitySelectorDefinition<E, Vars> { }
 
-/**
- * Селектор сущности в базе данных. Используется в
- * методе [[BotDatabase.selectEntities]]
- */
-export class EntitySelector<E extends EntityType> {
-    constructor(definition: EntitySelectorDefinition<E>) {
+export class EntitySelector<E extends EntityType, Vars extends SelectorVarsDefinition = {}> {
+    constructor(definition: EntitySelectorDefinition<E, Vars>) {
         Object.assign(this, definition);
+        Object.freeze(this);
     }
-}
-
-/**
- * Настройки селектора
- */
-export interface EntitySelectorOptions<E extends EntityType> {
-    /**
-     * Менеджер сущностей, по которому библиотека должна сделать выборку
-     */
-    manager: E extends 'member' ? GuildMemberManager : GuildManager;
-    /**
-     * Функция фильтрации сущностей, которых библиотека получила из менеджера
-     */
-    filter?: (entity: Entity<E>) => boolean;
-    /**
-     * Максимальное количество сущностей, которое может найти селектор
-     * @default Infinity
-     */
-    maxCount?: number;
-    /**
-     * Ошибка, которую выбросит селектор, если он ничего не найдёт
-     * @default undefined
-     */
-    throwOnNotFound?: Error;
 }

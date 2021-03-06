@@ -1,22 +1,16 @@
-import { InferPrimitive } from "../../utils";
-import { ArgumentReader } from "./Reader";
+import { ValueParser } from "../../utils/index.js";
+import { CommandContext } from "../Context.js";
 
-/**
- * Интерфейс аргумента комманды
- */
+export interface ArgumentString<T> {
+    readonly length: number;
+    readonly parsedValue: T;
+}
+
+export type ArgumentReader<T> = ValueParser<string, ArgumentString<T>, CommandContext<unknown[]>, string>;
+
+export type ArgsDefinitions<Args extends unknown[]> = { readonly [K in keyof Args]: CommandArgument<Args[K]> };
+
 export interface CommandArgument<T> {
-    /**
-     * Имя аргумента команды
-     */
-    readonly name: string;
-
-    /**
-     * Описание аргумента
-     */
     readonly description: string;
-
-    /**
-     * @returns функцию, читающаю аргумент
-     */
-    readonly reader: ArgumentReader<InferPrimitive<T>>;
+    readonly reader: ArgumentReader<T>;
 }

@@ -1,6 +1,6 @@
-import { EntityType } from "../Entity";
-import { Property } from "../property/Property";
-import { ComparisonExpression, BooleanExpression, UnaryExpression, AnyExpression, Constant } from "./Expression";
+import { EntityType } from "../Entity.js";
+import { ComparisonExpression, BooleanExpression, UnaryExpression, AnyExpression, ExpressionConstant, ExpressionVariable, BinaryExpression } from "./Expression.js";
+import { SelectorVarsDefinition } from "./Selector.js";
 
 export type UnaryOperator = 'not'
 
@@ -19,57 +19,56 @@ export type BinaryOperator =
     | BinaryCompareOperator
     | BinaryLogicOperator
 
-export interface QueryOperators<E extends EntityType> {
-    /**
-     * @example xpProperty > 0
-     */
-    gt(l: Property<E, number>, r: Property<E, number> | number): ComparisonExpression<E, 'gt', number>;
+type NumberExpression<E extends EntityType, O extends BinaryCompareOperator, Vars extends SelectorVarsDefinition> = ComparisonExpression<E, O, number, Vars>;
 
-    /**
-     * @example xpProperty >= 0
-     */
-    gte(l: Property<E, number>, r: Property<E, number> | number): ComparisonExpression<E, 'gte', number>;
+type ExpressionMethod<E extends EntityType, Vars extends SelectorVarsDefinition, Ex extends BinaryExpression<E, Vars>> = (l: Ex['left'], r: Ex['right']) => Ex;
 
-    /**
-     * @example xpProperty < 0
-     */
-    lt(l: Property<E, number>, r: Property<E, number> | number): ComparisonExpression<E, 'lt', number>;
+type NumberExpressionMethod<E extends EntityType, O extends BinaryCompareOperator, Vars extends SelectorVarsDefinition> = ExpressionMethod<E, Vars, NumberExpression<E, O, Vars>>;
 
-    /**
-     * @example xpProperty <= 0
-     */
-    lte(l: Property<E, number>, r: Property<E, number> | number): ComparisonExpression<E, 'lte', number>;
+/**
+ * Операторы выражения для поиска по базе данных
+ */
+export interface QueryOperators<E extends EntityType, Vars extends SelectorVarsDefinition> {
+    /** @example xpState > 0 */
+    readonly gt: NumberExpressionMethod<E, 'gt', Vars>;
 
-    /**
-     * @example xpProperty == 0
-     */
-    eq<T extends Constant>(l: Property<E, T>, r: Property<E, T> | T): ComparisonExpression<E, 'eq', T>;
+    /** @example xpState >= 0 */
+    readonly gte: NumberExpressionMethod<E, 'gte', Vars>;
 
-    /**
-     * @example (...) && (...)
-     */
-    and(l: AnyExpression<E>, r: AnyExpression<E>): BooleanExpression<E, 'and'>;
-    /**
-     * @example (...) || (...)
-     */
-    or(l: AnyExpression<E>, r: AnyExpression<E>): BooleanExpression<E, 'or'>;
+    /** @example xpState < 0 */
+    readonly lt: NumberExpressionMethod<E, 'lt', Vars>;
 
-    /**
-     * @example !(...)
-     */
-    not(r: AnyExpression<E>): UnaryExpression<E, 'not'>;
+    /** @example xpState <= 0 */
+    readonly lte: NumberExpressionMethod<E, 'lte', Vars>;
+
+    /** @example xpState == 0 */
+    readonly eq: ExpressionMethod<E, Vars, ComparisonExpression<E, 'eq', ExpressionConstant, Vars>>;
+
+    /** @example (...) && (...) */
+    readonly and: (l: AnyExpression<E>, r: AnyExpression<E>) => BooleanExpression<E, 'and'>;
+
+    /** @example (...) || (...) */
+    readonly or: (l: AnyExpression<E>, r: AnyExpression<E>) => BooleanExpression<E, 'or'>;
+
+    /** @example !(...) */
+    readonly not: (r: AnyExpression<E>) => UnaryExpression<E, 'not', Vars>;
+
+    /** @example q.var('minXp') */
+    readonly var: (name: keyof Vars) => ExpressionVariable<Vars>;
 }
 
-export const OperatorExpressions: QueryOperators<EntityType> = {
-    'gt': (l, r) => new ComparisonExpression('gt', l, r),
-    'gte': (l, r) => new ComparisonExpression('gte', l, r),
-    'lt': (l, r) => new ComparisonExpression('lt', l, r),
-    'lte': (l, r) => new ComparisonExpression('lte', l, r),
+export const OperatorExpressions: QueryOperators<EntityType, any> = Object.freeze({
+    gt: (l, r) => new ComparisonExpression('gt', l, r),
+    gte: (l, r) => new ComparisonExpression('gte', l, r),
+    lt: (l, r) => new ComparisonExpression('lt', l, r),
+    lte: (l, r) => new ComparisonExpression('lte', l, r),
 
-    'eq': (l, r) => new ComparisonExpression('eq', l, r),
+    eq: (l, r) => new ComparisonExpression('eq', l, r),
 
-    'and': (l, r) => new BooleanExpression('and', l, r),
-    'or': (l, r) => new BooleanExpression('or', l, r),
+    and: (l, r) => new BooleanExpression('and', l, r),
+    or: (l, r) => new BooleanExpression('or', l, r),
 
-    'not': r => new UnaryExpression('not', r),
-};
+    not: r => new UnaryExpression('not', r),
+
+    var: name => new ExpressionVariable(name),
+});

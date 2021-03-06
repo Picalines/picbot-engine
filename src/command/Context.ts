@@ -1,40 +1,39 @@
-import { GuildMember } from "discord.js";
-import { GuildMessage } from "../utils";
-import { Command } from "./Command";
-import { Bot } from "../Bot";
+import { GuildMessage } from "../utils/index.js";
+import { Command } from "./Command.js";
+import { Bot } from "../bot/index.js";
+import { TermCollection, TermsDefinition, TranslationCollection } from "../translator/index.js";
 
-/**
- * Контекст выполнения запущенной
- */
 export class CommandContext<Args extends unknown[]> {
-    /**
-     * Участник сервера, который запустил команду
-     */
-    public readonly executor: GuildMember;
+    readonly args: Args;
 
-    /**
-     * Объект аргументов команды (содержит данные, если у команды прописан синтаксис. Иначе undefined)
-     */
-    public readonly args: Args;
+    readonly translate: <Contexts extends TermsDefinition>(terms: TermCollection<Contexts>, locale?: string) => TranslationCollection<Contexts>['translations'];
 
-    /**
-     * @param command команда
-     * @param bot ссылка на бота
-     * @param message сообщение с командой
-     */
     constructor(
-        readonly command: Command<Args>,
         readonly bot: Bot,
+        readonly command: Command<Args>,
         readonly message: GuildMessage,
+        readonly locale: string,
     ) {
-        this.executor = message.member;
+        this.translate = (terms, locale) => this.bot.translator.translate(terms, locale ?? this.locale);
 
-        if (command.arguments) {
+        if (this.command.arguments) {
             const userInput = message.content.replace(/^\S+\s*/, '');
-            this.args = command.arguments.readArguments(userInput, this as unknown as CommandContext<unknown[]>);
+            this.args = this.command.arguments.read(userInput, this as unknown as CommandContext<unknown[]>);
         }
         else {
             this.args = [] as any;
         }
+    }
+
+    get executor() {
+        return this.message.member;
+    }
+
+    get database() {
+        return this.bot.database;
+    }
+
+    get logger() {
+        return this.bot.logger;
     }
 }

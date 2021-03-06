@@ -1,21 +1,17 @@
-/**
- * Примитивные типы JavaScript
- */
-export type Primitive = string | symbol | number | bigint | boolean | null | undefined;
+export type Primitive =
+    | string
+    | symbol
+    | number
+    | bigint
+    | boolean
+    | null
+    | undefined;
 
-/**
- * Если T является примитивным типом, то он остаётся литералом
- */
-export type WidenLiteral<T> = T extends string ? string
-    : T extends symbol ? symbol
-    : T extends number ? number
-    : T extends bigint ? bigint
-    : T extends boolean ? boolean
-    : T extends null ? null
-    : T extends undefined ? undefined
+export type PrimitiveConstructor<T extends NonNullable<Primitive> = NonNullable<Primitive>> = T extends string ? StringConstructor
+    : T extends symbol ? SymbolConstructor
+    : T extends number ? NumberConstructor
+    : T extends bigint ? BigIntConstructor
+    : T extends boolean ? BooleanConstructor
     : T;
 
-/**
- * Используется для того, чтобы TypeScript определял generic как литерал
- */
-export type InferPrimitive<T> = T extends Primitive ? T : WidenLiteral<T>;
+export type PrimitiveInstanceType<T extends PrimitiveConstructor<NonNullable<Primitive>>> = T extends (value?: any) => infer P ? P : never;
