@@ -47,7 +47,7 @@ export type BotOptions = Readonly<{
     fetchPrefixes: Fetcher<string[]>;
 
     /**
-     * @default () => 'en-US'
+     * @default () => 'en'
      */
     fetchLocale: Fetcher<string>;
 
@@ -80,7 +80,7 @@ export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'
      */
     fetchPrefixes?: ArgumentFetcher<string[]>;
     /**
-     * @example (() => 'en-US') | 'en-US' | localeDbState
+     * @example (() => 'en') | 'en' | localeDbState
      */
     fetchLocale?: ArgumentFetcher<string>;
 }>;
@@ -98,7 +98,7 @@ export const DefaultBotOptions: BotOptions = deepFreeze({
     },
     canBotsRunCommands: false,
     fetchPrefixes: () => ['!'],
-    fetchLocale: () => 'en-US',
+    fetchLocale: () => 'en',
     useBuiltInHelpCommand: true,
     loggerOptions: {
         hide: false,
