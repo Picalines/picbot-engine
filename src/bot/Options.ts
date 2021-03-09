@@ -1,9 +1,10 @@
 import { Guild } from "discord.js";
-import { assert, DeepPartialExcept, Overwrite, PromiseOrSync } from "../utils/index.js";
+import { assert, DeepPartial, Overwrite, PromiseOrSync } from "../utils/index.js";
 import { State, CreateDatabaseHandler, createJsonDatabaseHandler } from "../database/index.js";
 import { LoggerOptions, pipeLoggerTheme } from "../logger/index.js";
 import { Bot } from "./Bot.js";
 import { readFileSync } from "fs";
+import { ImporterOptions } from "../importer/index.js";
 
 export type BotOptions = Readonly<{
     token: string;
@@ -16,25 +17,7 @@ export type BotOptions = Readonly<{
      */
     tokenType: 'string' | 'file' | 'env';
 
-    loadingPaths: Readonly<{
-        /** @default 'src/states' */
-        states: string;
-
-        /** @default 'src/selectors' */
-        selectors: string;
-
-        /** @default 'src/events' */
-        events: string;
-
-        /** @default 'src/initializers' */
-        initializers: string,
-
-        /** @default 'src/commands' */
-        commands: string;
-
-        /** @default 'src/translations' */
-        translations: string;
-    }>;
+    importerOptions: ImporterOptions;
 
     /**
      * @default false
@@ -74,7 +57,8 @@ export type BotOptions = Readonly<{
     cleanupGuildOnDelete: boolean;
 }>;
 
-export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'>, {
+export type BotOptionsArgument = Overwrite<DeepPartial<BotOptions>, Readonly<{
+    token: string;
     /**
      * @example (() => ['!']) | ['!'] | prefixesDbState
      */
@@ -83,18 +67,21 @@ export type BotOptionsArgument = Overwrite<DeepPartialExcept<BotOptions, 'token'
      * @example (() => 'en') | 'en' | localeDbState
      */
     fetchLocale?: ArgumentFetcher<string>;
-}>;
+}>>;
 
 export const DefaultBotOptions: BotOptions = deepFreeze({
     token: '',
     tokenType: 'string',
-    loadingPaths: {
-        commands: 'src/commands',
-        events: 'src/events',
-        initializers: 'src/initializers',
-        states: 'src/states',
-        selectors: 'src/selectors',
-        translations: 'src/translations',
+    importerOptions: {
+        baseDir: 'src',
+        importDirs: {
+            commands: 'commands',
+            events: 'events',
+            initializers: 'initializers',
+            states: 'states',
+            selectors: 'selectors',
+            translations: 'translations',
+        },
     },
     canBotsRunCommands: false,
     fetchPrefixes: () => ['!'],

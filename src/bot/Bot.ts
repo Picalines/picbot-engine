@@ -1,6 +1,6 @@
 import { Client, ClientEvents } from "discord.js";
 import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Options.js";
-import { GuildMessage, isGuildMessage, importFolder, ClientEventNames } from "../utils/index.js";
+import { GuildMessage, isGuildMessage, ClientEventNames } from "../utils/index.js";
 import { CommandContext, CommandStorage } from "../command/index.js";
 import { Event, nodeEmitterEvents } from "../event/index.js";
 import { Database } from "../database/index.js";
@@ -9,10 +9,12 @@ import { Translator } from "../translator/index.js";
 import { StageSequence } from "../sequence/index.js";
 import { BotInitializer } from "./Initializer.js";
 import { BotEventListener } from "./EventListener.js";
+import { Importer } from "../importer/index.js";
 
 export class Bot {
     readonly options: BotOptions;
 
+    readonly importer: Importer;
     readonly commands: CommandStorage;
     readonly database: Database;
     readonly translator: Translator;
@@ -36,6 +38,8 @@ export class Bot {
         this.options = parseBotOptionsArgument(options);
 
         this.logger = new Logger(this.options.loggerOptions);
+
+        this.importer = new Importer(this);
 
         this.loadingSequence = new StageSequence().useLogger(this.logger, {
             startedLog: () => 'loding bot...',
@@ -68,25 +72,22 @@ export class Bot {
 
         this.loadingSequence.add({
             name: 'import events',
-            task: async () => {
-                (await importFolder(BotEventListener, this.options.loadingPaths.events)).forEach(({ item: listener, path }) => {
-                    const event = listener.event(this);
-                    event.on((...args) => listener.listener(this, ...args));
-                    this.logger.log(path);
-                });
-            },
+            task: async () => this.importer.forEach('events', listener => {
+                const event = listener.event(this);
+                event.on((...args) => listener.listener(this, ...args));
+            })
         });
 
-        let initializers: { item: BotInitializer, path: string }[];
+        const deinitializers: [item: BotInitializer, path: string][] = [];
 
         this.loadingSequence.add({
             name: 'initialize',
-            task: async () => {
-                initializers = await importFolder(BotInitializer, this.options.loadingPaths.initializers);
-                for (const { item: initializer, path } of initializers) {
-                    this.logger.promiseTask(path, async () => await initializer.initialize(this));
+            task: async () => await this.importer.forEach('initializers', (initializer, path) => {
+                this.logger.promiseTask(path, async () => await initializer.initialize(this));
+                if (initializer.deinitialize) {
+                    deinitializers.push([initializer, path]);
                 }
-            },
+            }),
         });
 
         this.shutdownSequence.add({
@@ -97,10 +98,8 @@ export class Bot {
         this.shutdownSequence.add({
             name: 'deinitialize',
             task: async () => {
-                for (const { item: initializer, path } of initializers) {
-                    if (initializer.deinitialize) {
-                        this.logger.promiseTask(path, async () => await initializer.deinitialize!(this));
-                    }
+                for (const [deinitializer, path] of deinitializers) {
+                    this.logger.promiseTask(path, async () => await deinitializer.deinitialize!(this));
                 }
             }
         });

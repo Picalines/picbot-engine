@@ -1,5 +1,5 @@
 import { GuildMemberManager } from "discord.js";
-import { assert, importFolder } from "../utils/index.js";
+import { assert } from "../utils/index.js";
 import { State, StateAccess, StateStorage, createStateBaseAccess } from "./state/index.js";
 import { EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector/index.js";
 import { EntityType, Entity, checkEntityType } from "./Entity.js";
@@ -34,9 +34,8 @@ export class Database {
             task: async () => {
                 const groupedStates: Record<EntityType, State<any, any>[]> = { user: [], guild: [], member: [] };
 
-                (await importFolder(State, this.bot.options.loadingPaths.states)).forEach(({ path, item: state }) => {
+                await this.bot.importer.forEach('states', state => {
                     (this.cache.states as State<any, any>[]).push(state);
-                    this.bot.logger.log(path);
                     groupedStates[state.entityType].push(state);
                 });
 
@@ -52,12 +51,9 @@ export class Database {
 
         this.bot.loadingSequence.add({
             name: 'import selectors',
-            task: async () => {
-                (await importFolder(EntitySelector, this.bot.options.loadingPaths.selectors)).forEach(({ path, item: selector }) => {
-                    (this.cache.selectors as EntitySelector<any, any>[]).push(selector);
-                    this.bot.logger.log(path);
-                });
-            },
+            task: async () => await this.bot.importer.forEach('selectors', selector => {
+                (this.cache.selectors as EntitySelector<any, any>[]).push(selector);
+            }),
         });
 
         this.bot.loadingSequence.add({

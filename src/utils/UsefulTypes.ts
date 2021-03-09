@@ -2,15 +2,10 @@ export type PromiseOrSync<T> = Promise<T> | T;
 
 export type PromiseVoid = PromiseOrSync<void>;
 
-export type PartialExcept<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
-
 /**
  * @author https://gist.github.com/navix/6c25c15e0a2d3cd0e5bce999e0086fc9
  */
-export type DeepPartial<T> = T extends Function ? T
-    : (T extends object ? { [P in keyof T]?: DeepPartial<T[P]>; } : T);
-
-export type DeepPartialExcept<T, K extends keyof T> = DeepPartial<T> & PartialExcept<T, K>;
+export type DeepPartial<T> = T extends Function ? T : (T extends object ? { [P in keyof T]?: DeepPartial<T[P]> } : T);
 
 export type NonEmpty<T> = T extends readonly (infer U)[] ? [U, ...U[]] : never;
 
