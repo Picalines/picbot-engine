@@ -1,7 +1,7 @@
 import { Guild } from "discord.js";
 import { assert, DeepPartial, Overwrite, PromiseOrSync } from "../utils/index.js";
 import { State, CreateDatabaseHandler, createJsonDatabaseHandler } from "../database/index.js";
-import { LoggerOptions, pipeLoggerTheme } from "../logger/index.js";
+import { LoggerTheme, pipeLoggerTheme } from "../logger/index.js";
 import { Bot } from "./Bot.js";
 import { readFileSync } from "fs";
 import { ImporterOptions } from "../importer/index.js";
@@ -39,7 +39,10 @@ export type BotOptions = Readonly<{
      */
     useBuiltInHelpCommand: boolean;
 
-    loggerOptions: Partial<LoggerOptions>;
+    /**
+     * @default pipeLoggerTheme
+     */
+    loggerTheme: LoggerTheme;
 
     /**
      * @default createJsonDatabaseHandler({ databasePath: '/database/' })
@@ -87,10 +90,7 @@ export const DefaultBotOptions: BotOptions = deepFreeze({
     fetchPrefixes: () => ['!'],
     fetchLocale: () => 'en',
     useBuiltInHelpCommand: true,
-    loggerOptions: {
-        hide: false,
-        theme: pipeLoggerTheme,
-    },
+    loggerTheme: pipeLoggerTheme,
     databaseHandler: createJsonDatabaseHandler({ databasePath: '/database/' }),
     cleanupMemberOnRemove: true,
     cleanupGuildOnDelete: true,

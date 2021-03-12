@@ -2,12 +2,12 @@ import { LogType } from "./Logger.js";
 
 interface ThemeContext {
     /**
-     * increases in task(), decreases in done()
+     * increases in startTask(), decreases in endTask()
      */
     readonly taskLevel: number;
 
     /**
-     * true in done()
+     * true in endTask()
      */
     readonly taskCompleted: boolean;
 }
@@ -17,16 +17,4 @@ export interface LoggerTheme {
      * @returns edited log
      */
     (log: string, logType: LogType, context: ThemeContext): string;
-}
-
-export interface LoggerOptions {
-    /**
-     * @default false
-     */
-    readonly hide: boolean;
-
-    /**
-     * @default pipeLoggerTheme
-     */
-    readonly theme: LoggerTheme;
 }

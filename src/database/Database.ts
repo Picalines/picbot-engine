@@ -78,17 +78,11 @@ export class Database {
                     this.#guildsStorage = await this.#handler.loadGuildsState(this.bot.client.guilds);
                 });
 
-                await this.bot.logger.promiseTask('members', async () => {
-                    type LoadResult = [guildId: string, state: StateStorage<"member">];
-                    const promises = this.bot.client.guilds.cache.map(async guild => {
-                        const state = await this.#handler.loadMembersState!(guild.members);
-                        return [guild.id, state] as LoadResult;
-                    });
-
-                    for await (const [guildId, state] of promises) {
-                        this.#memberStorage.set(guildId, state);
-                    }
-                });
+                await this.bot.logger.promiseTask('members', () => Promise.all(
+                    this.bot.client.guilds.cache.map(async guild => {
+                        this.#memberStorage.set(guild.id, await this.#handler.loadMembersState!(guild.members));
+                    })
+                ));
 
                 this.events.loaded.emit();
             },
@@ -103,24 +97,17 @@ export class Database {
                 await this.#handler.prepareForSaving?.();
 
                 if (this.#handler.saveUsersState) {
-                    await this.bot.logger.promiseTask('users', async () => {
-                        await this.#handler.saveUsersState!(this.bot.client.users);
-                    });
+                    await this.bot.logger.promiseTask('users', () => this.#handler.saveUsersState!(this.bot.client.users));
                 }
 
                 if (this.#handler.saveGuildsState) {
-                    await this.bot.logger.promiseTask('guilds', async () => {
-                        await this.#handler.saveGuildsState!(this.bot.client.guilds);
-                    });
+                    await this.bot.logger.promiseTask('guilds', () => this.#handler.saveGuildsState!(this.bot.client.guilds));
                 }
 
                 if (this.#handler.saveMembersState) {
-                    await this.bot.logger.promiseTask('members', async () => {
-                        const promises = this.bot.client.guilds.cache.map(guild => {
-                            return this.#handler.saveMembersState!(guild.members);
-                        });
-                        await Promise.all(promises);
-                    });
+                    await this.bot.logger.promiseTask('members', () => Promise.all(
+                        this.bot.client.guilds.cache.map(guild => this.#handler.saveMembersState!(guild.members))
+                    ));
                 }
 
                 this.events.saved.emit();
@@ -154,14 +141,9 @@ export class Database {
     accessState<E extends EntityType, T, A extends StateAccess<T>>(entity: Entity<E>, state: State<E, T, A>): A {
         assert(this.cache.states.includes(state), `unknown ${state.entityType} state '${state.name}'`);
 
-        let storage: StateStorage<any>;
-
-        if (checkEntityType(entity, 'member')) {
-            storage = this.#memberStorage.get(entity.guild.id)!;
-        }
-        else {
-            storage = checkEntityType(entity, 'user') ? this.#usersStorage : this.#guildsStorage;
-        }
+        const storage: StateStorage<any> = checkEntityType(entity, 'member')
+            ? this.#memberStorage.get(entity.guild.id)!
+            : (checkEntityType(entity, 'user') ? this.#usersStorage : this.#guildsStorage);
 
         let access = createStateBaseAccess(state, storage, entity) as A;
         if (state.accessFabric) {
@@ -178,17 +160,11 @@ export class Database {
         if (maxCount <= 0) return [];
 
         const expression = selector.expression(OperatorExpressions as unknown as QueryOperators<E, Vars>);
-        let storage: StateStorage<any>;
 
-        if (selector.entityType == 'user') {
-            storage = this.#usersStorage;
-        }
-        else if (selector.entityType == 'user') {
-            storage = this.#guildsStorage;
-        }
-        else {
-            storage = this.#memberStorage.get((options.manager as GuildMemberManager).guild.id)!;
-        }
+        const storage: StateStorage<any> =
+            selector.entityType == 'user' ? this.#usersStorage :
+            selector.entityType == 'guild' ? this.#guildsStorage :
+            this.#memberStorage.get((options.manager as GuildMemberManager).guild.id)!;
 
         let entities = options.manager.cache.values() as IterableIterator<Entity<E>>;
         if (options.filter) {

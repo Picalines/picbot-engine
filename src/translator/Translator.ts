@@ -29,7 +29,7 @@ export class Translator {
                 addTranslation(commandErrorTermTranslationRu);
                 addTranslation(argumentReaderTermTranslationRu);
 
-                this.bot.importer.forEach('translations', addTranslation);
+                await this.bot.importer.forEach('translations', addTranslation);
             },
         });
     }

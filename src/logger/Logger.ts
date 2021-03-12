@@ -1,4 +1,6 @@
-import { LoggerTheme, LoggerOptions } from "./Options.js";
+import { Bot } from "../bot/Bot.js";
+import { PromiseOrSync } from "../utils/index.js";
+import { LoggerTheme } from "./Theme.js";
 
 export type LogType =
     | "log"
@@ -7,53 +9,36 @@ export type LogType =
     | "task"
     | "success";
 
-export interface Logger extends LoggerOptions { }
-
 export class Logger {
     private taskLevel = 0;
+    private taskCompleted = false;
 
-    constructor(options: Partial<LoggerOptions>) {
-        Object.assign(this, {
-            hide: options.hide ?? false,
-            theme: options.theme ?? ((_, log) => log)
-        });
+    constructor(readonly bot: Bot) { }
 
-        if (this.hide) {
-            this._log = () => { };
-        }
-    }
+    log(log: any, type: LogType = 'log') {
+        const { loggerTheme: theme } = this.bot.options;
 
-    private _log = (logType: LogType, log: any, taskCompleted = false) => {
         if (log instanceof Error) {
-            console.log(this.theme('', logType, { taskLevel: this.taskLevel, taskCompleted }))
+            console.log(theme('', type, { taskLevel: this.taskLevel, taskCompleted: this.taskCompleted }))
             console.log(log.stack);
-            return;
+        }
+        else {
+            console.log(theme(String(log), type, { taskLevel: this.taskLevel, taskCompleted: this.taskCompleted }));
         }
 
-        const strLog = this.theme(String(log), logType, { taskLevel: this.taskLevel, taskCompleted });
-        console.log(strLog);
-    }
-
-    /**
-     * type hint
-     */
-    static theme(themeFunction: LoggerTheme) {
-        return themeFunction;
+        return this;
     }
 
     task(log: any) {
-        this._log('task', log);
+        this.log(log, 'task');
         this.taskLevel += 1;
         return this;
     }
 
-    success(log: any) {
-        this._log('success', log);
-        return this;
-    }
-
     done(result: Exclude<LogType, 'task' | 'log'>, log: any) {
-        this._log(result, log, true);
+        this.taskCompleted = true;
+        this.log(log, result);
+        this.taskCompleted = false;
         if (this.taskLevel > 0) {
             this.taskLevel -= 1;
         }
@@ -63,7 +48,7 @@ export class Logger {
         return this;
     }
 
-    async promiseTask<T>(task: any, block: () => Promise<T>, successLog: any = ''): Promise<T> {
+    async promiseTask<T>(task: any, block: () => PromiseOrSync<T>, successLog: any = ''): Promise<T> {
         this.task(task);
         try {
             const result = await block();
@@ -76,18 +61,22 @@ export class Logger {
         }
     }
 
-    log(log: any) {
-        this._log('log', log);
-        return this;
+    success(log: any = '') {
+        return this.log(log, 'success');
     }
 
-    warning(log: any) {
-        this._log('warning', log);
-        return this;
+    warning(log: any = '') {
+        return this.log(log, 'warning');
     }
 
-    error(log: any) {
-        this._log('error', log);
-        return this;
+    error(log: any = '') {
+        return this.log(log, 'error');
+    }
+
+    /**
+     * type hint
+     */
+    static theme(themeFunction: LoggerTheme) {
+        return themeFunction;
     }
 }

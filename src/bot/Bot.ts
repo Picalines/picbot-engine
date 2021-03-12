@@ -8,7 +8,6 @@ import { Logger } from "../logger/Logger.js";
 import { Translator } from "../translator/index.js";
 import { StageSequence } from "../sequence/index.js";
 import { BotInitializer } from "./Initializer.js";
-import { BotEventListener } from "./EventListener.js";
 import { Importer } from "../importer/index.js";
 
 export class Bot {
@@ -37,7 +36,7 @@ export class Bot {
     constructor(readonly client: Client, options: BotOptionsArgument) {
         this.options = parseBotOptionsArgument(options);
 
-        this.logger = new Logger(this.options.loggerOptions);
+        this.logger = new Logger(this);
 
         this.importer = new Importer(this);
 
@@ -72,7 +71,7 @@ export class Bot {
 
         this.loadingSequence.add({
             name: 'import events',
-            task: async () => this.importer.forEach('events', listener => {
+            task: () => this.importer.forEach('events', listener => {
                 const event = listener.event(this);
                 event.on((...args) => listener.listener(this, ...args));
             })
@@ -82,12 +81,29 @@ export class Bot {
 
         this.loadingSequence.add({
             name: 'initialize',
-            task: async () => await this.importer.forEach('initializers', (initializer, path) => {
-                this.logger.promiseTask(path, async () => await initializer.initialize(this));
+            task: () => this.importer.forEach('initializers', (initializer, path) => {
+                this.logger.promiseTask(path, () => initializer.initialize(this));
                 if (initializer.deinitialize) {
                     deinitializers.push([initializer, path]);
                 }
             }),
+        });
+
+        this.loadingSequence.add({
+            name: 'listen to messages',
+            task: () => void this.client.on('message', message => {
+                if (isGuildMessage(message)) {
+                    this.handleGuildMessage(message);
+                }
+            })
+        });
+
+        this.loadingSequence.add({
+            name: 'listen to SIGINT',
+            task: () => void process.once('SIGINT', () => this.shutdown()
+                .then(() => process.exit(0))
+                .catch(() => process.exit(1))
+            )
         });
 
         this.shutdownSequence.add({
@@ -99,30 +115,10 @@ export class Bot {
             name: 'deinitialize',
             task: async () => {
                 for (const [deinitializer, path] of deinitializers) {
-                    this.logger.promiseTask(path, async () => await deinitializer.deinitialize!(this));
+                    await this.logger.promiseTask(path, () => deinitializer.deinitialize!(this));
                 }
             }
         });
-
-        process.once('SIGINT', () => {
-            this.shutdown()
-                .then(() => process.exit(0))
-                .catch(() => process.exit(1));
-        });
-
-        this.loadingSequence.add({
-            name: 'listen to messages',
-            runsAfter: 'initialize',
-            task: () => void this.client.on('message', message => {
-                if (isGuildMessage(message)) {
-                    this.handleGuildMessage(message);
-                }
-            })
-        });
-    }
-
-    get username(): string {
-        return this.client.user?.username ?? 'bot';
     }
 
     private async handleGuildMessage(message: GuildMessage): Promise<void> {
@@ -181,5 +177,9 @@ export class Bot {
 
     shutdown() {
         return this.shutdownSequence.run();
+    }
+
+    get username(): string {
+        return this.client.user?.username ?? 'bot';
     }
 }
