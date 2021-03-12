@@ -33,7 +33,7 @@ export class Importer {
         assert(existsSync(baseDir), `base importer dir '${baseDir}' not found`);
     }
 
-    async *generator<K extends ImportDir>(dir: K): AsyncGenerator<[item: InstanceType<ImportDirClass<K>>, path: string]> {
+    async *generator<K extends ImportDir>(dir: K): AsyncGenerator<readonly [item: InstanceType<ImportDirClass<K>>, path: string]> {
         const { baseDir, importDirs } = this.bot.options.importerOptions;
 
         assert(dir in importDirs, `unknown importer dir '${dir}'`);
@@ -47,7 +47,7 @@ export class Importer {
         const projectRoot = process.argv[1];
         const isJsFile = RegExp.prototype.test.bind(/.*\.(m|c)?js$/);
 
-        this.bot.logger.task(projectDir);
+        this.bot.logger.task(`${projectDir} -> ${constructor.name}`);
 
         for await (const localPath of readdirRecursive(projectDir)) {
             if (!isJsFile(localPath)) {

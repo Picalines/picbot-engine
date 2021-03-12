@@ -43,7 +43,7 @@ export class Database {
 
                 for (const entityType in groupedStates) {
                     groupedStates[entityType as EntityType].forEach(state => {
-                        (this as any).defaultEntityState[entityType as EntityType][state.name] = state.defaultValue;
+                        (this as any).defaultEntityState[entityType][state.name] = state.defaultValue;
                     });
                 }
             },
