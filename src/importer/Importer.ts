@@ -28,12 +28,20 @@ export class Importer {
         translations: TranslationCollection,
     });
 
+    readonly #cache: { [K in ImportDir]?: (readonly [InstanceType<ImportDirClass<K>>, string])[] } = {};
+
     constructor(readonly bot: Bot) {
         const { baseDir } = this.bot.options.importerOptions;
         assert(existsSync(baseDir), `base importer dir '${baseDir}' not found`);
     }
 
     async *generator<K extends ImportDir>(dir: K): AsyncGenerator<readonly [item: InstanceType<ImportDirClass<K>>, path: string]> {
+        let cached = this.#cache[dir];
+        if (cached !== undefined) {
+            yield* cached as any;
+            return;
+        }
+
         const { baseDir, importDirs } = this.bot.options.importerOptions;
 
         assert(dir in importDirs, `unknown importer dir '${dir}'`);
@@ -48,6 +56,7 @@ export class Importer {
         const isJsFile = RegExp.prototype.test.bind(/.*\.(m|c)?js$/);
 
         this.bot.logger.task(`${projectDir} -> ${constructor.name}`);
+        cached = [];
 
         for await (const localPath of readdirRecursive(projectDir)) {
             if (!isJsFile(localPath)) {
@@ -57,10 +66,15 @@ export class Importer {
             const { default: defaultExport } = await import(join('file://', projectRoot, projectDir, localPath));
             assert(defaultExport instanceof constructor, `default export of type ${constructor.name} expected in module ${localPath}`);
 
+            const exportItem = [defaultExport as any, localPath] as const;
+
             this.bot.logger.log(localPath);
-            yield [defaultExport as any, localPath];
+
+            cached.push(exportItem);
+            yield exportItem;
         }
 
+        this.#cache[dir] = cached;
         this.bot.logger.done('success', '');
     }
 
@@ -68,6 +82,12 @@ export class Importer {
         for await (const [item, path] of this.generator(dir)) {
             await callback(item, path);
         }
+    }
+
+    async array<K extends ImportDir>(dir: K): Promise<readonly InstanceType<ImportDirClass<K>>[]> {
+        const instances: InstanceType<ImportDirClass<K>>[] = [];
+        await this.forEach(dir, instance => void instances.push(instance));
+        return instances;
     }
 }
 
