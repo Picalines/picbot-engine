@@ -1,5 +1,5 @@
 import { Bot } from "../bot/index.js";
-import { assert, importFolder } from "../utils/index.js";
+import { assert } from "../utils/index.js";
 import { TermCollection, TermsDefinition } from "./TermCollection.js";
 import { TranslationCollection } from "./TranslationCollection.js";
 
@@ -29,10 +29,7 @@ export class Translator {
                 addTranslation(commandErrorTermTranslationRu);
                 addTranslation(argumentReaderTermTranslationRu);
 
-                (await importFolder(TranslationCollection, this.bot.options.loadingPaths.translations)).forEach(({ path, item }) => {
-                    this.bot.logger.log(path);
-                    addTranslation(item);
-                });
+                this.bot.importer.forEach('translations', addTranslation);
             },
         });
     }

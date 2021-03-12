@@ -1,5 +1,4 @@
 import { Bot } from "../bot/index.js";
-import { importFolder } from "../utils/index.js";
 import { Command } from "./Command.js";
 import { helpCommand } from "./help/index.js";
 
@@ -33,10 +32,7 @@ export class CommandStorage implements Iterable<AnyCommand> {
                     addCommand(helpCommand as unknown as AnyCommand);
                 }
 
-                (await importFolder<AnyCommand>(Command, this.bot.options.loadingPaths.commands)).forEach(({ path, item: command }) => {
-                    addCommand(command);
-                    this.bot.logger.log(path);
-                });
+                await this.bot.importer.forEach('commands', addCommand);
             },
         });
     }
