@@ -15,11 +15,6 @@ export class Database {
         loaded: new Event<[]>(),
     });
 
-    readonly cache = Object.freeze({
-        states: [] as readonly State<any, any>[],
-        selectors: [] as readonly Selector<any, any>[],
-    });
-
     #handler!: DatabaseHandler;
 
     #usersStorage!: EntityStorage<'user'>;
@@ -35,7 +30,6 @@ export class Database {
                 const groupedStates: Record<EntityType, State<any, any>[]> = { user: [], guild: [], member: [] };
 
                 await this.bot.importer.forEach('states', state => {
-                    (this.cache.states as State<any, any>[]).push(state);
                     groupedStates[state.entityType].push(state);
                 });
 
@@ -51,19 +45,13 @@ export class Database {
 
         this.bot.loadingSequence.add({
             name: 'import selectors',
-            task: async () => await this.bot.importer.forEach('selectors', selector => {
-                (this.cache.selectors as Selector<any, any>[]).push(selector);
-            }),
+            task: () => this.bot.importer.forEach('selectors', () => { }),
         });
 
         this.bot.loadingSequence.add({
             name: 'load database',
             runsAfter: 'login',
             task: async () => {
-                for (const key in this.cache) {
-                    Object.freeze(this.cache[key as keyof Database['cache']]);
-                }
-
                 this.events.beforeLoading.emit();
 
                 this.#handler = this.bot.options.databaseHandler(this);
@@ -139,7 +127,7 @@ export class Database {
     }
 
     accessState<E extends EntityType, T, A extends StateAccess<T>>(entity: Entity<E>, state: State<E, T, A>): A {
-        assert(this.cache.states.includes(state), `unknown ${state.entityType} state '${state.name}'`);
+        assert(this.bot.importer.isImported('states', state as any), `unknown ${state.entityType} state '${state.name}'`);
 
         const storage: EntityStorage<any> = checkEntityType(entity, 'member')
             ? this.#memberStorage.get(entity.guild.id)!
@@ -154,7 +142,7 @@ export class Database {
     }
 
     async selectEntities<E extends EntityType, Vars extends SelectorVarsDefinition>(selector: Selector<E, Vars>, options: SelectorOptions<E, Vars>): Promise<Entity<E>[]> {
-        assert(this.cache.selectors.includes(selector as any), `unknown ${selector.entityType} selector`);
+        assert(this.bot.importer.isImported('selectors', selector as any), `unknown ${selector.entityType} selector`);
 
         const { maxCount = Infinity } = options;
         if (maxCount <= 0) return [];
@@ -163,8 +151,8 @@ export class Database {
 
         const storage: EntityStorage<any> =
             selector.entityType == 'user' ? this.#usersStorage :
-            selector.entityType == 'guild' ? this.#guildsStorage :
-            this.#memberStorage.get((options.manager as GuildMemberManager).guild.id)!;
+                selector.entityType == 'guild' ? this.#guildsStorage :
+                    this.#memberStorage.get((options.manager as GuildMemberManager).guild.id)!;
 
         let entities = options.manager.cache.values() as IterableIterator<Entity<E>>;
         if (options.filter) {

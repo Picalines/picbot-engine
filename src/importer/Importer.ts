@@ -89,6 +89,11 @@ export class Importer {
         await this.forEach(dir, instance => void instances.push(instance));
         return instances;
     }
+
+    async isImported<K extends ImportDir>(dir: K, instance: InstanceType<ImportDirClass<K>>): Promise<boolean> {
+        //@ts-ignore
+        return (this.#cache[dir]?.find(item => item[0] == instance) != undefined) ?? false;
+    }
 }
 
 async function* readdirRecursive(path: string): AsyncGenerator<string> {
