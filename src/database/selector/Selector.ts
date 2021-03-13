@@ -6,16 +6,16 @@ export type SelectorVarsDefinition = { readonly [name: string]: (value?: any) =>
 
 export type SelectorVars<Vars extends SelectorVarsDefinition> = { readonly [K in keyof Vars]: Vars[K] extends (value?: any) => infer T ? T : never };
 
-interface EntitySelectorDefinition<E extends EntityType, Vars extends SelectorVarsDefinition = {}> {
+interface Definition<E extends EntityType, Vars extends SelectorVarsDefinition = {}> {
     readonly entityType: E;
     readonly variables?: Vars;
     readonly expression: (q: QueryOperators<E, Vars>) => AnyExpression<E>;
 }
 
-export interface EntitySelector<E extends EntityType, Vars extends SelectorVarsDefinition = {}> extends EntitySelectorDefinition<E, Vars> { }
+export interface Selector<E extends EntityType, Vars extends SelectorVarsDefinition = {}> extends Definition<E, Vars> { }
 
-export class EntitySelector<E extends EntityType, Vars extends SelectorVarsDefinition = {}> {
-    constructor(definition: EntitySelectorDefinition<E, Vars>) {
+export class Selector<E extends EntityType, Vars extends SelectorVarsDefinition = {}> {
+    constructor(definition: Definition<E, Vars>) {
         Object.assign(this, definition);
         Object.freeze(this);
     }

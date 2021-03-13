@@ -1,4 +1,4 @@
-import { StateAccess } from "../Access.js";
+import { StateAccess } from "../State.js";
 
 export const jsonAccess = (access: StateAccess<string>) => ({
     ...access,

@@ -4,7 +4,7 @@ import { assert, PromiseVoid } from "../utils/index.js";
 import { Bot } from "../bot/Bot.js";
 import { BotEventListener, BotInitializer } from "../bot/index.js";
 import { Command } from "../command/index.js";
-import { EntitySelector, State } from "../database/index.js";
+import { Selector, State } from "../database/index.js";
 import { TranslationCollection } from "../translator/index.js";
 
 export type ImportDir = keyof typeof Importer['importDirClasses'];
@@ -23,7 +23,7 @@ export class Importer {
         commands: Command,
         events: BotEventListener,
         initializers: BotInitializer,
-        selectors: EntitySelector,
+        selectors: Selector,
         states: State,
         translations: TranslationCollection,
     });

@@ -2,10 +2,10 @@ import { Guild } from "discord.js";
 import { PromiseOrSync, PromiseVoid, UnionToIntersection } from "../utils/index.js";
 import { Database } from "./Database.js";
 import { EntityManager, EntityType } from "./Entity.js";
-import { StateStorage } from "./state/index.js";
+import { EntityStorage } from "./state/index.js";
 
 type LoadMethods<E extends EntityType> = {
-    readonly [K in `load${Capitalize<E>}sState`]: (manager: EntityManager<E>) => PromiseOrSync<StateStorage<E>>;
+    readonly [K in `load${Capitalize<E>}sState`]: (manager: EntityManager<E>) => PromiseOrSync<EntityStorage<E>>;
 }
 
 type SaveMethods<E extends EntityType> = {
@@ -17,7 +17,7 @@ type Methods = UnionToIntersection<{ [E in EntityType]: LoadMethods<E> & SaveMet
 export interface DatabaseHandler extends Methods {
     prepareForLoading?(): PromiseVoid;
     prepareForSaving?(): PromiseVoid;
-    prepareCreatedGuild(guild: Guild): PromiseOrSync<StateStorage<'member'>>;
+    prepareCreatedGuild(guild: Guild): PromiseOrSync<EntityStorage<'member'>>;
 }
 
 export interface CreateDatabaseHandler {

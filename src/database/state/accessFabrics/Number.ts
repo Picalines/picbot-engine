@@ -1,5 +1,5 @@
 import { assert } from "../../../utils/index.js";
-import { StateAccess } from "../Access.js";
+import { StateAccess } from "../State.js";
 
 /**
  * @param range default is [-Infinity, Infinity]

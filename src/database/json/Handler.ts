@@ -1,10 +1,10 @@
 import { join, sep as pathSep } from "path";
 import { CreateDatabaseHandler } from "../Handler.js";
 import { promises as fs } from "fs";
-import { StateStorage } from "../state/index.js";
+import { EntityStorage } from "../state/index.js";
 import { CompiledExpression, compileExpression } from "./Expression.js";
 import { EntityManager, EntityType } from "../Entity.js";
-import { EntitySelector } from "../selector/index.js";
+import { Selector } from "../selector/index.js";
 
 interface JsonHandlerOptions {
     databasePath: string,
@@ -22,13 +22,13 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
         await Promise.all([usersDir, guildsDir, ...memberDirs].map(async dir => fs.mkdir(dir, { recursive: true })))
     };
 
-    const compiledExpressions = new WeakMap<EntitySelector<any, any>, CompiledExpression>();
+    const compiledExpressions = new WeakMap<Selector<any, any>, CompiledExpression>();
 
     const usersStateMap = new Map<string, any>();
     const guildsStateMap = new Map<string, any>();
     const membersStateMap = new Map<string, Map<string, any>>();
 
-    const createStateStorage = <E extends EntityType>(entityType: E, stateMap: Map<string, any>): StateStorage<E> => ({
+    const createStateStorage = <E extends EntityType>(entityType: E, stateMap: Map<string, any>): EntityStorage<E> => ({
         clear() {
             stateMap.clear();
         },
@@ -37,16 +37,15 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
             stateMap.delete(entity.id);
         },
 
-        entity(entity) {
-            let state = stateMap.get(entity.id);
-            if (!state) {
-                state = {};
-                stateMap.set(entity.id, state);
+        accessState(entity, state) {
+            let stateObj = stateMap.get(entity.id);
+            if (!stateObj) {
+                stateObj = {};
+                stateMap.set(entity.id, stateObj);
             }
             return {
-                store: ({ name }, value) => void (state[name] = value),
-                restore: ({ name }) => state[name],
-                reset: ({ name }) => void delete state[name],
+                set: async (value) => void (stateObj[state.name] = value),
+                value: async () => stateObj[state.name] ?? state.defaultValue,
             };
         },
 
