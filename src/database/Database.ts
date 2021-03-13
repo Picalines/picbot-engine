@@ -1,7 +1,7 @@
 import { GuildMemberManager } from "discord.js";
 import { assert } from "../utils/index.js";
-import { State, StateAccess, StateStorage, createStateBaseAccess } from "./state/index.js";
-import { EntitySelector, EntitySelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector/index.js";
+import { State, StateAccess, EntityStorage } from "./state/index.js";
+import { Selector, SelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector/index.js";
 import { EntityType, Entity, checkEntityType } from "./Entity.js";
 import { DatabaseHandler } from "./Handler.js";
 import { Bot } from "../bot/index.js";
@@ -17,14 +17,14 @@ export class Database {
 
     readonly cache = Object.freeze({
         states: [] as readonly State<any, any>[],
-        selectors: [] as readonly EntitySelector<any, any>[],
+        selectors: [] as readonly Selector<any, any>[],
     });
 
     #handler!: DatabaseHandler;
 
-    #usersStorage!: StateStorage<'user'>;
-    #guildsStorage!: StateStorage<'guild'>;
-    #memberStorage = new Map<string, StateStorage<'member'>>();
+    #usersStorage!: EntityStorage<'user'>;
+    #guildsStorage!: EntityStorage<'guild'>;
+    #memberStorage = new Map<string, EntityStorage<'member'>>();
 
     readonly defaultEntityState!: { [K in EntityType]: Readonly<Record<string, any>> };
 
@@ -52,7 +52,7 @@ export class Database {
         this.bot.loadingSequence.add({
             name: 'import selectors',
             task: async () => await this.bot.importer.forEach('selectors', selector => {
-                (this.cache.selectors as EntitySelector<any, any>[]).push(selector);
+                (this.cache.selectors as Selector<any, any>[]).push(selector);
             }),
         });
 
@@ -141,11 +141,11 @@ export class Database {
     accessState<E extends EntityType, T, A extends StateAccess<T>>(entity: Entity<E>, state: State<E, T, A>): A {
         assert(this.cache.states.includes(state), `unknown ${state.entityType} state '${state.name}'`);
 
-        const storage: StateStorage<any> = checkEntityType(entity, 'member')
+        const storage: EntityStorage<any> = checkEntityType(entity, 'member')
             ? this.#memberStorage.get(entity.guild.id)!
             : (checkEntityType(entity, 'user') ? this.#usersStorage : this.#guildsStorage);
 
-        let access = createStateBaseAccess(state, storage, entity) as A;
+        let access = storage.accessState(entity, state) as A;
         if (state.accessFabric) {
             access = state.accessFabric(access, entity);
         }
@@ -153,7 +153,7 @@ export class Database {
         return access;
     }
 
-    async selectEntities<E extends EntityType, Vars extends SelectorVarsDefinition>(selector: EntitySelector<E, Vars>, options: EntitySelectorOptions<E, Vars>): Promise<Entity<E>[]> {
+    async selectEntities<E extends EntityType, Vars extends SelectorVarsDefinition>(selector: Selector<E, Vars>, options: SelectorOptions<E, Vars>): Promise<Entity<E>[]> {
         assert(this.cache.selectors.includes(selector as any), `unknown ${selector.entityType} selector`);
 
         const { maxCount = Infinity } = options;
@@ -161,7 +161,7 @@ export class Database {
 
         const expression = selector.expression(OperatorExpressions as unknown as QueryOperators<E, Vars>);
 
-        const storage: StateStorage<any> =
+        const storage: EntityStorage<any> =
             selector.entityType == 'user' ? this.#usersStorage :
             selector.entityType == 'guild' ? this.#guildsStorage :
             this.#memberStorage.get((options.manager as GuildMemberManager).guild.id)!;

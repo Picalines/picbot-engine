@@ -1,6 +1,6 @@
 import { assert } from "../../../utils/index.js";
 import { Entity } from "../../Entity.js";
-import { StateAccess } from "../Access.js";
+import { StateAccess } from "../State.js";
 
 export const validatedAccess = <T>(validator: (value: T) => boolean) => (access: StateAccess<T>, entity: Entity<any>) => ({
     ...access,
