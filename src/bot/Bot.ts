@@ -77,15 +77,10 @@ export class Bot {
             })
         });
 
-        const deinitializers: [item: BotInitializer, path: string][] = [];
-
         this.loadingSequence.add({
             name: 'initialize',
             task: () => this.importer.forEach('initializers', (initializer, path) => {
                 this.logger.promiseTask(path, () => initializer.initialize(this));
-                if (initializer.deinitialize) {
-                    deinitializers.push([initializer, path]);
-                }
             }),
         });
 
@@ -113,11 +108,11 @@ export class Bot {
 
         this.shutdownSequence.add({
             name: 'deinitialize',
-            task: async () => {
-                for (const [deinitializer, path] of deinitializers) {
-                    await this.logger.promiseTask(path, () => deinitializer.deinitialize!(this));
+            task: () => this.importer.forEach('initializers', (initializer, path) => {
+                if (initializer.deinitialize) {
+                    this.logger.promiseTask(path, () => initializer.deinitialize!(this));
                 }
-            }
+            }),
         });
     }
 

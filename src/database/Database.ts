@@ -45,7 +45,7 @@ export class Database {
 
         this.bot.loadingSequence.add({
             name: 'import selectors',
-            task: () => this.bot.importer.forEach('selectors', () => { }),
+            task: () => this.bot.importer.import('selectors'),
         });
 
         this.bot.loadingSequence.add({

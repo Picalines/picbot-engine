@@ -1,6 +1,6 @@
 import { existsSync, promises as fs } from "fs";
 import { join } from "path";
-import { assert, PromiseVoid } from "../utils/index.js";
+import { assert } from "../utils/index.js";
 import { Bot } from "../bot/Bot.js";
 import { BotEventListener, BotInitializer } from "../bot/index.js";
 import { Command } from "../command/index.js";
@@ -78,16 +78,16 @@ export class Importer {
         this.bot.logger.done('success', '');
     }
 
-    async forEach<K extends ImportDir>(dir: K, callback: (item: InstanceType<ImportDirClass<K>>, path: string) => PromiseVoid) {
-        for await (const [item, path] of this.generator(dir)) {
-            await callback(item, path);
+    async import<K extends ImportDir>(dir: K) {
+        if (!(dir in this.#cache)) {
+            for await (const _ of this.generator(dir)) { }
         }
     }
 
-    async array<K extends ImportDir>(dir: K): Promise<readonly InstanceType<ImportDirClass<K>>[]> {
-        const instances: InstanceType<ImportDirClass<K>>[] = [];
-        await this.forEach(dir, instance => void instances.push(instance));
-        return instances;
+    async forEach<K extends ImportDir>(dir: K, callback: (item: InstanceType<ImportDirClass<K>>, path: string) => any) {
+        for await (const [item, path] of this.generator(dir)) {
+            await callback(item, path);
+        }
     }
 
     async isImported<K extends ImportDir>(dir: K, instance: InstanceType<ImportDirClass<K>>): Promise<boolean> {
