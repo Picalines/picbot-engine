@@ -1,7 +1,7 @@
 import { GuildMemberManager } from "discord.js";
 import { assert } from "../utils/index.js";
 import { State, StateAccess, EntityStorage } from "./state/index.js";
-import { Selector, SelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector/index.js";
+import { Selector, SelectorOptions, SelectorVars } from "./selector/index.js";
 import { EntityType, Entity, checkEntityType } from "./Entity.js";
 import { DatabaseHandler } from "./Handler.js";
 import { Bot } from "../bot/index.js";

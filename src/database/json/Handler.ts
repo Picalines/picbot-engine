@@ -50,13 +50,14 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
             };
         },
 
-        async select(selector, { manager, variables = {}, maxCount = Infinity }) {
+        async select(selector, { manager, variables, maxCount = Infinity }) {
             let arrowExpression = compiledExpressions.get(selector);
             if (!arrowExpression) {
                 arrowExpression = compileExpression(selector.expression);
                 compiledExpressions.set(selector, arrowExpression);
             }
 
+            variables ??= {};
             const defaultSatate = database.defaultEntityState![entityType];
             const selected = [];
 

@@ -1,47 +1,40 @@
 import { State } from "../state/index.js";
 import { EntityType } from "../Entity.js";
-import { BinaryCompareOperator, BinaryLogicOperator, UnaryOperator } from "./Operator.js";
-import { SelectorVars } from "./Selector.js";
+import { SelectorVars, SelectorVarValues } from "./Selector.js";
+import { NonEmpty } from "../../utils/index.js";
 
-export type ExpressionConstant =
-    | number
-    | string
-    | boolean;
-
-export class ExpressionVariable<Vars extends SelectorVars> {
-    constructor(readonly name: keyof Vars) { }
+export class ExpressionVariable<Vars extends SelectorVars, T> {
+    constructor(readonly name: { [K in keyof Vars]: SelectorVarValues<Vars>[K] extends T ? K : never }[keyof Vars]) { }
 }
 
-export class UnaryExpression<E extends EntityType, O extends UnaryOperator, Vars extends SelectorVars> {
-    constructor(
-        readonly operator: O,
-        readonly right: UnaryExpression<E, UnaryOperator, Vars> | BinaryExpression<E, Vars>,
-    ) { }
-}
+export type ComparsionOperator<T>
+    = 'eq' | 'ne' | (T extends number ? | 'gt' | 'gte' | 'lt' | 'lte' : never);
 
-export class ComparisonExpression<E extends EntityType, O extends BinaryCompareOperator, T, Vars extends SelectorVars> {
+export class ComparisonExpression<E extends EntityType, O extends ComparsionOperator<T>, T, Vars extends SelectorVars> {
     constructor(
         readonly operator: O,
         readonly left: State<E, T>,
-        readonly right: State<E, T> | T | ExpressionVariable<Vars>,
-    ) { }
-}
-
-export class BooleanExpression<E extends EntityType, O extends BinaryLogicOperator> {
-    readonly expressions: readonly AnyExpression<E>[];
-
-    constructor(
-        readonly operator: O,
-        ...expressions: readonly [AnyExpression<E>, ...AnyExpression<E>[]]
+        readonly right: State<E, T> | T | ExpressionVariable<Vars, T>,
     ) {
-        this.expressions = expressions;
+        Object.freeze(this);
     }
 }
 
-export type BinaryExpression<E extends EntityType, Vars extends SelectorVars> =
-    | ComparisonExpression<E, BinaryCompareOperator, any, Vars>
-    | BooleanExpression<E, BinaryLogicOperator>;
+export type BooleanOperator = 'not' | 'and' | 'or';
 
-export type AnyExpression<E extends EntityType> =
-    | UnaryExpression<E, UnaryOperator, any>
-    | BinaryExpression<E, any>;
+export class BooleanExpression<E extends EntityType, O extends BooleanOperator, Vars extends SelectorVars> {
+    readonly subExpressions: readonly AnyExpression<E, Vars>[];
+
+    constructor(
+        readonly operator: O,
+        ...expressions: O extends 'not' ? [AnyExpression<E, Vars>] : Readonly<NonEmpty<AnyExpression<E, Vars>[]>>
+    ) {
+        this.subExpressions = [...expressions];
+        Object.freeze(this);
+        Object.freeze(this.subExpressions);
+    }
+}
+
+export type AnyExpression<E extends EntityType, Vars extends SelectorVars> =
+    | ComparisonExpression<E, ComparsionOperator<any>, any, Vars>
+    | BooleanExpression<E, BooleanOperator, Vars>;
