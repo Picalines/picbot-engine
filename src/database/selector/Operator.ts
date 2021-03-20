@@ -1,34 +1,35 @@
 import { EntityType } from "../Entity.js";
+import { State } from "../state/State.js";
 import { ComparisonExpression, BooleanExpression, UnaryExpression, AnyExpression, ExpressionConstant, ExpressionVariable, BinaryExpression } from "./Expression.js";
-import { SelectorVarsDefinition } from "./Selector.js";
+import { SelectorVars } from "./Selector.js";
 
-export type UnaryOperator = 'not'
+export type UnaryOperator = 'not';
 
 export type BinaryLogicOperator =
     | 'and'
-    | 'or'
+    | 'or';
 
 export type BinaryCompareOperator =
     | 'gt'
     | 'gte'
     | 'lt'
     | 'lte'
-    | 'eq'
+    | 'eq';
 
 export type BinaryOperator =
     | BinaryCompareOperator
-    | BinaryLogicOperator
+    | BinaryLogicOperator;
 
-type NumberExpression<E extends EntityType, O extends BinaryCompareOperator, Vars extends SelectorVarsDefinition> = ComparisonExpression<E, O, number, Vars>;
+type NumberExpression<E extends EntityType, O extends BinaryCompareOperator, Vars extends SelectorVars>
+    = ComparisonExpression<E, O, number, Vars>;
 
-type ExpressionMethod<E extends EntityType, Vars extends SelectorVarsDefinition, Ex extends BinaryExpression<E, Vars>> = (l: Ex['left'], r: Ex['right']) => Ex;
-
-type NumberExpressionMethod<E extends EntityType, O extends BinaryCompareOperator, Vars extends SelectorVarsDefinition> = ExpressionMethod<E, Vars, NumberExpression<E, O, Vars>>;
+type NumberExpressionMethod<E extends EntityType, O extends BinaryCompareOperator, Vars extends SelectorVars>
+    = (l: NumberExpression<E, O, Vars>['left'], r: NumberExpression<E, O, Vars>['right']) => NumberExpression<E, O, Vars>;
 
 /**
  * Операторы выражения для поиска по базе данных
  */
-export interface QueryOperators<E extends EntityType, Vars extends SelectorVarsDefinition> {
+export interface QueryOperators<E extends EntityType, Vars extends SelectorVars> {
     /** @example xpState > 0 */
     readonly gt: NumberExpressionMethod<E, 'gt', Vars>;
 
@@ -42,13 +43,13 @@ export interface QueryOperators<E extends EntityType, Vars extends SelectorVarsD
     readonly lte: NumberExpressionMethod<E, 'lte', Vars>;
 
     /** @example xpState == 0 */
-    readonly eq: ExpressionMethod<E, Vars, ComparisonExpression<E, 'eq', ExpressionConstant, Vars>>;
+    readonly eq: <T>(left: State<E, T>, right: T | State<E, T> | ExpressionVariable<Vars>) => ComparisonExpression<E, 'eq', T, Vars>;
 
     /** @example (...) && (...) */
-    readonly and: (l: AnyExpression<E>, r: AnyExpression<E>) => BooleanExpression<E, 'and'>;
+    readonly and: (...exprs: [AnyExpression<E>, ...AnyExpression<E>[]]) => BooleanExpression<E, 'and'>;
 
     /** @example (...) || (...) */
-    readonly or: (l: AnyExpression<E>, r: AnyExpression<E>) => BooleanExpression<E, 'or'>;
+    readonly or: (...exprs: [AnyExpression<E>, ...AnyExpression<E>[]]) => BooleanExpression<E, 'or'>;
 
     /** @example !(...) */
     readonly not: (r: AnyExpression<E>) => UnaryExpression<E, 'not', Vars>;
@@ -65,8 +66,8 @@ export const OperatorExpressions: QueryOperators<EntityType, any> = Object.freez
 
     eq: (l, r) => new ComparisonExpression('eq', l, r),
 
-    and: (l, r) => new BooleanExpression('and', l, r),
-    or: (l, r) => new BooleanExpression('or', l, r),
+    and: (...exprs) => new BooleanExpression('and', ...exprs),
+    or: (...exprs) => new BooleanExpression('or', ...exprs),
 
     not: r => new UnaryExpression('not', r),
 

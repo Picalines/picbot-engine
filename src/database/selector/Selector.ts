@@ -1,22 +1,35 @@
+import { Overwrite } from "../../utils/index.js";
 import { EntityType } from "../Entity.js";
 import { AnyExpression, ExpressionConstant } from "./Expression.js";
-import { QueryOperators } from "./Operator.js";
+import { OperatorExpressions, QueryOperators } from "./Operator.js";
 
-export type SelectorVarsDefinition = { readonly [name: string]: (value?: any) => ExpressionConstant }
-
-export type SelectorVars<Vars extends SelectorVarsDefinition> = { readonly [K in keyof Vars]: Vars[K] extends (value?: any) => infer T ? T : never };
-
-interface Definition<E extends EntityType, Vars extends SelectorVarsDefinition = {}> {
-    readonly entityType: E;
-    readonly variables?: Vars;
-    readonly expression: (q: QueryOperators<E, Vars>) => AnyExpression<E>;
+export type SelectorVars = {
+    readonly [name: string]: (value?: any) => ExpressionConstant;
 }
 
-export interface Selector<E extends EntityType, Vars extends SelectorVarsDefinition = {}> extends Definition<E, Vars> { }
+export type SelectorVarValues<Vars extends SelectorVars> = {
+    readonly [K in keyof Vars]: Vars[K] extends ((value?: any) => infer T) ? T : never;
+};
 
-export class Selector<E extends EntityType, Vars extends SelectorVarsDefinition = {}> {
-    constructor(definition: Definition<E, Vars>) {
-        Object.assign(this, definition);
+interface Definition<E extends EntityType, Vars extends SelectorVars> {
+    readonly entityType: E;
+    readonly variables?: Vars;
+    readonly expression: AnyExpression<E>;
+}
+
+type DefinitionArgument<E extends EntityType, Vars extends SelectorVars> = Overwrite<Definition<E, Vars>, {
+    readonly expression: (q: QueryOperators<E, Vars>) => AnyExpression<E>;
+}>;
+
+export interface Selector<E extends EntityType, Vars extends SelectorVars = {}> extends Definition<E, Vars> { }
+
+export class Selector<E extends EntityType, Vars extends SelectorVars = {}> {
+    constructor(definition: DefinitionArgument<E, Vars>) {
+        Object.assign(this, {
+            entityType: definition.entityType,
+            variables: Object.freeze({ ...definition.variables }),
+            expression: definition.expression(OperatorExpressions as unknown as QueryOperators<E, Vars>),
+        });
         Object.freeze(this);
     }
 }

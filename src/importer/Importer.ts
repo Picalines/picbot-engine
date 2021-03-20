@@ -52,7 +52,7 @@ export class Importer {
         }
 
         const constructor = Importer.importDirClasses[dir];
-        const projectRoot = process.argv[1];
+        const projectRoot = process.argv[1]!;
         const isJsFile = RegExp.prototype.test.bind(/.*\.(m|c)?js$/);
 
         this.bot.logger.task(`${projectDir} -> ${constructor.name}`);

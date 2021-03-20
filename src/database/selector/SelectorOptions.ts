@@ -1,17 +1,14 @@
-import { GuildMemberManager, GuildManager } from "discord.js";
-import { EntityType, Entity } from "../Entity.js";
-import { SelectorVarsDefinition, SelectorVars } from "./Selector.js";
+import { EntityType, EntityManager } from "../Entity.js";
+import { SelectorVars, SelectorVarValues } from "./Selector.js";
 
-export type SelectorOptions<E extends EntityType, Vars extends SelectorVarsDefinition> = {
-    readonly manager: E extends 'member' ? GuildMemberManager : GuildManager;
-
-    readonly filter?: (entity: Entity<E>) => boolean;
+export type SelectorOptions<E extends EntityType, Vars extends SelectorVars = {}> = {
+    readonly manager: EntityManager<E>;
 
     readonly maxCount?: number;
 
-    readonly throwOnNotFound?: Error;
+    readonly variables?: {};
 
 } & ({} extends Vars ? {} : {
 
-    readonly variables: SelectorVars<Vars>;
+    readonly variables: SelectorVarValues<Vars>;
 });

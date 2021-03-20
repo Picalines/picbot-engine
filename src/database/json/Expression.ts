@@ -15,14 +15,13 @@ export function compileExpression<E extends EntityType>(expression: AnyExpressio
     }
 
     if (expression instanceof BooleanExpression) {
-        const left = compileExpression(expression.left);
-        const right = compileExpression(expression.right);
+        const subExpressions = expression.expressions.map(compileExpression);
 
         if (expression.operator == 'and') {
-            return (ps, vars) => left(ps, vars) && right(ps, vars);
+            return (ps, vars) => subExpressions.every(e => e(ps, vars));
         }
 
-        return (ps, vars) => left(ps, vars) || right(ps, vars);
+        return (ps, vars) => subExpressions.some(e => e(ps, vars));
     }
 
     const leftProp = expression.left.name;

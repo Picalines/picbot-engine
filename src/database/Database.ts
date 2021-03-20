@@ -1,7 +1,7 @@
 import { GuildMemberManager } from "discord.js";
 import { assert } from "../utils/index.js";
 import { State, StateAccess, EntityStorage } from "./state/index.js";
-import { Selector, SelectorOptions, OperatorExpressions, QueryOperators, SelectorVarsDefinition } from "./selector/index.js";
+import { Selector, SelectorOptions, OperatorExpressions, QueryOperators, SelectorVars } from "./selector/index.js";
 import { EntityType, Entity, checkEntityType } from "./Entity.js";
 import { DatabaseHandler } from "./Handler.js";
 import { Bot } from "../bot/index.js";
@@ -56,7 +56,7 @@ export class Database {
 
                 this.#handler = this.bot.options.databaseHandler(this);
 
-                await this.#handler.prepareForLoading?.();
+                await this.#handler.preLoad?.();
 
                 await this.bot.logger.promiseTask('users', async () => {
                     this.#usersStorage = await this.#handler.loadUsersState(this.bot.client.users);
@@ -72,6 +72,8 @@ export class Database {
                     })
                 ));
 
+                await this.#handler.postLoad?.();
+
                 this.events.loaded.emit();
             },
         });
@@ -82,7 +84,7 @@ export class Database {
             task: async () => {
                 this.events.beforeSaving.emit();
 
-                await this.#handler.prepareForSaving?.();
+                await this.#handler.preSave?.();
 
                 if (this.#handler.saveUsersState) {
                     await this.bot.logger.promiseTask('users', () => this.#handler.saveUsersState!(this.bot.client.users));
@@ -98,19 +100,21 @@ export class Database {
                     ));
                 }
 
+                await this.#handler.postSave?.();
+
                 this.events.saved.emit();
             },
         });
 
         this.bot.client.on('guildCreate', async guild => {
-            const storage = await this.#handler.prepareCreatedGuild(guild);
+            const storage = await this.#handler.loadMembersState(guild.members);
             this.#memberStorage.set(guild.id, storage);
         });
 
         if (this.bot.options.cleanupGuildOnDelete) {
             bot.client.on('guildDelete', async guild => {
                 await this.#memberStorage.get(guild.id)?.clear();
-                this.#memberStorage.delete(guild.id)
+                this.#memberStorage.delete(guild.id);
                 await this.#guildsStorage.delete(guild);
             });
         }
@@ -141,46 +145,21 @@ export class Database {
         return access;
     }
 
-    async selectEntities<E extends EntityType, Vars extends SelectorVarsDefinition>(selector: Selector<E, Vars>, options: SelectorOptions<E, Vars>): Promise<Entity<E>[]> {
+    async selectEntities<E extends EntityType, Vars extends SelectorVars>(selector: Selector<E, Vars>, options: SelectorOptions<E, Vars>): Promise<Entity<E>[]> {
         assert(this.bot.importer.isImported('selectors', selector as any), `unknown ${selector.entityType} selector`);
 
         const { maxCount = Infinity } = options;
         if (maxCount <= 0) return [];
-
-        const expression = selector.expression(OperatorExpressions as unknown as QueryOperators<E, Vars>);
 
         const storage: EntityStorage<any> =
             selector.entityType == 'user' ? this.#usersStorage :
                 selector.entityType == 'guild' ? this.#guildsStorage :
                     this.#memberStorage.get((options.manager as GuildMemberManager).guild.id)!;
 
-        let entities = options.manager.cache.values() as IterableIterator<Entity<E>>;
-        if (options.filter) {
-            entities = filterIterable(entities, options.filter);
-        }
+        const selected = await storage.select(selector, options);
 
-        const selectedGen = storage.select(entities, selector as any, expression, options.variables as any);
-        const selected: Entity<E>[] = [];
+        selected.length = Math.min(selected.length, maxCount);
 
-        const checkBreak = maxCount == Infinity ? (() => false) : (() => selected.length >= maxCount);
-
-        for await (const entity of selectedGen) {
-            selected.push(entity as Entity<E>);
-            if (checkBreak()) {
-                break;
-            }
-        }
-
-        if (!selected.length && options.throwOnNotFound) {
-            throw options.throwOnNotFound;
-        }
-
-        return selected;
-    }
-}
-
-function* filterIterable<T>(iterable: IterableIterator<T>, filter: (item: T) => boolean): IterableIterator<T> {
-    for (const value of iterable) {
-        if (filter(value)) yield value;
+        return selected as any;
     }
 }

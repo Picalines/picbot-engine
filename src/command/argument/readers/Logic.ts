@@ -16,7 +16,7 @@ export const mergeReaders = <T extends any[]>(...readers: { [K in keyof T]: Argu
     let length = 0;
 
     for (let index = 0; index < readers.length; index++) {
-        const valResult = readers[index](userInput.slice(length), context);
+        const valResult = readers[index]!(userInput.slice(length), context);
         if (valResult.isError) {
             return {
                 isError: true,

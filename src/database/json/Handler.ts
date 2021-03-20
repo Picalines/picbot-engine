@@ -1,10 +1,11 @@
 import { join, sep as pathSep } from "path";
 import { CreateDatabaseHandler } from "../Handler.js";
-import { promises as fs } from "fs";
+import { existsSync, promises as fs } from "fs";
 import { EntityStorage } from "../state/index.js";
 import { CompiledExpression, compileExpression } from "./Expression.js";
-import { EntityManager, EntityType } from "../Entity.js";
+import { Entity, EntityManager, EntityType } from "../Entity.js";
 import { Selector } from "../selector/index.js";
+import { Collection } from "discord.js";
 
 interface JsonHandlerOptions {
     databasePath: string,
@@ -19,7 +20,7 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
 
     const prepare = async () => {
         const memberDirs = database.bot.client.guilds.cache.map((_, guildId) => join(membersDir, guildId));
-        await Promise.all([usersDir, guildsDir, ...memberDirs].map(async dir => fs.mkdir(dir, { recursive: true })))
+        await Promise.all([usersDir, guildsDir, ...memberDirs].map(async dir => fs.mkdir(dir, { recursive: true })));
     };
 
     const compiledExpressions = new WeakMap<Selector<any, any>, CompiledExpression>();
@@ -49,20 +50,28 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
             };
         },
 
-        *select(entities, selector, expression, vars) {
+        async select(selector, { manager, variables = {}, maxCount = Infinity }) {
             let arrowExpression = compiledExpressions.get(selector);
             if (!arrowExpression) {
-                arrowExpression = compileExpression(expression);
+                arrowExpression = compileExpression(selector.expression);
                 compiledExpressions.set(selector, arrowExpression);
             }
 
             const defaultSatate = database.defaultEntityState![entityType];
+            const selected = [];
 
-            for (const entity of entities) {
-                if (arrowExpression({ ...defaultSatate, ...stateMap.get(entity.id) }, vars)) {
-                    yield entity;
+            for (const [id, entity] of manager.cache as Collection<string, Entity<E>>) {
+                if (!arrowExpression({ ...defaultSatate, ...stateMap.get(id) }, variables)) {
+                    continue;
+                }
+
+                selected.push(entity);
+                if (selected.length >= maxCount) {
+                    break;
                 }
             }
+
+            return selected;
         },
     });
 
@@ -101,6 +110,8 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
     const isEmpty = (state: any) => Object.keys(state).length == 0;
 
     const saveEntities = async <E extends EntityType>(dir: string, manager: EntityManager<E>, entityMap: Map<string, any>) => {
+        await fs.mkdir(dir, { recursive: true });
+
         const savePromises = [] as Promise<void>[];
 
         entityMap.forEach((entityState, entityId) => {
@@ -119,20 +130,20 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
 
     if (database.bot.options.cleanupGuildOnDelete) {
         database.bot.client.on('guildDelete', guild => {
-            fs.unlink(join(guildsDir, guild.id + '.json')).catch(() => {});
+            fs.unlink(join(guildsDir, guild.id + '.json')).catch(() => { });
             fs.rmdir(join(membersDir, guild.id), { recursive: true, maxRetries: 3 });
         });
     }
 
     if (database.bot.options.cleanupMemberOnRemove) {
         database.bot.client.on('guildMemberRemove', member => {
-            fs.unlink(join(membersDir, member.guild.id, member.id + '.json')).catch(() => {});
+            fs.unlink(join(membersDir, member.guild.id, member.id + '.json')).catch(() => { });
         });
     }
 
     return {
-        prepareForLoading: prepare,
-        prepareForSaving: prepare,
+        preLoad: prepare,
+        preSave: prepare,
 
         async loadUsersState(users) {
             return await loadEntities('user', usersDir, users, usersStateMap);
@@ -154,19 +165,18 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
             const path = join(membersDir, members.guild.id);
             const membersMap = new Map();
             membersStateMap.set(members.guild.id, membersMap);
-            return await loadEntities('member', path, members, membersMap);
+            if (existsSync(path)) {
+                return await loadEntities('member', path, members, membersMap);
+            }
+            else {
+                return createStateStorage('member', membersMap);
+            }
         },
 
         async saveMembersState(members) {
             const path = join(membersDir, members.guild.id);
             const membersMap = membersStateMap.get(members.guild.id)!;
             return await saveEntities(path, members, membersMap);
-        },
-
-        async prepareCreatedGuild(guild) {
-            const membersMap = new Map();
-            membersStateMap.set(guild.id, membersMap);
-            return createStateStorage('member', membersMap);
         },
     };
 };

@@ -8,7 +8,7 @@ export function assert(condition: any, message = "assertion failed"): asserts co
  * @example capitalize('abc') === 'Abc'
  * @example capitalize('') == ''
  */
-export const capitalize = (str: string) => (str.length > 0) ? str[0].toUpperCase() + str.slice(1) : '';
+export const capitalize = (str: string) => (str.length > 0) ? str[0]!.toUpperCase() + str.slice(1) : '';
 
 /**
  * @example orderedList('a', 'b') === '1. a\n2. b'
