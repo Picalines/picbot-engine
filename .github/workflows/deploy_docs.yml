@@ -3,6 +3,7 @@ name: Docs Deployment
 on:
   push:
     branches: [ master ]
+    paths: [ '**.md', '**.ts' ]
 
 jobs:
   deploy_docs:
