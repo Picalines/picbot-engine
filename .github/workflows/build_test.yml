@@ -2,9 +2,11 @@ name: master building test
 
 on:
   pull_request:
-    branches: [ master, develop ]
+    branches: [ master ]
+    paths: [ '**.ts' ]
   push:
-    branches: [ master, develop ]
+    branches: [ master ]
+    paths: [ '**.ts' ]
 
 jobs:
   unit_test_request:

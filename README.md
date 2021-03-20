@@ -546,10 +546,8 @@ export default new Command({
     execute: async ({ message, database, args: [minWarns] }) => {
         const selected = await database.selectEntities(minWarnsSelector, {
             manager: message.guild.members, // если искать сервера, то нужно указать client.guilds (а если юзеров - client.users)
-            throwOnNotFound: new Error('Ничего не найдено'), // если не указать, selected может быть пустым
             variables: { minWarns }, // переменные для селектора (не указываются, если переменных нет в самом селекторе)
             maxCount: 10, // максимальное кол-во результатов
-            filter: m => !m.permissions.has('ADMINISTRATOR'), // фильтрует участника перед выборкой
         });
 
         const names = selected.map(m => m.displayName);
