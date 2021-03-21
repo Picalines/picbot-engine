@@ -1,4 +1,3 @@
-import { assert } from "../utils/index.js";
 import { TermCollection, TermsDefinition } from "./TermCollection.js";
 
 interface Definition<Terms extends TermsDefinition> {

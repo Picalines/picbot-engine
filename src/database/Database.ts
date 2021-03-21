@@ -151,10 +151,20 @@ export class Database {
         const { maxCount = Infinity } = options;
         if (maxCount <= 0) return [];
 
-        const storage: EntityStorage<any> =
-            selector.entityType == 'user' ? this.#usersStorage :
-                selector.entityType == 'guild' ? this.#guildsStorage :
-                    this.#memberStorage.get((options.manager as GuildMemberManager).guild.id)!;
+        if (selector.variables) {
+            assert(typeof options.variables == 'object', 'selector options object expected');
+            for (const name in selector.variables as Record<string, any>) {
+                assert(name in options.variables, `missing selector variable '${name}'`);
+            }
+            for (const name in options.variables) {
+                assert(name in selector.variables, `unexpected selector variable '${name}'`);
+            }
+        }
+
+        const storage: EntityStorage<any>
+            = selector.entityType == 'user' ? this.#usersStorage
+                : selector.entityType == 'guild' ? this.#guildsStorage
+                    : this.#memberStorage.get((options.manager as GuildMemberManager).guild.id)!;
 
         const selected = await storage.select(selector, options);
 
