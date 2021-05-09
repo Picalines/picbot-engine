@@ -3,10 +3,10 @@ name: master building test
 on:
   pull_request:
     branches: [ master ]
-    paths: [ '**.ts' ]
+    paths: [ '**.ts', '**.json' ]
   push:
     branches: [ master ]
-    paths: [ '**.ts' ]
+    paths: [ '**.ts', '**.json' ]
 
 jobs:
   unit_test_request:
