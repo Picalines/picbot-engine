@@ -1,6 +1,6 @@
 {
     "name": "picbot-engine",
-    "version": "2.3.0",
+    "version": "2.3.1",
     "description": "discord.js bot engine",
     "type": "module",
     "module": "./dist/index.js",
