@@ -7,7 +7,6 @@ import { Database } from "../database/index.js";
 import { Logger } from "../logger/Logger.js";
 import { Translator } from "../translator/index.js";
 import { StageSequence } from "../sequence/index.js";
-import { BotInitializer } from "./Initializer.js";
 import { Importer } from "../importer/index.js";
 
 export class Bot {
