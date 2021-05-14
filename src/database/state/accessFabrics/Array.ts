@@ -1,5 +1,8 @@
 import { StateAccess } from "../State.js";
 
+/**
+ * @warning be careful with JS references and your database handler
+ */
 export const arrayAccess = <T>(access: StateAccess<readonly T[]>) => ({
     ...access,
 
@@ -26,8 +29,8 @@ export const arrayAccess = <T>(access: StateAccess<readonly T[]>) => ({
 
     async shift() {
         const array = [...await access.value()];
-        const last = array.shift();
+        const first = array.shift();
         await access.set(array);
-        return last;
+        return first;
     },
 });

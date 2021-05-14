@@ -58,8 +58,14 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
             }
 
             variables ??= {};
-            const defaultSatate = database.defaultEntityState![entityType];
             const selected = [];
+
+            const defaultSatate = {} as any;
+            await database.bot.importer.forEach('states', state => {
+                if (state.entityType == entityType) {
+                    defaultSatate[state.name] = state.defaultValue;
+                }
+            });
 
             for (const [id, entity] of manager.cache as Collection<string, Entity<E>>) {
                 if (!arrowExpression({ ...defaultSatate, ...stateMap.get(id) }, variables)) {
@@ -129,18 +135,14 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
         await Promise.all(savePromises);
     };
 
-    if (database.bot.options.cleanupGuildOnDelete) {
-        database.bot.client.on('guildDelete', guild => {
-            fs.unlink(join(guildsDir, guild.id + '.json')).catch(() => { });
-            fs.rmdir(join(membersDir, guild.id), { recursive: true, maxRetries: 3 });
-        });
-    }
+    database.bot.client.on('guildDelete', guild => {
+        fs.unlink(join(guildsDir, guild.id + '.json')).catch(() => { });
+        fs.rmdir(join(membersDir, guild.id), { recursive: true, maxRetries: 3 });
+    });
 
-    if (database.bot.options.cleanupMemberOnRemove) {
-        database.bot.client.on('guildMemberRemove', member => {
-            fs.unlink(join(membersDir, member.guild.id, member.id + '.json')).catch(() => { });
-        });
-    }
+    database.bot.client.on('guildMemberRemove', member => {
+        fs.unlink(join(membersDir, member.guild.id, member.id + '.json')).catch(() => { });
+    });
 
     return {
         preLoad: prepare,

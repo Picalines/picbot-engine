@@ -1,27 +1,27 @@
 import { StateAccess } from "../State.js";
 
-export const jsonAccess = (access: StateAccess<string>) => ({
+export const jsonAccess = <T = any>(access: StateAccess<string>) => ({
     ...access,
 
-    async set(value: string) {
+    async set(object: T) {
+        await access.set(JSON.stringify(object))
+    },
+
+    async value(): Promise<T> {
+        const value = await access.value();
+
         try {
-            JSON.parse(value);
+            return JSON.parse(value);
         }
         catch {
-            throw new Error('json is not valid');
+            throw new Error('stored json is not valid');
         }
-        await access.set(value);
     },
 
-    async parsed() {
-        return JSON.parse(await access.value());
-    },
-
-    async setJson(object: any) {
-        await access.set(JSON.stringify(object));
-    },
-
-    async assignJson(source: any) {
-        await this.setJson(Object.assign(await this.parsed(), source));
+    /**
+     * uses Object.assing
+     */
+    async assign(object: Partial<T>) {
+        await this.set(Object.assign(await this.value(), object));
     },
 });

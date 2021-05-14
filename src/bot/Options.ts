@@ -1,6 +1,6 @@
 import { Guild } from "discord.js";
 import { assert, DeepPartial, Overwrite, PromiseOrSync } from "../utils/index.js";
-import { State, CreateDatabaseHandler, createJsonDatabaseHandler } from "../database/index.js";
+import { State, CreateDatabaseHandler, createJsonDatabaseHandler, StateAccess } from "../database/index.js";
 import { LoggerTheme, pipeLoggerTheme } from "../logger/index.js";
 import { Bot } from "./Bot.js";
 import { readFileSync } from "fs";
@@ -48,16 +48,6 @@ export type BotOptions = Readonly<{
      * @default createJsonDatabaseHandler({ databasePath: '/database/' })
      */
     databaseHandler: CreateDatabaseHandler;
-
-    /**
-     * @default true
-     */
-    cleanupMemberOnRemove: boolean;
-
-    /**
-     * @default true
-     */
-    cleanupGuildOnDelete: boolean;
 }>;
 
 export type BotOptionsArgument = Overwrite<DeepPartial<BotOptions>, Readonly<{
@@ -65,7 +55,7 @@ export type BotOptionsArgument = Overwrite<DeepPartial<BotOptions>, Readonly<{
     /**
      * @example (() => ['!']) | ['!'] | prefixesDbState
      */
-    fetchPrefixes?: ArgumentFetcher<string[]>;
+    fetchPrefixes?: ArgumentFetcher<readonly string[]>;
     /**
      * @example (() => 'en') | 'en' | localeDbState
      */
@@ -92,13 +82,11 @@ export const DefaultBotOptions: BotOptions = deepFreeze({
     useBuiltInHelpCommand: true,
     loggerTheme: pipeLoggerTheme,
     databaseHandler: createJsonDatabaseHandler({ databasePath: '/database/' }),
-    cleanupMemberOnRemove: true,
-    cleanupGuildOnDelete: true,
 });
 
 type Fetcher<T> = (bot: Bot, guild: Guild) => PromiseOrSync<T>;
 
-type ArgumentFetcher<T> = T | State<'guild', T> | Fetcher<T>;
+type ArgumentFetcher<T> = T | State<'guild', any, { value: StateAccess<T>['value'] }> | Fetcher<T>;
 
 export function parseBotOptionsArgument(options: BotOptionsArgument): BotOptions {
     let { fetchPrefixes, fetchLocale, token } = options;

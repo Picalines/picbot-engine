@@ -21,26 +21,10 @@ export class Database {
     #guildsStorage!: EntityStorage<'guild'>;
     #memberStorage = new Map<string, EntityStorage<'member'>>();
 
-    readonly defaultEntityState!: { [K in EntityType]: Readonly<Record<string, any>> };
-
     constructor(readonly bot: Bot) {
         this.bot.loadingSequence.add({
             name: 'import states',
-            task: async () => {
-                const groupedStates: Record<EntityType, State<any, any>[]> = { user: [], guild: [], member: [] };
-
-                await this.bot.importer.forEach('states', state => {
-                    groupedStates[state.entityType].push(state);
-                });
-
-                (this as any).defaultEntityState = { user: {}, guild: {}, member: {} };
-
-                for (const entityType in groupedStates) {
-                    groupedStates[entityType as EntityType].forEach(state => {
-                        (this as any).defaultEntityState[entityType][state.name] = state.defaultValue;
-                    });
-                }
-            },
+            task: () => this.bot.importer.import('states'),
         });
 
         this.bot.loadingSequence.add({
@@ -111,35 +95,31 @@ export class Database {
             this.#memberStorage.set(guild.id, storage);
         });
 
-        if (this.bot.options.cleanupGuildOnDelete) {
-            bot.client.on('guildDelete', async guild => {
-                await this.#memberStorage.get(guild.id)?.clear();
-                this.#memberStorage.delete(guild.id);
-                await this.#guildsStorage.delete(guild);
-            });
-        }
+        bot.client.on('guildDelete', async guild => {
+            await this.#memberStorage.get(guild.id)?.clear();
+            this.#memberStorage.delete(guild.id);
+            await this.#guildsStorage.delete(guild);
+        });
 
-        if (this.bot.options.cleanupMemberOnRemove) {
-            bot.client.on('guildMemberRemove', async member => {
-                const memberStorage = this.#memberStorage.get(member.guild.id);
-                if (memberStorage) {
-                    member = member.partial ? await member.fetch() : member;
-                    await memberStorage.delete(member);
-                }
-            });
-        }
+        bot.client.on('guildMemberRemove', async member => {
+            const memberStorage = this.#memberStorage.get(member.guild.id);
+            if (memberStorage) {
+                member = member.partial ? await member.fetch() : member;
+                await memberStorage.delete(member);
+            }
+        });
     }
 
-    accessState<E extends EntityType, T, A extends StateAccess<T>>(entity: Entity<E>, state: State<E, T, A>): A {
+    accessState<E extends EntityType, T, A>(entity: Entity<E>, state: State<E, T, A>): A {
         assert(this.bot.importer.isImported('states', state as any), `unknown ${state.entityType} state '${state.name}'`);
 
         const storage: EntityStorage<any> = checkEntityType(entity, 'member')
             ? this.#memberStorage.get(entity.guild.id)!
             : (checkEntityType(entity, 'user') ? this.#usersStorage : this.#guildsStorage);
 
-        let access = storage.accessState(entity, state) as A;
+        let access = storage.accessState(entity, state as any) as unknown as A;
         if (state.accessFabric) {
-            access = state.accessFabric(access, entity);
+            access = state.accessFabric(access as unknown as StateAccess<T>, entity, state.defaultValue);
         }
 
         return access;

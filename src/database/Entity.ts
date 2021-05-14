@@ -8,6 +8,8 @@ export type Entity<E extends EntityType>
     : E extends "member" ? GuildMember
     : never;
 
+export type AnyEntity = Entity<EntityType>;
+
 export type EntityManager<E extends EntityType>
     = E extends "user" ? UserManager
     : E extends "guild" ? GuildManager

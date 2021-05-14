@@ -8,4 +8,4 @@ export const unicodeEmojiRegex = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2
 
 export const unicodeEmojiReader = regexReader(unicodeEmojiRegex);
 
-export const userEmojiReader = mentionReader(/<:.+?:(?<id>\d+)>/, ({ executor: { client: { emojis } } }, id) => emojis.cache.get(id));
+export const customEmojiReader = mentionReader(/<:.+?:(?<id>\d+)>/, ({ executor: { client: { emojis } } }, id) => emojis.cache.get(id));
