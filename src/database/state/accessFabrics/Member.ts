@@ -8,7 +8,7 @@ export const memberAccess = referenceAccess<string, GuildMember, GuildMember | G
     },
 
     async deserialize(id) {
-        return (checkEntityType(entity, 'member') ? entity.guild : entity).member(id);
+        return (checkEntityType(entity, 'member') ? entity.guild : entity).members.cache.get(id) ?? null;
     },
 
     async isValid(member) {

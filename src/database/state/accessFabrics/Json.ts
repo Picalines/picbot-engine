@@ -7,6 +7,9 @@ export const jsonAccess = <T = any>(access: StateAccess<string>) => ({
         await access.set(JSON.stringify(object))
     },
 
+    /**
+     * @warning to save changes use `.set(object)` or prefer `.modify(obj => ...)`
+     */
     async value(): Promise<T> {
         const value = await access.value();
 
@@ -16,12 +19,5 @@ export const jsonAccess = <T = any>(access: StateAccess<string>) => ({
         catch {
             throw new Error('stored json is not valid');
         }
-    },
-
-    /**
-     * uses Object.assing
-     */
-    async assign(object: Partial<T>) {
-        await this.set(Object.assign(await this.value(), object));
     },
 });

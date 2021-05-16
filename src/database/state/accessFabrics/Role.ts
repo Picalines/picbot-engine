@@ -8,7 +8,7 @@ export const roleAccess = referenceAccess<string, Role, GuildMember | Guild>(ent
     },
 
     async deserialize(id) {
-        return await (checkEntityType(entity, 'member') ? entity.guild : entity).roles.fetch(id);
+        return (checkEntityType(entity, 'member') ? entity.guild : entity).roles.cache.get(id) ?? null;
     },
 
     async isValid(role) {
