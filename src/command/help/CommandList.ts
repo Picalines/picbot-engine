@@ -4,9 +4,11 @@ import { Bot } from "../../bot/index.js";
 import { helpEmbedTerms } from "./embedTerms/Terms.js";
 
 export const embedCommandList = (bot: Bot, embed: MessageEmbed, requester: GuildMember, context: CommandContext<any>) => {
-    const embedLabel = context.translate(helpEmbedTerms);
+    const embedText = context.translate(helpEmbedTerms);
 
-    embed.setTitle(embedLabel.botCommandsList);
+    embed
+        .setTitle(embedText.botCommandsList)
+        .setDescription('> ' + embedText.showMoreCommandInfo);
 
     const groupFields = new Map<string, EmbedField>();
 

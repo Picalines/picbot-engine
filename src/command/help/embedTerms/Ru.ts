@@ -6,6 +6,7 @@ export default new TranslationCollection({
     locale: 'ru',
     translations: {
         botCommandsList: 'Список команд',
+        showMoreCommandInfo: 'Используйте `!help <command>` для подробной информации о команде',
         infoAboutCommand: ({ command }) => `Информация о команде \`${command}\``,
         aliases: 'Алиасы',
         description: 'Описание',
