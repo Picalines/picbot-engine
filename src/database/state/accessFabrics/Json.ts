@@ -8,7 +8,7 @@ export const jsonAccess = <T = any>(access: StateAccess<string>) => ({
     },
 
     /**
-     * @warning to save changes use `.set(object)` or prefer `.modify(obj => ...)`
+     * @warning to save changes use `.set(object)`
      */
     async value(): Promise<T> {
         const value = await access.value();

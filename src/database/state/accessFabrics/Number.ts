@@ -8,9 +8,13 @@ import { StateAccess } from "../State.js";
 export const numberAccess = (range?: [min: number, max: number], allowNaN = false) => {
     assert(!range || range[1] > range[0], `${numberAccess.name} range is invalid`);
 
-    const inRange = range ? ((n: number) => n >= range[0] && n <= range[1]) : () => true;
+    const inRange = range
+        ? ((n: number) => n >= range[0] && n <= range[1])
+        : () => true;
 
-    const isValid = !allowNaN ? ((n: number) => !isNaN(n) && inRange(n)) : inRange;
+    const isValid = !allowNaN
+        ? ((n: number) => !isNaN(n) && inRange(n))
+        : inRange;
 
     return (access: StateAccess<number>) => ({
         ...access,
@@ -31,5 +35,5 @@ export const numberAccess = (range?: [min: number, max: number], allowNaN = fals
             await this.set(newValue);
             return newValue;
         },
-    })
+    });
 };

@@ -6,9 +6,6 @@ import { SelectorVars } from "./Selector.js";
 type ComparsionExpressionMethod<E extends EntityType, O extends ComparsionOperator<T>, T, Vars extends SelectorVars>
     = <U extends T>(l: ComparisonExpression<E, O, U, Vars>['left'], r: ComparisonExpression<E, O, U, Vars>['right']) => ComparisonExpression<E, O, T, Vars>
 
-/**
- * Операторы выражения для поиска по базе данных
- */
 export interface QueryOperators<E extends EntityType, Vars extends SelectorVars> {
     readonly gt: ComparsionExpressionMethod<E, 'gt', number, Vars>;
     readonly gte: ComparsionExpressionMethod<E, 'gte', number, Vars>;
