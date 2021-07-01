@@ -2,6 +2,15 @@ export type PromiseOrSync<T> = Promise<T> | T;
 
 export type PromiseVoid = PromiseOrSync<void>;
 
+export type Primitive =
+    | string
+    | symbol
+    | number
+    | bigint
+    | boolean
+    | null
+    | undefined;
+
 /**
  * @author https://gist.github.com/navix/6c25c15e0a2d3cd0e5bce999e0086fc9
  */
@@ -15,8 +24,6 @@ export type NonEmpty<T> = T extends readonly (infer U)[] ? [U, ...U[]] : never;
 export type Overwrite<T, U> = Pick<T, Exclude<keyof T, keyof U>> & U;
 
 export type Indexes<Tuple extends any[]> = { [I in keyof Tuple]: I }[number];
-
-export type Mutable<T> = { [K in keyof T]: T[K] };
 
 //#region TupleOf
 
