@@ -18,8 +18,7 @@ export const jsonModelAccess = <T>(modelConstructor: new () => T) => (access: St
          */
         async value() {
             const value = await jAccess.value();
-            const instance = Object.assign(new modelConstructor(), value) as T;
-            return instance;
+            return Object.assign(new modelConstructor(), value) as T;
         },
     };
 };
