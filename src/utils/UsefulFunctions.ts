@@ -1,3 +1,5 @@
+import { AnyConstructor, PrimitiveConstructor, PrimitiveConstructorInstance } from "./UsefulTypes.js";
+
 export function assert(condition: any, message = "assertion failed"): asserts condition {
     if (!condition) {
         throw new Error(message);
@@ -37,4 +39,28 @@ export const parseInterval = (min: number, max: number) => {
     const right = isFinite(max) ? `${max}]` : `${inf(max)})`;
 
     return left + '; ' + right;
+};
+
+type UnwrappedInstanceType<C extends AnyConstructor>
+    = C extends PrimitiveConstructor
+    ? PrimitiveConstructorInstance<C>
+    : InstanceType<C>;
+
+/**
+ * Type checker hint
+ * @param _types list of constructor functions (ignored at runtime)
+ * @example nulled(Number) // returns null at runtime, gives (null | number) type at "compile" time
+ * @returns null
+ */
+export function nulled<Types extends AnyConstructor[]>(..._types: Types):
+    null | { [I in keyof Types]: Types[I] extends AnyConstructor ? UnwrappedInstanceType<Types[I]> : never }[number] {
+    return null;
+}
+
+/**
+ * Type checker hint
+ * @example nullable(123) // returns 123 at runtime, gives (123 | null) type at "compile" time
+ */
+export function nullable<T>(value: T): T | null {
+    return value;
 }

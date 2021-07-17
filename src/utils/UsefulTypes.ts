@@ -2,14 +2,7 @@ export type PromiseOrSync<T> = Promise<T> | T;
 
 export type PromiseVoid = PromiseOrSync<void>;
 
-export type Primitive =
-    | string
-    | symbol
-    | number
-    | bigint
-    | boolean
-    | null
-    | undefined;
+export type AnyConstructor<T = any> = new (...args: any) => T;
 
 /**
  * @author https://gist.github.com/navix/6c25c15e0a2d3cd0e5bce999e0086fc9
@@ -35,7 +28,7 @@ type ConcatLargestUntilDone<N extends number, R extends never[][], B extends nev
     ? ConcatLargestUntilDone<N, R extends [R[0], ...infer U] ? U extends never[][] ? U : never : never, B>
     : ConcatLargestUntilDone<N, R extends [R[0], ...infer U] ? U extends never[][] ? U : never : never, [...R[0], ...B]>;
 
-type Replace<R extends any[], T> = { [K in keyof R]: T }
+type Replace<O extends any[], I> = { [K in keyof O]: I };
 
 /**
  * @example TupleOf<number, 3> -> [number, number, number]
@@ -45,8 +38,38 @@ export type TupleOf<T, N extends number> = number extends N ? T[] : {
     [K in N]:
     BuildPowersOf2LengthArrays<K, [[never]]> extends infer U ? U extends never[][]
     ? Replace<ConcatLargestUntilDone<K, U, []>, T> : never : never;
-}[N]
+}[N];
 
 //#endregion
 
 export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
+
+export type Switch<T, Cases extends [_case: any, result: any][]>
+    = Exclude<
+        { [C in keyof Cases]: Cases[C] extends [any, any] ? T extends Cases[C][0] ? Cases[C][1] : never : never }[number],
+        never
+    >;
+
+export type Primitive =
+    | string
+    | symbol
+    | number
+    | bigint
+    | boolean
+    | null
+    | undefined;
+
+export type PrimitiveConstructor =
+    | StringConstructor
+    | SymbolConstructor
+    | NumberConstructor
+    | BigIntConstructor
+    | BooleanConstructor;
+
+export type PrimitiveConstructorInstance<T extends PrimitiveConstructor> = Switch<T, [
+    [StringConstructor, string],
+    [SymbolConstructor, symbol],
+    [NumberConstructor, number],
+    [BigIntConstructor, bigint],
+    [BooleanConstructor, boolean],
+]>;
