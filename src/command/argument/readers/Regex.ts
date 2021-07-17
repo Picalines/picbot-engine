@@ -1,5 +1,4 @@
-import { ValueParser } from "../../../utils/index.js";
-import { ArgumentReader } from "../Argument.js";
+import { ArgumentReader, Parser } from "../Argument.js";
 import { CommandContext } from "../../Context.js";
 import { argumentReaderTerms as readerTerms } from "./terms/Terms.js";
 
@@ -17,9 +16,9 @@ export const regexReader = (regex: RegExp): ArgumentReader<string> => {
             value: { length: firstMatch.length, parsedValue: firstMatch },
         };
     };
-}
+};
 
-export const parsedRegexReader = <T>(regex: RegExp, parser: ValueParser<string, T, CommandContext<unknown[]>, string>): ArgumentReader<T> => {
+export const parsedRegexReader = <T>(regex: RegExp, parser: Parser<string, T, CommandContext<unknown[]>, string>): ArgumentReader<T> => {
     const reader = regexReader(regex);
     return (userInput, context) => {
         const result = reader(userInput, context);
@@ -35,4 +34,4 @@ export const parsedRegexReader = <T>(regex: RegExp, parser: ValueParser<string, 
             value: { length: result.value.length, parsedValue: parsed.value },
         };
     };
-}
+};

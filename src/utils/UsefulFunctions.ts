@@ -1,11 +1,5 @@
 import { AnyConstructor, PrimitiveConstructor, PrimitiveConstructorInstance } from "./UsefulTypes.js";
 
-export function assert(condition: any, message = "assertion failed"): asserts condition {
-    if (!condition) {
-        throw new Error(message);
-    }
-}
-
 /**
  * @example capitalize('abc') === 'Abc'
  * @example capitalize('') == ''
