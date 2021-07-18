@@ -1,6 +1,6 @@
 import { MessageEmbed } from "discord.js";
 import { CommandContext } from "../Context.js";
-import { capitalize, orderedList } from "../../utils/index.js";
+import { capitalize, orderedList, range } from "../../utils/index.js";
 import { Command } from "../Command.js";
 import { helpEmbedTerms } from "./embedTerms/Terms.js";
 
@@ -19,12 +19,7 @@ export const embedCommandInfo = (embed: MessageEmbed, command: Command<any>, hel
     embed.addField(embedLabel.description, commandInfo.description);
 
     if (command.arguments) {
-        const argList: string[] = [];
-
-        for (let i = 0; i < command.arguments.length; i++) {
-            argList[i] = capitalize((commandInfo as any)[`argument_${i}_description`]);
-        }
-
+        const argList = range(command.arguments.length).map(i => capitalize((commandInfo as any)[`argument_${i}_description`]))
         embed.addField(embedLabel.arguments, orderedList(...argList));
     }
 

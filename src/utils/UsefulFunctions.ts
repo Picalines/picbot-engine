@@ -17,6 +17,13 @@ export const orderedList = (...elements: readonly string[]) => elements.map((ele
 export const unorderedList = (...elements: readonly string[]) => elements.map(element => '• ' + element.trim()).join('\n');
 
 /**
+ * @example range(3) -> [0, 1, 2]
+ * @example range(0) -> []
+ * @example range(-1) -> RangeError
+ */
+export const range = (stop: number) => [...new Array(stop).keys()];
+
+/**
  * @example parseInterval(1, 100) === '[1; 100]'
  * @example parseInterval(1, Infinity) === '[1; +∞)'
  * @example parseInterval(-Infinity, 0) === '(-∞; 0]'

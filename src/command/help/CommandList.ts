@@ -2,6 +2,7 @@ import { MessageEmbed, GuildMember, EmbedField } from "discord.js";
 import { CommandContext } from "../Context.js";
 import { Bot } from "../../bot/index.js";
 import { helpEmbedTerms } from "./embedTerms/Terms.js";
+import { Command } from "../Command.js";
 
 export const embedCommandList = (bot: Bot, embed: MessageEmbed, requester: GuildMember, context: CommandContext<any>) => {
     const embedText = context.translate(helpEmbedTerms);
@@ -10,23 +11,21 @@ export const embedCommandList = (bot: Bot, embed: MessageEmbed, requester: Guild
         .setTitle(embedText.botCommandsList)
         .setDescription('> ' + embedText.showMoreCommandInfo);
 
-    const groupFields = new Map<string, EmbedField>();
+    const groupedCommands = [...bot.commands]
+        .filter(command => command.canBeExecutedBy(requester))
+        .reduce((grouped: Record<string, Command<any>[]>, command) => {
+            const { group } = context.translate(command.infoTerms);
 
-    for (const command of bot.commands) {
-        if (!command.canBeExecutedBy(requester)) {
-            continue;
-        }
+            (grouped[group] ??= []).push(command);
 
-        const { group } = context.translate(command.infoTerms);
+            return grouped;
+        }, {});
 
-        let field = groupFields.get(group);
-        if (!field) {
-            field = { name: group, value: '', inline: false };
-            groupFields.set(group, field);
-        }
+    const fields = Object.entries(groupedCommands)
+        .map(([group, commands]) => ({
+            name: group,
+            value: commands.map(c => `\`${c.name}\``).join(', ')
+        }));
 
-        field.value += (field.value.length > 0 ? ', ' : '') + `\`${command.name}\``;
-    }
-
-    embed.addFields([...groupFields.values()]);
-}
+    embed.addFields(...fields);
+};
