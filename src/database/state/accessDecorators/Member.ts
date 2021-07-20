@@ -1,8 +1,8 @@
-import { Guild, GuildMember } from "discord.js";
+import { GuildMember } from "discord.js";
 import { checkEntityType } from "../../Entity.js";
 import { referenceAccess } from "./Reference.js";
 
-export const memberAccess = referenceAccess<string, GuildMember, GuildMember | Guild>(entity => ({
+export const memberAccess = referenceAccess<'member' | 'guild', string, GuildMember>(entity => ({
     async serialize(member) {
         return member.id;
     },

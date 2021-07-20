@@ -1,8 +1,8 @@
 import { User } from "discord.js";
-import { AnyEntity } from "../../Entity.js";
+import { EntityType } from "../../Entity.js";
 import { referenceAccess } from "./Reference.js";
 
-export const userAccess = referenceAccess<string, User, AnyEntity>(entity => ({
+export const userAccess = referenceAccess<EntityType, string, User>(entity => ({
     async serialize(user) {
         return user.id;
     },

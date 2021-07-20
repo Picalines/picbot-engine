@@ -1,11 +1,12 @@
 import { assert } from "../../../utils/index.js";
-import { StateAccess } from "../State.js";
+import { EntityType } from "../../Entity.js";
+import { StateAccess, StateAccessDecorator } from "../State.js";
 
 /**
  * @param range default is [-Infinity, Infinity]
  * @param range default is false
  */
-export const numberAccess = (range?: [min: number, max: number], allowNaN = false) => {
+export const numberAccess = (range?: [min: number, max: number], allowNaN = false): StateAccessDecorator<EntityType, number> => {
     assert(!range || range[1] > range[0], `${numberAccess.name} range is invalid`);
 
     const inRange = range

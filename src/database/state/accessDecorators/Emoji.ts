@@ -1,11 +1,11 @@
-import { Guild, GuildEmoji, GuildMember } from "discord.js";
+import { GuildEmoji } from "discord.js";
 import { checkEntityType } from "../../Entity.js";
 import { referenceAccess } from "./Reference.js";
 
 /**
  * @param allowExternal default is false
  */
-export const customEmojiAccess = (allowExternal = false) => referenceAccess<string, GuildEmoji, GuildMember | Guild>(entity => ({
+export const customEmojiAccess = (allowExternal = false) => referenceAccess<'member' | 'guild', string, GuildEmoji>(entity => ({
     async serialize(emoji) {
         return emoji.id;
     },

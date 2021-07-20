@@ -1,6 +1,6 @@
 import { StateAccess } from "../State.js";
 
-export const jsonAccess = <T = any>(access: StateAccess<string>) => ({
+export const jsonAccess = <T = any>(access: StateAccess<string>): StateAccess<T> => ({
     ...access,
 
     async set(object: T) {

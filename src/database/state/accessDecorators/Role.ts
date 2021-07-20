@@ -2,7 +2,7 @@ import { Guild, GuildMember, Role } from "discord.js";
 import { checkEntityType } from "../../Entity.js";
 import { referenceAccess } from "./Reference.js";
 
-export const roleAccess = referenceAccess<string, Role, GuildMember | Guild>(entity => ({
+export const roleAccess = referenceAccess<'member' | 'guild', string, Role>(entity => ({
     async serialize(role) {
         return role.id;
     },

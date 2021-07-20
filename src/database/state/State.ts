@@ -6,11 +6,15 @@ export interface StateAccess<T> {
     value(): Promise<T>;
 }
 
+export interface StateAccessDecorator<E extends EntityType, T, A = StateAccess<T>> {
+    (baseAccess: StateAccess<T>, entity: Entity<E>, defaultState: T): A;
+}
+
 interface Definition<E extends EntityType, T, A> {
     readonly name: string;
     readonly entityType: E;
     readonly defaultValue: T;
-    readonly accessFabric?: (baseAccess: StateAccess<T>, entity: Entity<E>, defaultValue: T) => A;
+    readonly accessDecorator?: StateAccessDecorator<E, T, A>;
 }
 
 export interface State<E extends EntityType, T, A = StateAccess<T>> extends Definition<E, T, A> { }

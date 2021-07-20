@@ -1,19 +1,19 @@
 import { assert } from "../../../utils/index.js";
-import { AnyEntity } from "../../Entity.js";
-import { StateAccess } from "../State.js";
+import { Entity, EntityType } from "../../Entity.js";
+import { StateAccess, StateAccessDecorator } from "../State.js";
 
-interface Options<T, R> {
+interface Options<S, R> {
     isValid?(value: R): Promise<boolean>;
-    serialize(value: R): Promise<T>;
-    deserialize(stored: T): Promise<R | null>;
+    serialize(value: R): Promise<S>;
+    deserialize(stored: S): Promise<R | null>;
 }
 
-interface OptionsGetter<T, R, E extends AnyEntity> {
-    (entity: E): Options<T, R>;
+interface OptionsGetter<E extends EntityType, S, R> {
+    (entity: Entity<E>): Options<S, R>;
 }
 
-export const referenceAccess = <T, R, E extends AnyEntity>(optionsGetter: OptionsGetter<T, R, E>) => (access: StateAccess<T>, entity: E, defaultValue: T) => {
-    const { isValid, serialize, deserialize } = optionsGetter(entity);
+export const referenceAccess = <E extends EntityType, S, R>(getOptions: OptionsGetter<E, S, R>): StateAccessDecorator<E, S, StateAccess<R | null>> => (access, entity, defaultValue) => {
+    const { isValid, serialize, deserialize } = getOptions(entity);
 
     return {
         ...access,

@@ -1,15 +1,16 @@
 import { assert } from "../../../utils/index.js";
-import { StateAccess } from "../State.js";
+import { EntityType } from "../../Entity.js";
+import { StateAccess, StateAccessDecorator } from "../State.js";
 import { jsonAccess } from "./Json.js";
 
-export const jsonModelAccess = <T>(modelConstructor: new () => T) => (access: StateAccess<string>) => {
+export const jsonModelAccess = <T>(constructor: new () => T): StateAccessDecorator<EntityType, string, StateAccess<T>> => access => {
     const jAccess = jsonAccess<T>(access);
 
     return {
         ...jAccess,
 
         async set(model: T) {
-            assert(model instanceof modelConstructor, `${modelConstructor.name} instance expected`);
+            assert(model instanceof constructor, `${constructor.name} instance expected`);
             await jAccess.set(model);
         },
 
@@ -18,7 +19,7 @@ export const jsonModelAccess = <T>(modelConstructor: new () => T) => (access: St
          */
         async value() {
             const value = await jAccess.value();
-            return Object.assign(new modelConstructor(), value) as T;
+            return Object.assign(new constructor(), value) as T;
         },
     };
 };

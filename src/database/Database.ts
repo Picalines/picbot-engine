@@ -118,8 +118,8 @@ export class Database {
             : (checkEntityType(entity, 'user') ? this.#usersStorage : this.#guildsStorage);
 
         let access = storage.accessState(entity, state as any) as unknown as A;
-        if (state.accessFabric) {
-            access = state.accessFabric(access as unknown as StateAccess<T>, entity, state.defaultValue);
+        if (state.accessDecorator) {
+            access = state.accessDecorator(access as unknown as StateAccess<T>, entity, state.defaultValue);
         }
 
         return access;

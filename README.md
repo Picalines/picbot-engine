@@ -339,7 +339,7 @@ export const warnsState = new State({
     defaultValue: 0,      // изначальное кол-во warn'ов
 
     // значение счётчика всегда больше или равно нулю. Подробнее об этом ниже
-    accessFabric: numberAccess([0, Infinity]),
+    accessDecorator: numberAccess([0, Infinity]),
 });
 
 export default warnsState;
@@ -355,7 +355,7 @@ export const maxWarnsState = new State({
     name: 'warns',
     entityType: 'guild',
     defaultValue: 3,
-    accessFabric: numberAccess([1, Infinity]),
+    accessDecorator: numberAccess([1, Infinity]),
 });
 
 export default maxWarnsState;
@@ -395,11 +395,11 @@ export default new Command({
         const maxWarnsValue = await maxWarns.value();
 
         /*
-        У обоих свойств мы ставили параметр accessorFabric на numberAccess.
+        У обоих свойств мы ставили параметр accessorDecorator на numberAccess.
         Это было нужно, чтобы у 'объектов доступа' был метод increase,
         который увеличивает значение свойства как с оператором +=
 
-        По стандарту (если не указывать accessFabric) у объекта доступа
+        По стандарту (если не указывать accessDecorator) у объекта доступа
         есть методы value и set (прочитать и записать новое значение).
         Метод increase у numberAccess на самом деле просто использует
         set и value, а нужен только для упрощения кода.
@@ -569,9 +569,9 @@ export default new Command({
 
 `src/states/locale.js`:
 ```js
-import { State, validatedAccess } from "picbot-engine";
+import { State, assert } from "picbot-engine";
 
-export const supportedLocales = ['ru', 'en'];
+export const supportedLocales = Object.freeze(['ru', 'en']);
 
 /**
  * @param {string} locale
@@ -582,7 +582,15 @@ export const localeState = new State({
     name: 'locale',
     entityType: 'guild',
     defaultValue: 'ru',
-    accessFabric: validatedAccess(isLocaleSupported),
+    accessDecorator: baseAccess => ({ // baseAccess - объект доступа, который предоставляет библиотека
+        ...baseAccess, // наш объект доступа наследует все функции из базового
+
+        // но перезаписывает set
+        set(value) {
+            assert(isLocaleSupported(value), `'${value}' is not a supported locale`)
+            return baseAccess.set(value); // после проверки использует базовый доступ
+        }
+    }),
 });
 
 export default localeState;
