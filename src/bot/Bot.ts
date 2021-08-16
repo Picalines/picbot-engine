@@ -128,39 +128,33 @@ export class Bot {
 
         const guildPrefixes = await this.options.fetchPrefixes(this, message.guild);
         if (!guildPrefixes.length) {
-            this.logger.warning(`empty guild prefixes array ('${message.guild.name}', ${message.guild.id})`);
-            return;
+            return void this.logger.warning(`empty guild prefixes array ('${message.guild.name}', ${message.guild.id})`);
         }
 
         const lowerCaseContent = message.content.toLowerCase();
 
         const prefixLength = guildPrefixes.find(p => lowerCaseContent.startsWith(p))?.length ?? 0;
         if (prefixLength <= 0) {
-            this.events.guildMemberMessage.emit(message);
-            return;
+            return this.events.guildMemberMessage.emit(message);
         }
 
         const commandName = lowerCaseContent.slice(prefixLength).replace(/\s.*$/, '');
         if (!commandName) {
-            this.events.guildMemberMessage.emit(message);
-            return;
+            return this.events.guildMemberMessage.emit(message);
         }
 
         const command = this.commands.get(commandName);
         if (!command) {
-            this.events.commandNotFound.emit(message, commandName);
-            return;
+            return this.events.commandNotFound.emit(message, commandName);
         }
 
         const contextOrError = await command.execute(this, message);
 
         if (contextOrError instanceof Error) {
-            this.events.commandError.emit(message, contextOrError);
-            return;
+            return this.events.commandError.emit(message, contextOrError);
         }
 
         this.events.commandExecuted.emit(contextOrError);
-        return;
     }
 
     load() {
