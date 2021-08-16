@@ -1,6 +1,6 @@
-import { Client, ClientEvents } from "discord.js";
+import { Client } from "discord.js";
 import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Options.js";
-import { GuildMessage, isGuildMessage, ClientEventNames } from "../utils/index.js";
+import { GuildMessage, isGuildMessage, ClientEventNames, NonDeprecatedClientEvents as ClientEvents } from "../utils/index.js";
 import { CommandContext, CommandStorage } from "../command/index.js";
 import { Event, nodeEmitterEvents } from "../event/index.js";
 import { Database } from "../database/index.js";
@@ -85,7 +85,7 @@ export class Bot {
 
         this.loadingSequence.add({
             name: 'listen to messages',
-            task: () => void this.client.on('message', message => {
+            task: () => void this.client.on('messageCreate', message => {
                 if (isGuildMessage(message)) {
                     this.handleGuildMessage(message);
                 }

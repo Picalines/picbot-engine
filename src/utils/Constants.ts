@@ -1,6 +1,8 @@
 import { ClientEvents } from "discord.js";
 
-export const ClientEventNames: readonly (keyof ClientEvents)[] = Object.freeze([
+export type NonDeprecatedClientEvents = { [Event in Exclude<keyof ClientEvents, 'message' | 'interaction'>]: ClientEvents[Event] };
+
+export const ClientEventNames: readonly (keyof NonDeprecatedClientEvents)[] = Object.freeze([
     'applicationCommandCreate',
     'applicationCommandDelete',
     'applicationCommandUpdate',
@@ -28,7 +30,6 @@ export const ClientEventNames: readonly (keyof ClientEvents)[] = Object.freeze([
     'guildUpdate',
     'inviteCreate',
     'inviteDelete',
-    'message',
     'messageCreate',
     'messageDelete',
     'messageReactionRemoveAll',
@@ -55,7 +56,6 @@ export const ClientEventNames: readonly (keyof ClientEvents)[] = Object.freeze([
     'userUpdate',
     'voiceStateUpdate',
     'webhookUpdate',
-    'interaction',
     'interactionCreate',
     'shardDisconnect',
     'shardError',
