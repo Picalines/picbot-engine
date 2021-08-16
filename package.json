@@ -33,10 +33,11 @@
     "author": "Picalines",
     "license": "MIT",
     "engines": {
-        "node": ">=14.15.4"
+        "node": ">=16.6.0",
+        "npm": ">=7.0.0"
     },
     "dependencies": {
-        "discord.js": "^12.3.1"
+        "discord.js": "^13.1.0"
     },
     "devDependencies": {
         "@types/node": "^13.13.12",
