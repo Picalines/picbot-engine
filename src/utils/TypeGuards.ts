@@ -13,7 +13,7 @@ export type GuildMessage = Message & {
 };
 
 export function isGuildMessage(message: Message): message is GuildMessage {
-    return message.channel.type == 'text'
+    return message.channel.type == 'GUILD_TEXT'
         && message.member != undefined
         && message.guild != undefined
         && message.guild.me != undefined

@@ -24,7 +24,7 @@ export const helpCommand = new Command({
     ),
 
     execute: async (context) => {
-        const { message, bot, args: [commandName] } = context;
+        const { message, executor, bot, args: [commandName] } = context;
 
         const embed = new MessageEmbed().setColor(0x45ff83);
 
@@ -37,6 +37,6 @@ export const helpCommand = new Command({
             embedCommandInfo(embed, command, context);
         }
 
-        await message.reply({ embed });
+        await message.channel.send({ content: executor.toString(), embeds: [embed] })
     }
 });

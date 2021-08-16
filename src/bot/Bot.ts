@@ -154,8 +154,6 @@ export class Bot {
 
         const contextOrError = await command.execute(this, message);
 
-        message.channel.stopTyping(true);
-
         if (contextOrError instanceof Error) {
             this.events.commandError.emit(message, contextOrError);
             return;

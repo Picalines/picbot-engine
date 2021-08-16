@@ -1,4 +1,4 @@
-import { BitFieldResolvable, GuildMember, Permissions, PermissionString } from "discord.js";
+import { BitFieldResolvable, GuildMember, PermissionResolvable, Permissions, PermissionString } from "discord.js";
 import { assert, GuildMessage, Overwrite, PromiseVoid, Indexes, NonEmpty } from "../utils/index.js";
 import { CommandContext } from "./Context.js";
 import { Bot } from "../bot/index.js";
@@ -21,7 +21,7 @@ interface CommandInfoArgument<Args extends unknown[]> {
     readonly description: string;
     readonly group: string;
     readonly tutorial: string;
-    readonly permissions?: BitFieldResolvable<PermissionString>;
+    readonly permissions?: PermissionResolvable;
     readonly execute: CommandExecuteable<Args>;
 }
 
