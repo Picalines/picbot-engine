@@ -11,16 +11,15 @@ type OptionChoice<T extends number | string> = Readonly<{
     value: T;
 }>;
 
-type StrOrIntOption = BaseOptionInfo & Readonly<
-    {
-        type: OptionType.String,
-        choices?: Readonly<NonEmpty<OptionChoice<string>[]>>;
-    }
-    | {
-        type: OptionType.Integer | OptionType.Number,
-        choices?: Readonly<NonEmpty<OptionChoice<number>[]>>;
-    }
->;
+type StringOption = BaseOptionInfo & Readonly<{
+    type: OptionType.String,
+    choices?: Readonly<NonEmpty<OptionChoice<string>[]>>;
+}>;
+
+type IntegerOrNumberOption = BaseOptionInfo & Readonly<{
+    type: OptionType.Integer | OptionType.Number,
+    choices?: Readonly<NonEmpty<OptionChoice<number>[]>>;
+}>;
 
 type BooleanOption = BaseOptionInfo & Readonly<{
     type: OptionType.Boolean;
@@ -30,7 +29,7 @@ type MentionableOption = BaseOptionInfo & Readonly<{
     type: OptionType.User | OptionType.Channel | OptionType.Role | OptionType.Mentionable;
 }>;
 
-type ValueOption = (StrOrIntOption | BooleanOption | MentionableOption) & {
+type ValueOption = (StringOption | IntegerOrNumberOption | BooleanOption | MentionableOption) & {
     required?: boolean;
 };
 
@@ -44,9 +43,4 @@ type SubCommandGroupOption = BaseOptionInfo & Readonly<{
     options: Readonly<NonEmpty<SubCommandOption[]>>;
 }>;
 
-type Option = Readonly<
-    BaseOptionInfo
-    & (ValueOption | SubCommandOption | SubCommandGroupOption)
->;
-
-export type CommandOptions = Readonly<NonEmpty<Option[]>>;
+export type OptionArray = Readonly<NonEmpty<SubCommandOption[] | SubCommandGroupOption[] | ValueOption[]>>;
