@@ -1,16 +1,5 @@
 import { NonEmpty } from "../../utils/index.js";
-
-export type OptionType =
-    | "string"
-    | "integer"
-    | "number"
-    | "boolean"
-    | "user"
-    | "channel"
-    | "role"
-    | "mentionable"
-    | "subCommand"
-    | "subCommandGroup";
+import { OptionType } from "./OptionType.js";
 
 type BaseOptionInfo = Readonly<{
     name: string;
@@ -24,21 +13,21 @@ type OptionChoice<T extends number | string> = Readonly<{
 
 type StrOrIntOption = BaseOptionInfo & Readonly<
     {
-        type: "string",
+        type: OptionType.String,
         choices?: Readonly<NonEmpty<OptionChoice<string>[]>>;
     }
     | {
-        type: "integer" | "number",
+        type: OptionType.Integer | OptionType.Number,
         choices?: Readonly<NonEmpty<OptionChoice<number>[]>>;
     }
 >;
 
 type BooleanOption = BaseOptionInfo & Readonly<{
-    type: "boolean";
+    type: OptionType.Boolean;
 }>;
 
 type MentionableOption = BaseOptionInfo & Readonly<{
-    type: "user" | "channel" | "role" | "mentionable";
+    type: OptionType.User | OptionType.Channel | OptionType.Role | OptionType.Mentionable;
 }>;
 
 type ValueOption = (StrOrIntOption | BooleanOption | MentionableOption) & {
@@ -46,12 +35,12 @@ type ValueOption = (StrOrIntOption | BooleanOption | MentionableOption) & {
 };
 
 type SubCommandOption = BaseOptionInfo & Readonly<{
-    type: "subCommand";
+    type: OptionType.SubCommand;
     options?: Readonly<NonEmpty<ValueOption[]>>;
 }>;
 
 type SubCommandGroupOption = BaseOptionInfo & Readonly<{
-    type: "subCommandGroup";
+    type: OptionType.SubCommandGroup;
     options: Readonly<NonEmpty<SubCommandOption[]>>;
 }>;
 
