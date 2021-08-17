@@ -3,6 +3,7 @@ import { NonEmpty } from "../../utils/index.js";
 export type OptionType =
     | "string"
     | "integer"
+    | "number"
     | "boolean"
     | "user"
     | "channel"
@@ -27,7 +28,7 @@ type StrOrIntOption = BaseOptionInfo & Readonly<
         choices?: Readonly<NonEmpty<OptionChoice<string>[]>>;
     }
     | {
-        type: "integer",
+        type: "integer" | "number",
         choices?: Readonly<NonEmpty<OptionChoice<number>[]>>;
     }
 >;
