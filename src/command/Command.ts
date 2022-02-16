@@ -1,5 +1,5 @@
 import { CommandInteraction } from "discord.js";
-import { Overwrite, PromiseVoid } from "../utils/index.js";
+import { PromiseVoid } from "../utils/index.js";
 import { CommandContext } from "./Context.js";
 import { Bot } from "../bot/index.js";
 import { CommandOptions } from "./option/Option.js";
@@ -8,13 +8,10 @@ interface CommandExecuteable<Options extends CommandOptions = []> {
     (this: Command, context: CommandContext<Options>): PromiseVoid;
 }
 
-export interface CommandInfo<Options extends CommandOptions = []> {
+interface CommandDefinition<Options extends CommandOptions = []> {
     readonly name: string;
     readonly description: string;
     readonly options?: Options;
-}
-
-interface CommandInfoArgument<Options extends CommandOptions = []> {
     readonly execute: CommandExecuteable<Options>;
 }
 
@@ -28,7 +25,7 @@ export class Command {
         Object.freeze(this);
     }
 
-    public static create<Options extends CommandOptions = []>(definition: Overwrite<CommandInfo<Options>, CommandInfoArgument<Options>>): Command {
+    public static create<Options extends CommandOptions = []>(definition: CommandDefinition<Options>): Command {
         const { name, description, execute, options } = definition;
 
         // TODO: too complex expression?
