@@ -1,46 +1,61 @@
-import { NonEmpty } from "../../utils/index.js";
+import { Switch } from "../../utils/UsefulTypes.js";
 import { OptionType } from "./OptionType.js";
 
-type BaseOptionInfo = Readonly<{
-    name: string;
-    description: string;
-}>;
+export type BaseOption<T extends OptionType> = {
+    readonly name: string;
+    readonly description: string;
+    readonly type: T;
 
-type OptionChoice<T extends number | string> = Readonly<{
-    name: string;
-    value: T;
-}>;
-
-type StringOption = BaseOptionInfo & Readonly<{
-    type: OptionType.String,
-    choices?: Readonly<NonEmpty<OptionChoice<string>[]>>;
-}>;
-
-type IntegerOrNumberOption = BaseOptionInfo & Readonly<{
-    type: OptionType.Integer | OptionType.Number,
-    choices?: Readonly<NonEmpty<OptionChoice<number>[]>>;
-}>;
-
-type BooleanOption = BaseOptionInfo & Readonly<{
-    type: OptionType.Boolean;
-}>;
-
-type MentionableOption = BaseOptionInfo & Readonly<{
-    type: OptionType.User | OptionType.Channel | OptionType.Role | OptionType.Mentionable;
-}>;
-
-type ValueOption = (StringOption | IntegerOrNumberOption | BooleanOption | MentionableOption) & {
-    required?: boolean;
+    /** @default false */
+    readonly required?: boolean;
 };
 
-type SubCommandOption = BaseOptionInfo & Readonly<{
-    type: OptionType.SubCommand;
-    options?: Readonly<NonEmpty<ValueOption[]>>;
-}>;
+type OptionChoice<T extends OptionType.Number | OptionType.Integer | OptionType.String> = {
+    readonly name: string;
+    readonly value: T extends OptionType.String ? string : number;
+};
 
-type SubCommandGroupOption = BaseOptionInfo & Readonly<{
-    type: OptionType.SubCommandGroup;
-    options: Readonly<NonEmpty<SubCommandOption[]>>;
-}>;
+type OptionWithChoices<T extends OptionType.Number | OptionType.Integer | OptionType.String> = BaseOption<T> & {
+    readonly choices?: readonly OptionChoice<T>[];
+};
 
-export type OptionArray = Readonly<NonEmpty<SubCommandOption[] | SubCommandGroupOption[] | ValueOption[]>>;
+export type StringOption = OptionWithChoices<OptionType.String>;
+
+export type IntegerOption = OptionWithChoices<OptionType.Integer>;
+
+export type NumberOption = OptionWithChoices<OptionType.Number>;
+
+export type BooleanOption = BaseOption<OptionType.Boolean>;
+
+export type UserOption = BaseOption<OptionType.User>;
+
+export type ChannelOption = BaseOption<OptionType.Channel>;
+
+export type RoleOption = BaseOption<OptionType.Role>;
+
+export type MentionableOption = BaseOption<OptionType.Mentionable>;
+
+export type ValueOption = StringOption | IntegerOption | NumberOption | BooleanOption | UserOption | ChannelOption | RoleOption | MentionableOption;
+
+export type SubCommandOption = BaseOption<OptionType.SubCommand> & {
+    readonly options: readonly ValueOption[];
+};
+
+export type SubCommandGroupOption = BaseOption<OptionType.SubCommandGroup> & {
+    readonly options: readonly SubCommandOption[];
+};
+
+export type CommandOptions = Readonly<[] | SubCommandOption[] | SubCommandGroupOption[] | ValueOption[]>;
+
+export type OptionTypeOf<O> = Switch<O, [
+    [StringOption, OptionType.String],
+    [IntegerOption, OptionType.Integer],
+    [NumberOption, OptionType.Number],
+    [BooleanOption, OptionType.Boolean],
+    [UserOption, OptionType.User],
+    [ChannelOption, OptionType.Channel],
+    [RoleOption, OptionType.Role],
+    [MentionableOption, OptionType.Mentionable],
+    [SubCommandOption, OptionType.SubCommand],
+    [SubCommandGroupOption, OptionType.SubCommandGroup],
+]>;

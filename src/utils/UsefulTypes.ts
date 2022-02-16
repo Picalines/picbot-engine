@@ -1,3 +1,5 @@
+export type NoInfer<T> = [T][T extends any ? 0 : never];
+
 export type PromiseOrSync<T> = Promise<T> | T;
 
 export type PromiseVoid = PromiseOrSync<void>;
@@ -17,30 +19,6 @@ export type NonEmpty<T> = T extends readonly (infer U)[] ? [U, ...U[]] : never;
 export type Overwrite<T, U> = Pick<T, Exclude<keyof T, keyof U>> & U;
 
 export type Indexes<Tuple extends any[]> = { [I in keyof Tuple]: I }[number];
-
-//#region TupleOf
-
-type BuildPowersOf2LengthArrays<N extends number, R extends never[][]> =
-    R[0][N] extends never ? R : BuildPowersOf2LengthArrays<N, [[...R[0], ...R[0]], ...R]>;
-
-type ConcatLargestUntilDone<N extends number, R extends never[][], B extends never[]> =
-    B["length"] extends N ? B : [...R[0], ...B][N] extends never
-    ? ConcatLargestUntilDone<N, R extends [R[0], ...infer U] ? U extends never[][] ? U : never : never, B>
-    : ConcatLargestUntilDone<N, R extends [R[0], ...infer U] ? U extends never[][] ? U : never : never, [...R[0], ...B]>;
-
-type Replace<O extends any[], I> = { [K in keyof O]: I };
-
-/**
- * @example TupleOf<number, 3> -> [number, number, number]
- * @author https://github.com/microsoft/TypeScript/issues/26223#issuecomment-674514787
- */
-export type TupleOf<T, N extends number> = number extends N ? T[] : {
-    [K in N]:
-    BuildPowersOf2LengthArrays<K, [[never]]> extends infer U ? U extends never[][]
-    ? Replace<ConcatLargestUntilDone<K, U, []>, T> : never : never;
-}[N];
-
-//#endregion
 
 export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
 
@@ -73,3 +51,11 @@ export type PrimitiveConstructorInstance<T extends PrimitiveConstructor> = Switc
     [BigIntConstructor, bigint],
     [BooleanConstructor, boolean],
 ]>;
+
+/**
+ * @example
+ * type NameLiteral<T extends Literal<string, T>> = T;
+ * NameLiteral<string> // error
+ * NameLiteral<'name'> // fine
+ */
+export type Literal<L extends Primitive, I> = L extends I ? never : L;

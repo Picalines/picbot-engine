@@ -1,12 +1,28 @@
-export namespace OptionType {
-    export type SubCommand = "SUB_COMMAND" | 1;
-    export type SubCommandGroup = "SUB_COMMAND_GROUP" | 2;
-    export type String = "STRING" | 3;
-    export type Integer = "INTEGER" | 4;
-    export type Boolean = "BOOLEAN" | 5;
-    export type User = "USER" | 6;
-    export type Channel = "CHANNEL" | 7;
-    export type Role = "ROLE" | 8;
-    export type Mentionable = "MENTIONABLE" | 9;
-    export type Number = "NUMBER" | 10;
+import { Channel, Role, User } from "discord.js";
+import { Switch } from "../../utils/index.js";
+
+export enum OptionType {
+    SubCommand = 1,
+    SubCommandGroup,
+    String,
+    Integer,
+    Boolean,
+    User,
+    Channel,
+    Role,
+    Mentionable,
+    Number,
 }
+
+export type OptionTypeToValue<O> = Switch<O, [
+    [OptionType.String, string],
+    [OptionType.Integer, number],
+    [OptionType.Number, number],
+    [OptionType.Boolean, boolean],
+    [OptionType.User, User],
+    [OptionType.Channel, Channel],
+    [OptionType.Role, Role],
+    [OptionType.Mentionable, User | Role],
+    [OptionType.SubCommand, never],
+    [OptionType.SubCommandGroup, never],
+]>;

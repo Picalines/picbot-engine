@@ -5,7 +5,6 @@ import { Bot } from "../bot/Bot.js";
 import { BotEventListener, BotInitializer } from "../bot/index.js";
 import { Command } from "../command/index.js";
 import { Selector, State } from "../database/index.js";
-import { TranslationCollection } from "../translator/index.js";
 
 export type ImportDir = keyof typeof Importer['importDirClasses'];
 
@@ -19,13 +18,12 @@ export type ImporterOptions = Readonly<{
 }>;
 
 export class Importer {
-    static readonly importDirClasses = Object.freeze({
-        commands: Command,
+    private static readonly importDirClasses = Object.freeze({
+        commands: Command as unknown as { new(): Command },
         events: BotEventListener,
         initializers: BotInitializer,
         selectors: Selector,
         states: State,
-        translations: TranslationCollection,
     });
 
     readonly #cache: { [K in ImportDir]?: (readonly [InstanceType<ImportDirClass<K>>, string])[] } = {};

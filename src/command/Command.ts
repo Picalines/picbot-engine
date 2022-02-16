@@ -1,88 +1,44 @@
-import { BitFieldResolvable, GuildMember, PermissionResolvable, Permissions, PermissionString } from "discord.js";
-import { assert, GuildMessage, Overwrite, PromiseVoid, Indexes, NonEmpty } from "../utils/index.js";
+import { CommandInteraction } from "discord.js";
+import { Overwrite, PromiseVoid } from "../utils/index.js";
 import { CommandContext } from "./Context.js";
 import { Bot } from "../bot/index.js";
-import { TermCollection } from "../translator/index.js";
-import { ArgumentSequence } from "./argument/index.js";
-import { commandErrorTerms } from "./errorTerms/Terms.js";
+import { CommandOptions } from "./option/Option.js";
 
-interface CommandExecuteable<Args extends unknown[]> {
-    (this: Command<Args>, context: CommandContext<Args>): PromiseVoid;
+interface CommandExecuteable<Options extends CommandOptions = []> {
+    (this: Command, context: CommandContext<Options>): PromiseVoid;
 }
 
-export interface CommandInfo<Args extends unknown[]> {
+export interface CommandInfo<Options extends CommandOptions = []> {
     readonly name: string;
-    readonly aliases?: Readonly<NonEmpty<string[]>>;
-    readonly arguments?: ArgumentSequence<Args>;
-    readonly permissions: Permissions;
-}
-
-interface CommandInfoArgument<Args extends unknown[]> {
     readonly description: string;
-    readonly group: string;
-    readonly tutorial: string;
-    readonly permissions?: PermissionResolvable;
-    readonly execute: CommandExecuteable<Args>;
+    readonly options?: Options;
 }
 
-export interface Command<Args extends unknown[]> extends CommandInfo<Args> { }
+interface CommandInfoArgument<Options extends CommandOptions = []> {
+    readonly execute: CommandExecuteable<Options>;
+}
 
-export class Command<Args extends unknown[]> {
-    readonly executeable: CommandExecuteable<Args>;
-
-    readonly infoTerms: TermCollection<{
-        readonly [I in "description" | "group" | "tutorial" | `argument_${Indexes<Args>}_description`]: []
-    }>;
-
-    constructor(definition: Overwrite<CommandInfo<Args>, CommandInfoArgument<Args>>) {
-        const { execute: executeable, permissions, name, aliases, arguments: args, ...info } = definition;
-
-        const frozenPermissions = new Permissions(permissions);
-        frozenPermissions.freeze();
-
-        Object.assign(this, {
-            name,
-            aliases,
-            arguments: args,
-            permissions: frozenPermissions,
-        });
-
-        this.executeable = executeable;
-
-        const argTerms = {} as any;
-        this.arguments?.definitions.forEach(({ description }, index) => {
-            argTerms[`argument_${index}_description`] = [description];
-        });
-
-        this.infoTerms = new TermCollection({
-            description: [info.description],
-            group: [info.group],
-            tutorial: [info.tutorial],
-            ...argTerms,
-        });
-
-        for (const name of [this.name, ...(this.aliases ?? [])]) {
-            assert(name && !name.includes(' ') && name == name.toLowerCase(), `invalid command name or alias '${name}'`);
-        }
-
+export class Command {
+    private constructor(
+        readonly name: string,
+        readonly description: string,
+        readonly executeable: CommandExecuteable<CommandOptions>,
+        readonly options?: CommandOptions
+    ) {
         Object.freeze(this);
     }
 
-    canBeExecutedBy(member: GuildMember): boolean {
-        return !member.permissions.missing(this.permissions.bitfield).length;
+    public static create<Options extends CommandOptions = []>(definition: Overwrite<CommandInfo<Options>, CommandInfoArgument<Options>>): Command {
+        const { name, description, execute, options } = definition;
+
+        // TODO: too complex expression?
+        //@ts-ignore
+        return new Command(name, description, execute, options);
     }
 
-    async execute(bot: Bot, message: GuildMessage): Promise<CommandContext<Args> | Error> {
+    async execute(bot: Bot, interaction: CommandInteraction): Promise<CommandContext<CommandOptions> | Error> {
         try {
-            const locale = await bot.options.fetchLocale(bot, message.guild);
-
-            const context = new CommandContext(bot, this, message, locale);
-
-            assert(this.canBeExecutedBy(message.member), context.translate(commandErrorTerms).notEnoughPermissions({
-                command: this.name,
-                executor: context.executor.displayName,
-                requiredPermissions: this.permissions.toArray().join(', ')
-            }));
+            const context = new CommandContext(bot, this, interaction);
 
             await this.executeable.call(this, context);
 

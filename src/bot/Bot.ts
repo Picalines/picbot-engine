@@ -1,11 +1,10 @@
-import { Client } from "discord.js";
+import { Client, CommandInteraction } from "discord.js";
 import { BotOptions, BotOptionsArgument, parseBotOptionsArgument } from "./Options.js";
-import { GuildMessage, isGuildMessage, ClientEventNames, NonDeprecatedClientEvents as ClientEvents } from "../utils/index.js";
+import { ClientEventNames, NonDeprecatedClientEvents as ClientEvents, assert } from "../utils/index.js";
 import { CommandContext, CommandStorage } from "../command/index.js";
 import { Event, nodeEmitterEvents } from "../event/index.js";
 import { Database } from "../database/index.js";
 import { Logger } from "../logger/Logger.js";
-import { Translator } from "../translator/index.js";
 import { StageSequence } from "../sequence/index.js";
 import { Importer } from "../importer/index.js";
 
@@ -15,16 +14,11 @@ export class Bot {
     readonly importer: Importer;
     readonly commands: CommandStorage;
     readonly database: Database;
-    readonly translator: Translator;
     readonly logger: Logger;
 
     readonly events = Object.freeze({
-        guildMemberMessage: new Event<[message: GuildMessage]>(),
-        guildMyMessage: new Event<[message: GuildMessage]>(),
-
-        commandNotFound: new Event<[message: GuildMessage, wrongName: string]>(),
-        commandError: new Event<[message: GuildMessage, error: Error]>(),
-        commandExecuted: new Event<[context: CommandContext<unknown[]>]>(),
+        commandError: new Event<[interaction: CommandInteraction, error: Error]>(),
+        commandExecuted: new Event<[context: CommandContext<any>]>(),
     });
 
     readonly clientEvents = <{ readonly [E in keyof ClientEvents]: Event<ClientEvents[E]> }>nodeEmitterEvents(this.client, ClientEventNames);
@@ -50,8 +44,6 @@ export class Bot {
         });
 
         this.commands = new CommandStorage(this);
-
-        this.translator = new Translator(this);
 
         this.database = new Database(this);
 
@@ -84,10 +76,10 @@ export class Bot {
         });
 
         this.loadingSequence.add({
-            name: 'listen to messages',
-            task: () => void this.client.on('messageCreate', message => {
-                if (isGuildMessage(message)) {
-                    this.handleGuildMessage(message);
+            name: 'listen to interactions',
+            task: () => void this.client.on('interactionCreate', interaction => {
+                if (interaction.isCommand()) {
+                    this.handleCommandInteraction(interaction);
                 }
             })
         });
@@ -115,43 +107,23 @@ export class Bot {
         });
     }
 
-    private async handleGuildMessage(message: GuildMessage): Promise<void> {
-        if (message.author.bot) {
-            if (message.member.id == message.guild.me.id) {
-                this.events.guildMyMessage.emit(message);
-                return;
-            }
-            if (!this.options.canBotsRunCommands) {
-                return;
-            }
+    private async handleCommandInteraction(interaction: CommandInteraction): Promise<void> {
+        assert(this.client.isReady(), 'client is not ready');
+        assert(!interaction.user.bot, 'unexpected interaction from bot');
+
+        if (this.client.application.id != interaction.applicationId) {
+            return;
         }
 
-        const guildPrefixes = await this.options.fetchPrefixes(this, message.guild);
-        if (!guildPrefixes.length) {
-            return void this.logger.warning(`empty guild prefixes array ('${message.guild.name}', ${message.guild.id})`);
-        }
-
-        const lowerCaseContent = message.content.toLowerCase();
-
-        const prefixLength = guildPrefixes.find(p => lowerCaseContent.startsWith(p))?.length ?? 0;
-        if (prefixLength <= 0) {
-            return this.events.guildMemberMessage.emit(message);
-        }
-
-        const commandName = lowerCaseContent.slice(prefixLength).replace(/\s.*$/, '');
-        if (!commandName) {
-            return this.events.guildMemberMessage.emit(message);
-        }
+        const commandName = interaction.commandName;
 
         const command = this.commands.get(commandName);
-        if (!command) {
-            return this.events.commandNotFound.emit(message, commandName);
-        }
+        assert(command, `command '${commandName}' not found`);
 
-        const contextOrError = await command.execute(this, message);
+        const contextOrError = await command.execute(this, interaction);
 
         if (contextOrError instanceof Error) {
-            return this.events.commandError.emit(message, contextOrError);
+            return this.events.commandError.emit(interaction, contextOrError);
         }
 
         this.events.commandExecuted.emit(contextOrError);

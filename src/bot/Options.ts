@@ -1,8 +1,6 @@
-import { Guild } from "discord.js";
-import { assert, DeepPartial, Overwrite, PromiseOrSync } from "../utils/index.js";
-import { State, CreateDatabaseHandler, createJsonDatabaseHandler, StateAccess } from "../database/index.js";
+import { assert, DeepPartial, Overwrite } from "../utils/index.js";
+import { CreateDatabaseHandler, createJsonDatabaseHandler } from "../database/index.js";
 import { LoggerTheme, pipeLoggerTheme } from "../logger/index.js";
-import { Bot } from "./Bot.js";
 import { readFileSync } from "fs";
 import { ImporterOptions } from "../importer/index.js";
 
@@ -20,26 +18,6 @@ export type BotOptions = Readonly<{
     importerOptions: ImporterOptions;
 
     /**
-     * @default false
-     */
-    canBotsRunCommands: boolean;
-
-    /**
-     * @default () => ['!']
-     */
-    fetchPrefixes: Fetcher<string[]>;
-
-    /**
-     * @default () => 'en'
-     */
-    fetchLocale: Fetcher<string>;
-
-    /**
-     * @default true
-     */
-    useBuiltInHelpCommand: boolean;
-
-    /**
      * @default pipeLoggerTheme
      */
     loggerTheme: LoggerTheme;
@@ -52,17 +30,9 @@ export type BotOptions = Readonly<{
 
 export type BotOptionsArgument = Overwrite<DeepPartial<BotOptions>, Readonly<{
     token: string;
-    /**
-     * @example (() => ['!']) | ['!'] | prefixesDbState
-     */
-    fetchPrefixes?: ArgumentFetcher<readonly string[]>;
-    /**
-     * @example (() => 'en') | 'en' | localeDbState
-     */
-    fetchLocale?: ArgumentFetcher<string>;
 }>>;
 
-export const DefaultBotOptions: BotOptions = deepFreeze({
+export const DefaultBotOptions: BotOptions = deepFreeze<BotOptions>({
     token: '',
     tokenType: 'string',
     importerOptions: {
@@ -73,26 +43,14 @@ export const DefaultBotOptions: BotOptions = deepFreeze({
             initializers: 'initializers',
             states: 'states',
             selectors: 'selectors',
-            translations: 'translations',
         },
     },
-    canBotsRunCommands: false,
-    fetchPrefixes: () => ['!'],
-    fetchLocale: () => 'en',
-    useBuiltInHelpCommand: true,
     loggerTheme: pipeLoggerTheme,
     databaseHandler: createJsonDatabaseHandler({ databasePath: '/database/' }),
 });
 
-type Fetcher<T> = (bot: Bot, guild: Guild) => PromiseOrSync<T>;
-
-type ArgumentFetcher<T> = T | State<'guild', any, { value: StateAccess<T>['value'] }> | Fetcher<T>;
-
 export function parseBotOptionsArgument(options: BotOptionsArgument): BotOptions {
-    let { fetchPrefixes, fetchLocale, token } = options;
-
-    fetchPrefixes = parseFetcher(fetchPrefixes, <(f: any) => f is string[]>(f => f instanceof Array));
-    fetchLocale = parseFetcher(fetchLocale, <(f: any) => f is string>(f => typeof f === 'string'));
+    let { token } = options;
 
     const { tokenType = 'string' } = options;
 
@@ -113,29 +71,7 @@ export function parseBotOptionsArgument(options: BotOptionsArgument): BotOptions
             break;
     }
 
-    return deepMerge(DefaultBotOptions, {
-        ...options as any,
-        fetchPrefixes,
-        fetchLocale,
-        token,
-    });
-}
-
-function parseFetcher<T>(fetcher: ArgumentFetcher<T> | undefined, isValue: (fetcher: ArgumentFetcher<T> | undefined) => fetcher is T): Fetcher<T> | undefined {
-    if (!fetcher) {
-        return undefined;
-    }
-
-    if (isValue(fetcher)) {
-        const value = fetcher;
-        fetcher = () => value;
-    }
-    else if (fetcher instanceof State) {
-        const state = fetcher;
-        fetcher = (bot, guild) => bot.database.accessState(guild, state).value();
-    }
-
-    return fetcher;
+    return deepMerge(DefaultBotOptions, { ...options as any, token });
 }
 
 function isPlainObject(obj: any): boolean {

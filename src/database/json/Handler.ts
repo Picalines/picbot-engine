@@ -78,7 +78,7 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
                 }
             }
 
-            return selected;
+            return selected as any;
         },
     });
 
