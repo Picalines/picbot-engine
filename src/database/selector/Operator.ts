@@ -22,7 +22,7 @@ export interface QueryOperators<E extends EntityType, Vars extends SelectorVars>
     readonly var: <T>(name: ExpressionVariable<Vars, T>['name']) => ExpressionVariable<Vars, T>;
 }
 
-export const QueryOperators = <QueryOperators<EntityType, any>>Object.freeze({
+export const QueryOperators = Object.freeze(<QueryOperators<EntityType, any>>{
     gt: (l, r) => new ComparisonExpression('gt' as any, l, r),
     gte: (l, r) => new ComparisonExpression('gte' as any, l, r),
     lt: (l, r) => new ComparisonExpression('lt' as any, l, r),

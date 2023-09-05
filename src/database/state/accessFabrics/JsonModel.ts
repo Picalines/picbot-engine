@@ -2,7 +2,7 @@ import { assert } from "../../../utils/index.js";
 import { StateAccess } from "../State.js";
 import { jsonAccess } from "./Json.js";
 
-export const jsonModelAccess = <T>(modelConstructor: new () => T) => (access: StateAccess<string>) => {
+export const jsonModelAccess = <T extends {}>(modelConstructor: new () => T) => (access: StateAccess<string>) => {
     const jAccess = jsonAccess<T>(access);
 
     return {

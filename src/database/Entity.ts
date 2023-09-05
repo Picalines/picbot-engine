@@ -2,19 +2,19 @@ import { Guild, GuildManager, GuildMember, GuildMemberManager, User, UserManager
 
 export type EntityType = "user" | "guild" | "member";
 
-export type Entity<E extends EntityType>
-    = E extends "user" ? User
-    : E extends "guild" ? Guild
-    : E extends "member" ? GuildMember
-    : never;
+export type Entity<E extends EntityType> = {
+    "user": User,
+    "guild": Guild,
+    "member": GuildMember,
+}[E];
 
 export type AnyEntity = Entity<EntityType>;
 
-export type EntityManager<E extends EntityType>
-    = E extends "user" ? UserManager
-    : E extends "guild" ? GuildManager
-    : E extends "member" ? GuildMemberManager
-    : never;
+export type EntityManager<E extends EntityType> = {
+    "user": UserManager,
+    "guild": GuildManager,
+    "member": GuildMemberManager,
+}[E];
 
 export function checkEntityType<E extends EntityType>(entity: Entity<any>, expectedType: E): entity is Entity<E> {
     switch (expectedType) {

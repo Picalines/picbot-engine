@@ -38,7 +38,7 @@ export class Selector<E extends EntityType, Vars extends SelectorVars = {}> {
     }
 }
 
-function checkExpression<E extends EntityType>(selector: Selector<E, any>, expression?: AnyExpression<EntityType, any>) {
+function checkExpression<E extends EntityType>(selector: Selector<E, any>, expression?: AnyExpression<E, any>) {
     expression ??= selector.expression;
 
     if (expression instanceof ComparisonExpression) {

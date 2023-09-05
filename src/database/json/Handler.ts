@@ -58,7 +58,7 @@ export const createJsonDatabaseHandler = (options: JsonHandlerOptions): CreateDa
             }
 
             variables ??= {};
-            const selected = [];
+            const selected: Entity<E>[] = [];
 
             const defaultSatate = {} as any;
             await database.bot.importer.forEach('states', state => {
