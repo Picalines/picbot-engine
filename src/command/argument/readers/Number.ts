@@ -3,16 +3,10 @@ import { parsedRegexReader } from "./Regex.js";
 import { argumentReaderTerms as readerTerms } from "./terms/Terms.js";
 
 export const numberReader = (type: 'int' | 'float', range?: [min: number, max: number]): ArgumentReader<number> => {
-    const parseNumber = type == 'int' ? parseInt : parseFloat;
+    range ??= [-Infinity, Infinity];
 
-    let inRange: (n: number) => boolean;
-    if (range) {
-        inRange = n => n >= range![0] && n <= range![1];
-    }
-    else {
-        inRange = () => true;
-        range = [-Infinity, Infinity];
-    }
+    const parseNumber = type == 'int' ? parseInt : parseFloat;
+    const inRange = (n: number) => n >= range![0] && n <= range![1];
 
     return parsedRegexReader(/[+-]?\d+(\.\d*)?/, (numberInput, context) => {
         const number = parseNumber(numberInput);
